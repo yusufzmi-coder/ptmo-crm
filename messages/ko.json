@@ -25,6 +25,7 @@
     "automations": "자동화",
     "flows": "플로우",
     "aiAgents": "AI 에이전트",
+    "ops": "Belum Dibalas",
     "settings": "설정",
     "beta": "베타",
     "unreadConversations": "읽지 않은 대화 {count}건",
@@ -48,6 +49,7 @@
     "pipelines": "파이프라인",
     "broadcasts": "브로드캐스트",
     "automations": "자동화",
+    "ops": "Belum Dibalas",
     "settings": "설정",
     "openMenu": "메뉴 열기",
     "openAccountMenu": "계정 메뉴 열기",
@@ -1737,6 +1739,62 @@
       "reindex": "재색인",
       "reindexTooltip": "모든 문서를 다시 임베딩합니다 (예: 임베딩 키 추가 후)",
       "loading": "불러오는 중…"
+    }
+  },
+  "Ops": {
+    "unanswered": {
+      "title": "Belum Dibalas",
+      "description": "Reply speed, failed sends, and every parent still waiting — most urgent first. The clock only runs during shift hours.",
+      "stateBreached": "Late",
+      "stateWarning": "Past target",
+      "stateOk": "Within target",
+      "live": "Live",
+      "polling": "Reconnecting — refreshing every 2 min",
+      "thresholds": "Office: {officeTarget} min target · {officeBreach} min late. Class: {classTarget} min target · {classBreach} min late.",
+      "updatedAt": "Updated {time}",
+      "refresh": "Refresh",
+      "loadError": "Could not load the board.",
+      "empty": "Everyone has been answered",
+      "emptyHint": "No parent is waiting on a reply right now.",
+      "unknownContact": "Unknown contact",
+      "unassigned": "Unassigned",
+      "openConversation": "Open conversation with {name}",
+      "coveredWait": "on the clock ({tier})",
+      "tierOffice": "office",
+      "tierClass": "class",
+      "tierOffDuty": "off duty",
+      "sentJustNow": "sent just now",
+      "sentMinutesAgo": "sent {count} min ago",
+      "sentHoursAgo": "sent {count, plural, =1 {1 hour} other {# hours}} ago",
+      "sentDaysAgo": "sent {count, plural, =1 {1 day} other {# days}} ago",
+      "boardHeading": "Waiting for a reply"
+    },
+    "responseTime": {
+      "withinTargetToday": "Within target today",
+      "ofAnswered": "{within} of {total} replies inside target",
+      "noRepliesYet": "No replies yet today",
+      "medianToday": "Median wait today",
+      "slowestToday": "Slowest: {wait}",
+      "onTheClock": "Shift clock · target {office} min office, {cls} min class",
+      "lateToday": "Late replies today",
+      "pastTargetToday": "+ {count} past target but not late",
+      "lateHint": "Late after {office} min office, {cls} min class",
+      "withinTargetWeek": "Within target · 7 days",
+      "ofAnsweredWeek": "{within} of {total} replies · median {median}",
+      "noRepliesWeek": "No replies in the last 7 days"
+    },
+    "failed": {
+      "title": "{count, plural, =1 {1 message} other {# messages}} did not reach the parent",
+      "badge": "Failed",
+      "desc": "WhatsApp could not deliver these in the last 7 days. The thread looks answered on our side; the parent never got it. Open the thread and resend.",
+      "noneTitle": "All messages delivered",
+      "noneDesc": "No failed sends in the last 7 days.",
+      "unknownContact": "Unknown contact",
+      "byBot": "auto-reply",
+      "more": "+ {count} more — open the inbox to see all",
+      "minutesAgo": "{count} min ago",
+      "hoursAgo": "{count, plural, =1 {1 hour} other {# hours}} ago",
+      "daysAgo": "{count, plural, =1 {1 day} other {# days}} ago"
     }
   }
 }
