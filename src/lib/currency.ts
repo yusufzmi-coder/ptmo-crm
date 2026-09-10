@@ -20,6 +20,19 @@ export interface CurrencyOption {
   label: string;
   /** Symbol for compact display, e.g. "$". */
   symbol: string;
+  /**
+   * Optional BCP-47 locale used when formatting this currency.
+   *
+   * `Intl.NumberFormat` picks the symbol from the *locale*, not the
+   * currency: an en-US runtime renders MYR as "MYR 1,234" rather than
+   * the "RM 1,234" a Malaysian user expects, because en-US has no
+   * short form for that code. Pinning a locale on the currency fixes
+   * the display wherever the browser happens to be set.
+   *
+   * Leave undefined to keep the previous behaviour — format in the
+   * runtime's own locale.
+   */
+  locale?: string;
 }
 
 /**
@@ -41,6 +54,8 @@ export const CURRENCIES: CurrencyOption[] = [
   { code: "ZAR", label: "South African Rand", symbol: "R" },
   { code: "NGN", label: "Nigerian Naira", symbol: "₦" },
   { code: "SGD", label: "Singapore Dollar", symbol: "S$" },
+  // ms-MY so the symbol resolves to "RM" regardless of browser locale.
+  { code: "MYR", label: "Malaysian Ringgit", symbol: "RM", locale: "ms-MY" },
   { code: "MXN", label: "Mexican Peso", symbol: "$" },
   { code: "COP", label: "Colombian Peso", symbol: "$" },
 ];
@@ -50,6 +65,9 @@ export const CURRENCIES: CurrencyOption[] = [
  * (no minor units) — deal values are tracked to the dollar across
  * the app. `currency` defaults to USD so callers with nothing better
  * stay safe, but pass the account/deal currency wherever known.
+ *
+ * When the code carries a `locale` in CURRENCIES that locale is used,
+ * so its symbol renders the way its own market writes it.
  *
  * Total by design: `Intl.NumberFormat` throws a RangeError on a
  * structurally invalid currency code, and `deals.currency` carries
@@ -64,8 +82,11 @@ export function formatCurrency(
 ): string {
   const code = (currency || DEFAULT_CURRENCY).trim();
   const amount = Number(value) || 0;
+  // A currency may pin its own locale (see CurrencyOption.locale).
+  // Anything without one keeps formatting in the runtime locale.
+  const locale = CURRENCIES.find((c) => c.code === code)?.locale;
   try {
-    return new Intl.NumberFormat(undefined, {
+    return new Intl.NumberFormat(locale, {
       style: "currency",
       currency: code,
       minimumFractionDigits: 0,

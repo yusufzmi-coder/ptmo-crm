@@ -42,3 +42,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# supabase cli local state (project ref, pooler url) — never commit
+supabase/.temp/
+
+# brand master artwork — large binary, lives in Drive not git
+brand/MindaOptima-logo.ai

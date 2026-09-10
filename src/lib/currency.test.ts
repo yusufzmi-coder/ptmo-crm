@@ -40,6 +40,16 @@ describe("formatCurrency", () => {
     }
   });
 
+  it("renders MYR as RM regardless of the runtime locale", () => {
+    // The test runner reports en-US, which has no short form for MYR
+    // and would otherwise print "MYR 1,234". The ms-MY locale pinned
+    // on the CURRENCIES entry is what makes this "RM 1,234".
+    const out = formatCurrency(1234, "MYR");
+    expect(out).toContain("RM");
+    expect(out).not.toContain("MYR");
+    expect(out).toContain("1,234");
+  });
+
   it("formats every offered currency without throwing", () => {
     for (const c of CURRENCIES) {
       expect(() => formatCurrency(1000, c.code)).not.toThrow();

@@ -23,7 +23,10 @@ export const THEME_IDS = [
 
 export type ThemeId = (typeof THEME_IDS)[number];
 
-export const DEFAULT_THEME: ThemeId = "violet";
+// CRM PTMO OPERATION DEPT ships on Cobalt — a calm professional blue that carries the
+// Minda Optima logo without competing with it. Amber stays available in
+// the picker as the warm accent for anyone who prefers it.
+export const DEFAULT_THEME: ThemeId = "cobalt";
 
 export const STORAGE_KEY = "wacrm.theme";
 
@@ -43,7 +46,9 @@ export const MODES = ["light", "dark"] as const;
 
 export type Mode = (typeof MODES)[number];
 
-export const DEFAULT_MODE: Mode = "dark";
+// Light is the default for an internal operations tool: these screens are
+// read in daylight offices next to printed rosters, not at night.
+export const DEFAULT_MODE: Mode = "light";
 
 export const MODE_STORAGE_KEY = "wacrm.mode";
 

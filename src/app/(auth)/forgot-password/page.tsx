@@ -13,7 +13,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { MessageSquare, CheckCircle, ArrowLeft } from "lucide-react";
+import { CheckCircle, ArrowLeft } from "lucide-react";
+import { BrandAuthHeader } from "@/components/brand/brand-logo";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -49,10 +50,10 @@ export default function ForgotPasswordPage() {
             <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
               <CheckCircle className="h-6 w-6 text-primary" />
             </div>
-            <CardTitle className="text-xl text-foreground">
+            <CardTitle className="text-[1.35rem] font-semibold leading-tight tracking-tight text-foreground">
               Check your email
             </CardTitle>
-            <CardDescription className="text-muted-foreground">
+            <CardDescription className="text-[0.9375rem] leading-relaxed text-muted-foreground">
               We&apos;ve sent a password reset link to{" "}
               <span className="text-foreground">{email}</span>. Please check your
               inbox.
@@ -77,11 +78,11 @@ export default function ForgotPasswordPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <Card className="w-full max-w-md border-border bg-card">
         <CardHeader className="items-center text-center">
-          <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-            <MessageSquare className="h-6 w-6 text-primary" />
-          </div>
-          <CardTitle className="text-xl text-foreground">Reset password</CardTitle>
-          <CardDescription className="text-muted-foreground">
+          <BrandAuthHeader />
+          <CardTitle className="text-[1.35rem] font-semibold leading-tight tracking-tight text-foreground">
+            Reset password
+          </CardTitle>
+          <CardDescription className="text-[0.9375rem] leading-relaxed text-muted-foreground">
             Enter your email and we&apos;ll send you a reset link
           </CardDescription>
         </CardHeader>

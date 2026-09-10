@@ -1,18 +1,31 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { ImageResponse } from "next/og";
 
-// Replaces the default Next.js favicon with the brand mark — Hostinger
-// violet rounded square + white chat-square glyph — matching the
-// sidebar logo in `src/components/layout/sidebar.tsx`. Next.js renders
-// this at build time and auto-injects <link rel="icon"> into <head>.
+// Favicon for CRM PTMO OPERATION DEPT.
 //
-// This route takes precedence over src/app/favicon.ico, which is the
-// Next.js default and can stay on disk harmlessly (or be removed).
+// Renders the official Minda Optima logo rather than a hand-drawn
+// stand-in. The square asset (`public/brand/minda-optima-mark.png`) is
+// the full lockup padded into a square — no crop — and it is drawn here
+// with `object-fit: contain` inside a white rounded tile, so at 32px the
+// artwork shrinks whole instead of being sliced. White keeps the logo's
+// own colours readable against dark browser chrome.
+//
+// Runs on the Node runtime (not edge) so the PNG can be read off disk at
+// build time and inlined; next/og then rasterises the 32x32 output.
+//
+// This route takes precedence over src/app/favicon.ico.
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 export const size = { width: 32, height: 32 };
 export const contentType = "image/png";
 
 export default function Icon() {
+  const logo = readFileSync(
+    join(process.cwd(), "public", "brand", "minda-optima-mark.png"),
+  );
+  const src = `data:image/png;base64,${logo.toString("base64")}`;
+
   return new ImageResponse(
     (
       <div
@@ -22,22 +35,17 @@ export default function Icon() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#7c3aed", // primary (Hostinger-aligned purple)
+          background: "#ffffff",
           borderRadius: 6,
         }}
       >
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#ffffff"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-        </svg>
+        <img
+          src={src}
+          alt=""
+          width={30}
+          height={30}
+          style={{ objectFit: "contain" }}
+        />
       </div>
     ),
     { ...size },

@@ -14,7 +14,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { MessageSquare, CheckCircle, UsersRound } from "lucide-react";
+import { CheckCircle, UsersRound } from "lucide-react";
+import { BrandAuthHeader } from "@/components/brand/brand-logo";
 
 // `useSearchParams` opts the component out of static prerendering
 // unless wrapped in Suspense — same pattern as /login.
@@ -97,10 +98,10 @@ function SignupPageInner() {
             <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
               <CheckCircle className="h-6 w-6 text-primary" />
             </div>
-            <CardTitle className="text-xl text-foreground">
+            <CardTitle className="text-[1.35rem] font-semibold leading-tight tracking-tight text-foreground">
               Check your email
             </CardTitle>
-            <CardDescription className="text-muted-foreground">
+            <CardDescription className="text-[0.9375rem] leading-relaxed text-muted-foreground">
               We&apos;ve sent a confirmation link to{" "}
               <span className="text-foreground">{email}</span>. Please check your
               inbox and click the link to verify your account.
@@ -131,20 +132,20 @@ function SignupPageInner() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <Card className="w-full max-w-md border-border bg-card">
         <CardHeader className="items-center text-center">
-          <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-            {inviteToken ? (
+          {inviteToken ? (
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
               <UsersRound className="h-6 w-6 text-primary" />
-            ) : (
-              <MessageSquare className="h-6 w-6 text-primary" />
-            )}
-          </div>
-          <CardTitle className="text-xl text-foreground">
+            </div>
+          ) : (
+            <BrandAuthHeader />
+          )}
+          <CardTitle className="text-[1.35rem] font-semibold leading-tight tracking-tight text-foreground">
             {inviteToken ? "Create account & join" : "Create account"}
           </CardTitle>
-          <CardDescription className="text-muted-foreground">
+          <CardDescription className="text-[0.9375rem] leading-relaxed text-muted-foreground">
             {inviteToken
               ? "Verify your email, then accept the invitation to join your team."
-              : "Get started with CRM Template for WhatsApp"}
+              : "Get started with CRM PTMO Operation Dept"}
           </CardDescription>
         </CardHeader>
         <CardContent>

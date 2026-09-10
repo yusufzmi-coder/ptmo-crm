@@ -22,10 +22,11 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "wacrm",
-    template: "%s — wacrm",
+    default: "CRM PTMO OPERATION DEPT",
+    template: "%s — CRM PTMO OPERATION DEPT",
   },
-  description: "Self-hostable CRM template for WhatsApp.",
+  description:
+    "CRM PTMO OPERATION DEPT — WhatsApp operations hub for Minda Optima centres.",
   robots: {
     index: false,
     follow: false,
@@ -41,8 +42,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#020617",
-  colorScheme: "dark light",
+  themeColor: "#ffffff",
+  colorScheme: "light dark",
 };
 
 // Inline boot script — runs before React hydrates so the user's
