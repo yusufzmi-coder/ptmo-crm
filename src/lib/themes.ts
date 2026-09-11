@@ -8,12 +8,13 @@
  *
  * Adding a new theme is a two-step change:
  *   1. Append the new `html[data-theme="<id>"]` block in globals.css
- *      with every token from an existing theme (use violet as the
+ *      with every token from an existing theme (use ptmo as the
  *      shape reference).
  *   2. Add an entry below. The order here drives the picker grid.
  */
 
 export const THEME_IDS = [
+  "ptmo",
   "violet",
   "emerald",
   "cobalt",
@@ -23,10 +24,10 @@ export const THEME_IDS = [
 
 export type ThemeId = (typeof THEME_IDS)[number];
 
-// CRM PTMO OPERATION DEPT ships on Cobalt — a calm professional blue that carries the
-// Minda Optima logo without competing with it. Amber stays available in
-// the picker as the warm accent for anyone who prefers it.
-export const DEFAULT_THEME: ThemeId = "cobalt";
+// CRM PTMO OPERATION DEPT ships on its own accent — the Minda Optima
+// logo blue, used sparingly (see globals.css). The other accents stay
+// in the picker for anyone who wants them.
+export const DEFAULT_THEME: ThemeId = "ptmo";
 
 export const STORAGE_KEY = "wacrm.theme";
 
@@ -73,9 +74,15 @@ export interface ThemeMeta {
 
 export const THEMES: ReadonlyArray<ThemeMeta> = [
   {
+    id: "ptmo",
+    name: "PTMO",
+    tagline: "The Minda Optima blue — the default for this deployment.",
+    swatch: "#0a77bb",
+  },
+  {
     id: "violet",
     name: "Violet",
-    tagline: "The default — confident, slightly playful.",
+    tagline: "Confident, slightly playful.",
     swatch: "oklch(0.526 0.247 293)",
   },
   {

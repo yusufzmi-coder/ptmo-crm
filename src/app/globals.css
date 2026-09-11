@@ -62,7 +62,7 @@
  *
  *   1. MODE   (light / dark)  → neutral surfaces. Selected with
  *      `document.documentElement.dataset.mode`. Defaults to dark.
- *   2. ACCENT (violet / …)    → the primary color only. Selected
+ *   2. ACCENT (ptmo / violet / …) → the primary color only. Selected
  *      with `document.documentElement.dataset.theme`.
  *
  * The two compose: any accent works in either mode. Neutral
@@ -72,7 +72,7 @@
  * --sidebar-ring) live in the ACCENT blocks. They set disjoint
  * variables, so cascade order between them doesn't matter.
  *
- * `:root` carries the dark-mode + violet defaults so a visitor
+ * `:root` carries the dark-mode + PTMO defaults so a visitor
  * renders correctly before JS runs; the boot script in
  * layout.tsx replays the saved mode + accent before first paint.
  *
@@ -147,7 +147,54 @@ html[data-mode="light"] {
 
 /* ---- ACCENT: primary color ---- */
 
+/* PTMO — the product accent. `:root` carries it so the first paint,
+ * before the boot script applies a saved choice, is already on brand.
+ *
+ * Brand blues come from the Minda Optima logo and are used sparingly:
+ * primary for actions and the active nav item, soft-blue for selected
+ * surfaces, and a run of lighter blues for chart series. Operational
+ * status colours (green / amber / red) are NOT part of this palette on
+ * purpose — they stay Tailwind's so "late" never reads as "brand".
+ */
 :root,
+html[data-theme="ptmo"] {
+  --primary: #0a77bb;
+  --primary-foreground: #ffffff;
+  --primary-hover: #08639b;
+  --primary-soft: color-mix(in srgb, #0a77bb 14%, transparent);
+  --primary-soft-2: color-mix(in srgb, #0a77bb 26%, transparent);
+  --ring: #0a77bb;
+  --chart-1: #0a77bb;
+  --chart-2: #4fa3dc;
+  --chart-3: #8cc6ea;
+  --chart-4: #bbddf3;
+  --chart-5: #dcedf9;
+  --sidebar-primary: #0a77bb;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-ring: #0a77bb;
+}
+
+/* PTMO light surfaces. Scoped to light mode so dark mode keeps its
+ * neutral slate — a pale blue page on a dark UI would be wrong. The
+ * page ground is a very soft blue-white (not flat white), cards stay
+ * white with a blue-grey hairline, and the selected sidebar item is
+ * the exact soft blue from the brand sheet. */
+html[data-theme="ptmo"][data-mode="light"] {
+  --background: #f4f8fc;
+  --card: #ffffff;
+  --card-2: #f7fafd;
+  --secondary: #eef4f9;
+  --muted: #eef4f9;
+  --accent: #eef4f9;
+  --border: #d9e4ef;
+  --input: #d9e4ef;
+  --primary-soft: #e8f3fb;
+  --primary-soft-2: #d3e6f5;
+  --sidebar: #fafcfe;
+  --sidebar-accent: #e8f3fb;
+  --sidebar-border: #d9e4ef;
+}
+
 html[data-theme="violet"] {
   --primary: oklch(0.526 0.247 293);
   --primary-foreground: oklch(0.985 0 0);
