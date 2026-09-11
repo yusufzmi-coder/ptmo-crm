@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { usePresence } from "@/hooks/use-presence";
 import { PresenceDot } from "@/components/presence/presence-dot";
 import { presenceLabel } from "@/lib/presence";
+import { setFocusedConversation } from "@/lib/presence-focus";
 import { cn } from "@/lib/utils";
 import type {
   Conversation,
@@ -27,6 +28,7 @@ import {
   RefreshCw,
   PanelRightOpen,
   PanelRightClose,
+  Eye,
 } from "lucide-react";
 import { format, isToday, isYesterday, differenceInHours } from "date-fns";
 import { useTranslations } from "next-intl";
@@ -169,7 +171,7 @@ export function MessageThread({
   const tQuote = useTranslations("Inbox.replyQuote");
 
   const { user } = useAuth();
-  const { getPresence, getRow, now } = usePresence();
+  const { getPresence, getRow, getCoViewers, now } = usePresence();
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
@@ -272,6 +274,18 @@ export function MessageThread({
 
   const conversationId = conversation?.id;
   const hasUnread = (conversation?.unread_count ?? 0) > 0;
+
+  // Tell the presence heartbeat which thread this tab has open, so the
+  // other agents covering the shared inbox can see it (migration 041).
+  // The heartbeat lives in the dashboard shell, so the two talk through
+  // a module-level store rather than a prop drilled through every page;
+  // the release function only clears the store if this thread's id is
+  // still the current one, which keeps a thread switch (new setup runs
+  // before old cleanup) from wiping the id that was just published.
+  useEffect(() => {
+    if (!conversationId) return;
+    return setFocusedConversation(conversationId);
+  }, [conversationId]);
 
   const mediaMessageId =
     openMedia && openMedia.conversationId === conversationId
@@ -895,6 +909,18 @@ export function MessageThread({
     ? (currentAssignee?.full_name ?? t("assigned"))
     : t("assign");
 
+  // Who else has this exact thread open right now. Two or three people
+  // share this inbox; sorted newest-first they all land on the same
+  // unanswered message, and the parent gets three answers to one
+  // question. The warning has to arrive before anyone types, which is
+  // why the heartbeat reports a thread change immediately instead of
+  // waiting for its next tick.
+  const coViewerIds = getCoViewers(conversationId);
+  const coViewerNames = coViewerIds.map(
+    (id) =>
+      profiles.find((p) => p.user_id === id)?.full_name ?? t("aTeammate"),
+  );
+
   return (
     // `min-w-0` is load-bearing: the page already puts min-w-0 on the
     // thread's flex *wrapper* (issue #165), but this root keeps the
@@ -1099,6 +1125,26 @@ export function MessageThread({
           </DropdownMenu>
         </div>
       </div>
+
+      {/* Someone else is in this thread. Icon + sentence, never colour
+          alone — this has to read the same to an agent who cannot tell
+          the amber strip from the doodle background. `role="status"`
+          so it is announced when it appears mid-session rather than
+          interrupting like an alert. */}
+      {coViewerNames.length > 0 && (
+        <div
+          role="status"
+          className="flex items-start gap-2 border-b border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 sm:px-4 dark:text-amber-300"
+        >
+          <Eye className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" aria-hidden />
+          <span>
+            {t("alsoViewing", {
+              names: coViewerNames.join(", "),
+              count: coViewerNames.length,
+            })}
+          </span>
+        </div>
+      )}
 
       {/* Messages Area */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4">

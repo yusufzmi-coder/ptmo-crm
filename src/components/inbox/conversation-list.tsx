@@ -9,7 +9,7 @@ import {
 } from "@/lib/inbox/conversations";
 import { cn } from "@/lib/utils";
 import type { Conversation, ConversationStatus, Tag } from "@/types";
-import { Search, ChevronDown, X } from "lucide-react";
+import { Search, ChevronDown, X, Eye } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { usePresence } from "@/hooks/use-presence";
 
 interface ConversationListProps {
   activeConversationId: string | null;
@@ -61,6 +62,12 @@ export function ConversationList({
   showBranch = false,
 }: ConversationListProps) {
   const t = useTranslations("Inbox.conversationList");
+  // Which threads a teammate already has open (migration 041). Marking
+  // the row is the earlier of the two guards: the thread banner stops a
+  // double reply, this stops the second agent opening it at all. One
+  // hook for the whole list — usePresence holds a realtime channel, so
+  // calling it per row would open one per conversation.
+  const { getCoViewers } = usePresence();
   
   const FILTER_OPTIONS: { label: string; value: InboxFilter }[] = useMemo(() => [
     { label: t("filterAll"), value: "all" },
@@ -420,6 +427,7 @@ export function ConversationList({
                 conversation={conv}
                 isActive={conv.id === activeConversationId}
                 showBranch={showBranch}
+                otherViewers={getCoViewers(conv.id).length}
                 onSelect={handleSelect}
                 t={t}
               />
@@ -438,6 +446,8 @@ interface ConversationItemProps {
   t: ReturnType<typeof useTranslations>;
   /** See ConversationListProps.showBranch. */
   showBranch?: boolean;
+  /** How many OTHER members currently have this thread open. */
+  otherViewers?: number;
 }
 
 function ConversationItem({
@@ -446,6 +456,7 @@ function ConversationItem({
   onSelect,
   t,
   showBranch = false,
+  otherViewers = 0,
 }: ConversationItemProps) {
   const contact = conversation.contact;
   const displayName = contact?.name || contact?.phone || t("unknown");
@@ -505,6 +516,18 @@ function ConversationItem({
             {conversation.last_message_text || t("noMessagesYet")}
           </p>
           <div className="flex shrink-0 items-center gap-1.5">
+            {/* Someone else is already in this thread. An icon, not a
+                colour, so it survives the row's active/hover states and
+                reads for anyone who can't tell them apart. */}
+            {otherViewers > 0 && (
+              <span
+                className="inline-flex items-center text-amber-600 dark:text-amber-400"
+                title={t("otherViewers", { count: otherViewers })}
+                aria-label={t("otherViewers", { count: otherViewers })}
+              >
+                <Eye className="h-3.5 w-3.5" />
+              </span>
+            )}
             {conversation.unread_count > 0 && (
               <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
                 {conversation.unread_count}

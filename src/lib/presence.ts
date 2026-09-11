@@ -35,6 +35,17 @@ export type PresenceStatus = "online" | "away" | "offline";
 export interface PresenceRow {
   status: StoredPresence;
   last_seen_at: string;
+  /**
+   * The conversation this member currently has open, or null
+   * (migration 041). Optional so callers that never select the column
+   * keep type-checking unchanged.
+   */
+  viewing_conversation_id?: string | null;
+}
+
+/** A presence row together with the member it belongs to. */
+export interface CoViewerRow extends PresenceRow {
+  user_id: string;
 }
 
 /**
@@ -118,4 +129,34 @@ export function summarize(statuses: PresenceStatus[]): {
   const counts = { online: 0, away: 0, offline: 0 };
   for (const s of statuses) counts[s] += 1;
   return counts;
+}
+
+/**
+ * Who ELSE currently has `conversationId` open — the guard against two
+ * agents answering the same parent (migration 041).
+ *
+ * Deliberately strict: only members deriving to "online" count. "away"
+ * means a hidden tab or five idle minutes, which is someone who left
+ * the thread open, not someone about to type — warning about them would
+ * train the team to ignore the warning. "offline" is a stale heartbeat,
+ * i.e. a crashed or closed tab, whose pointer must never linger.
+ *
+ * Returns user ids sorted, so the rendered list doesn't reshuffle on
+ * every re-derive tick.
+ */
+export function coViewers(
+  rows: Iterable<CoViewerRow>,
+  conversationId: string | null | undefined,
+  selfUserId: string | null | undefined,
+  now: number,
+): string[] {
+  if (!conversationId) return [];
+  const out: string[] = [];
+  for (const row of rows) {
+    if (!row.user_id || row.user_id === selfUserId) continue;
+    if (row.viewing_conversation_id !== conversationId) continue;
+    if (derivePresence(row.status, row.last_seen_at, now) !== "online") continue;
+    out.push(row.user_id);
+  }
+  return out.sort();
 }

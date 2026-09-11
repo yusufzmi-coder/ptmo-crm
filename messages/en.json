@@ -151,7 +151,8 @@
       "clearAll": "Clear all",
       "noConversations": "No conversations found",
       "noMessagesYet": "No messages yet",
-      "unknown": "Unknown"
+      "unknown": "Unknown",
+      "otherViewers": "{count, plural, one {1 teammate has this chat open} other {# teammates have this chat open}}"
     },
     "messageThread": {
       "backToConversations": "Back to conversations",
@@ -176,7 +177,9 @@
       "selectConversationHint": "Choose a conversation from the left to start messaging",
       "today": "Today",
       "yesterday": "Yesterday",
-      "replyingAsBranch": "replying as {branch}"
+      "replyingAsBranch": "replying as {branch}",
+      "aTeammate": "A teammate",
+      "alsoViewing": "{names} {count, plural, one {is} other {are}} also in this chat right now — check before you reply."
     },
     "sessionTimer": {
       "expired": "Expired",

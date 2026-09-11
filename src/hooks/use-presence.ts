@@ -1,12 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import {
+  coViewers,
   derivePresence,
+  type CoViewerRow,
   type PresenceRow,
   type PresenceStatus,
   type StoredPresence,
@@ -27,6 +29,12 @@ interface UsePresenceResult {
   /** Raw row for tooltips ("last seen …"). */
   getRow: (userId: string) => PresenceRow | undefined;
   /**
+   * Other members who currently have this conversation open — the
+   * double-reply guard (migration 041). Excludes the caller, and counts
+   * only members deriving to "online"; see `coViewers`.
+   */
+  getCoViewers: (conversationId: string | null | undefined) => string[];
+  /**
    * The clock value the hook is currently deriving against. Pass this
    * to `presenceLabel` / `formatLastSeen` so labels stay in lockstep
    * with the dots (both advance on the same ~15s re-derive tick).
@@ -43,7 +51,15 @@ interface UsePresenceResult {
  * out (e.g. while a parent sheet is closed).
  */
 export function usePresence(enabled = true): UsePresenceResult {
-  const { accountId } = useAuth();
+  const { accountId, user } = useAuth();
+
+  // Realtime topics are per-socket: two channels joining the SAME topic
+  // on one connection is a duplicate join, and the second one never
+  // delivers. The inbox now mounts this hook twice on one page (the
+  // conversation list and the open thread), so each instance gets its
+  // own topic. The topic is only a routing name — the postgres_changes
+  // filter below is what decides which rows arrive.
+  const instanceId = useId();
 
   // Presence rows keyed by user_id, held in immutable state — each
   // update replaces the Map so React renders and the derived getters
@@ -65,12 +81,14 @@ export function usePresence(enabled = true): UsePresenceResult {
       user_id: string;
       status: StoredPresence;
       last_seen_at: string;
+      viewing_conversation_id?: string | null;
     }) => {
       setRows((prev) => {
         const next = new Map(prev);
         next.set(row.user_id, {
           status: row.status,
           last_seen_at: row.last_seen_at,
+          viewing_conversation_id: row.viewing_conversation_id ?? null,
         });
         return next;
       });
@@ -81,7 +99,7 @@ export function usePresence(enabled = true): UsePresenceResult {
     // rather than replacing the map — so an event that lands while the
     // fetch is in flight isn't clobbered by a staler snapshot row.
     const channel: RealtimeChannel = supabase
-      .channel(`presence:${accountId}`)
+      .channel(`presence:${accountId}:${instanceId}`)
       .on(
         "postgres_changes",
         {
@@ -107,6 +125,7 @@ export function usePresence(enabled = true): UsePresenceResult {
               user_id: string;
               status: StoredPresence;
               last_seen_at: string;
+              viewing_conversation_id?: string | null;
             },
           );
         },
@@ -115,7 +134,7 @@ export function usePresence(enabled = true): UsePresenceResult {
 
     supabase
       .from("member_presence")
-      .select("user_id, status, last_seen_at")
+      .select("user_id, status, last_seen_at, viewing_conversation_id")
       .eq("account_id", accountId)
       .then(({ data, error }) => {
         if (cancelled) return;
@@ -130,6 +149,8 @@ export function usePresence(enabled = true): UsePresenceResult {
             const incoming: PresenceRow = {
               status: r.status as StoredPresence,
               last_seen_at: r.last_seen_at as string,
+              viewing_conversation_id:
+                (r.viewing_conversation_id as string | null) ?? null,
             };
             const existing = next.get(userId);
             // A live event that arrived first must win over a staler
@@ -152,7 +173,7 @@ export function usePresence(enabled = true): UsePresenceResult {
       clearInterval(tick);
       supabase.removeChannel(channel);
     };
-  }, [active, accountId]);
+  }, [active, accountId, instanceId]);
 
   const getRow = useCallback(
     (userId: string): PresenceRow | undefined => rows.get(userId),
@@ -167,5 +188,19 @@ export function usePresence(enabled = true): UsePresenceResult {
     [rows, now],
   );
 
-  return { getPresence, getRow, now };
+  const selfId = user?.id ?? null;
+
+  const getCoViewers = useCallback(
+    (conversationId: string | null | undefined): string[] => {
+      if (!conversationId) return [];
+      const candidates: CoViewerRow[] = [];
+      for (const [userId, row] of rows) {
+        candidates.push({ user_id: userId, ...row });
+      }
+      return coViewers(candidates, conversationId, selfId, now);
+    },
+    [rows, now, selfId],
+  );
+
+  return { getPresence, getRow, getCoViewers, now };
 }
