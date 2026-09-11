@@ -48,6 +48,8 @@ function InboxPageInner() {
     useState<Conversation | null>(null);
   const [activeContact, setActiveContact] = useState<Contact | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  /** How many WhatsApp numbers the account holds (migration 040). */
+  const [numberCount, setNumberCount] = useState(0);
   const [whatsappConnected, setWhatsappConnected] = useState<boolean | null>(
     null
   );
@@ -200,13 +202,20 @@ function InboxPageInner() {
         return;
       }
 
+      // One row per branch since migration 040, so `maybeSingle()`
+      // would throw once a second branch is connected. Two things come
+      // out of this read: whether ANY number is connected (clears the
+      // banner), and how many exist at all — the list only labels
+      // threads with their branch when there is more than one, since
+      // the same chip on every row would be noise.
       const { data } = await supabase
         .from("whatsapp_config")
         .select("status")
-        .eq("account_id", accountId)
-        .maybeSingle();
+        .eq("account_id", accountId);
 
-      setWhatsappConnected(data?.status === "connected");
+      const rows = data ?? [];
+      setWhatsappConnected(rows.some((r) => r.status === "connected"));
+      setNumberCount(rows.length);
     };
 
     checkConnection();
@@ -590,6 +599,7 @@ function InboxPageInner() {
             conversations={conversations}
             onConversationsLoaded={handleConversationsLoaded}
             resyncToken={resyncToken}
+            showBranch={numberCount > 1}
           />
         </div>
 

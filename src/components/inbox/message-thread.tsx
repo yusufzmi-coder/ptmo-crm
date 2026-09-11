@@ -884,6 +884,11 @@ export function MessageThread({
   const currentStatus = STATUS_OPTIONS.find(
     (s) => s.value === conversation.status
   );
+  // The branch this thread belongs to, named if an admin has named it.
+  const branchName =
+    conversation.whatsapp_config?.label?.trim() ||
+    conversation.whatsapp_config?.phone_number_id ||
+    null;
   const assignedAgentId = conversation.assigned_agent_id ?? null;
   const currentAssignee = profiles.find((p) => p.user_id === assignedAgentId);
   const assignLabel = assignedAgentId
@@ -921,7 +926,23 @@ export function MessageThread({
           </div>
           <div className="min-w-0">
             <h2 className="truncate text-sm font-semibold text-foreground">{displayName}</h2>
-            <p className="truncate text-xs text-muted-foreground">{contact.phone}</p>
+            <p className="truncate text-xs text-muted-foreground">
+              {contact.phone}
+              {/* Which of our numbers this thread is on — the branch
+                  (migration 040). An agent covering sixteen branches
+                  needs to know who they are speaking AS before they
+                  type, not after the parent replies "who is this?".
+                  Only rendered when the thread carries a branch, so a
+                  single-number account sees nothing new. */}
+              {branchName && (
+                <>
+                  <span aria-hidden> · </span>
+                  <span className="text-primary">
+                    {t("replyingAsBranch", { branch: branchName })}
+                  </span>
+                </>
+              )}
+            </p>
           </div>
           {/* Session timer badge — hidden on the narrowest phones so
               the name + back arrow keep their room. */}

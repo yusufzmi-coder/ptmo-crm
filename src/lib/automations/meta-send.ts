@@ -16,6 +16,7 @@ import {
   templateContentText,
 } from '@/lib/whatsapp/template-body'
 import { supabaseAdmin } from './admin-client'
+import { resolveConfig, resolveFailureMessage } from '@/lib/whatsapp/resolve-config'
 
 // ------------------------------------------------------------
 // Automation-side Meta sender.
@@ -135,14 +136,16 @@ async function sendViaMeta(input: SendInput): Promise<{ whatsapp_message_id: str
     throw new Error(`contact phone invalid: ${contact.phone}`)
   }
 
-  const { data: config, error: configErr } = await db
-    .from('whatsapp_config')
-    .select('*')
-    .eq('account_id', input.accountId)
-    .single()
-  if (configErr || !config) {
-    throw new Error('WhatsApp not configured for this account')
+  // The thread's own number (migration 040) — an automation still
+  // speaks to a parent, so it uses the branch they contacted.
+  const resolved = await resolveConfig(db, input.accountId, {
+    conversationId: input.conversationId,
+    columns: '*',
+  })
+  if (!resolved.ok) {
+    throw new Error(resolveFailureMessage(resolved.reason))
   }
+  const config = resolved.config
 
   const accessToken = decrypt(config.access_token)
 

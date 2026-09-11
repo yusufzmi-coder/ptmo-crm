@@ -8,6 +8,7 @@ import {
 import { decrypt } from '@/lib/whatsapp/encryption'
 import { normalizeStatus } from '@/lib/whatsapp/template-status-normalize'
 import type { TemplateButton, TemplateSampleValues } from '@/types'
+import { resolveConfig, resolveFailureMessage } from '@/lib/whatsapp/resolve-config';
 
 /**
  * Sync message templates from Meta → local message_templates table.
@@ -135,11 +136,18 @@ export async function POST() {
     // Resolving account_id off the profile only proved membership.
     const { supabase, accountId, userId } = await requireRole('admin')
 
-    const { data: config, error: configError } = await supabase
-      .from('whatsapp_config')
-      .select('*')
-      .eq('account_id', accountId)
-      .single()
+    // Templates belong to the WABA, not to any one number, so any of
+    // the account's numbers answers the same. `allowPrimary` is safe
+    // here precisely because this path does NOT message a parent —
+    // unlike the send paths, which must use the thread's own number.
+    const configResolved = await resolveConfig(supabase, accountId, {
+      allowPrimary: true,
+      columns: '*',
+    });
+    const config = configResolved.ok ? configResolved.config : null;
+    const configError = configResolved.ok
+      ? null
+      : new Error(resolveFailureMessage(configResolved.reason));
 
     if (configError || !config) {
       return NextResponse.json(

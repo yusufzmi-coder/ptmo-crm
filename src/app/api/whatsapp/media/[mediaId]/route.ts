@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getMediaUrl, downloadMedia } from '@/lib/whatsapp/meta-api'
 import { decrypt } from '@/lib/whatsapp/encryption'
+import { resolveConfig, resolveFailureMessage } from '@/lib/whatsapp/resolve-config'
 
 export async function GET(
   request: Request,
@@ -49,18 +50,19 @@ export async function GET(
     }
 
     // Fetch and decrypt WhatsApp config
-    const { data: config, error: configError } = await supabase
-      .from('whatsapp_config')
-      .select('*')
-      .eq('account_id', accountId)
-      .single()
-
-    if (configError || !config) {
+    // Downloading media from Meta uses the WABA-level access token, so
+    // any of the account's numbers serves — this never messages anyone.
+    const resolvedConfig = await resolveConfig(supabase, accountId, {
+      allowPrimary: true,
+      columns: '*',
+    })
+    if (!resolvedConfig.ok) {
       return NextResponse.json(
-        { error: 'WhatsApp not configured' },
+        { error: resolveFailureMessage(resolvedConfig.reason) },
         { status: 400 }
       )
     }
+    const config = resolvedConfig.config
 
     const accessToken = decrypt(config.access_token)
 

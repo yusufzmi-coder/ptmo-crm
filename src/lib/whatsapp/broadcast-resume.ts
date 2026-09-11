@@ -22,6 +22,7 @@ import { BroadcastError, type BroadcastPlan } from '@/lib/whatsapp/broadcast-cor
 import { decrypt } from '@/lib/whatsapp/encryption';
 import { resolveTemplateRow } from '@/lib/whatsapp/template-body';
 import { sanitizePhoneForMeta, isValidE164 } from '@/lib/whatsapp/phone-utils';
+import { resolveConfig, resolveFailureMessage } from '@/lib/whatsapp/resolve-config';
 
 /** Which recipients a resume pass picks up. */
 export type ResumeScope = 'pending' | 'failed' | 'all';
@@ -205,18 +206,21 @@ export async function planBroadcastResume(
     );
   }
 
-  const { data: config, error: configError } = await db
-    .from('whatsapp_config')
-    .select('*')
-    .eq('account_id', accountId)
-    .single();
-  if (configError || !config) {
+  // Deliberately NO `allowPrimary`: a broadcast reaches hundreds of
+  // parents at once, so sending from a guessed number is the most
+  // expensive mistake this codebase can make. With one number
+  // connected this resolves to it; with several it stops and asks.
+  const resolvedConfig = await resolveConfig(db, accountId, { columns: '*' });
+  if (!resolvedConfig.ok) {
+    // Say which of the two it is — nothing connected, or several
+    // connected and none chosen. They need different fixes.
     throw new BroadcastError(
       'whatsapp_not_configured',
-      'WhatsApp not configured. Please set up your WhatsApp integration first.',
+      resolveFailureMessage(resolvedConfig.reason),
       400
     );
   }
+  const config = resolvedConfig.config;
 
   const resolvedTemplate = await resolveTemplateRow(
     db,

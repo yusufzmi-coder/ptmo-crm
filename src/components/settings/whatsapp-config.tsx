@@ -59,6 +59,14 @@ export function WhatsAppConfig() {
   const [resetting, setResetting] = useState(false);
   const [showToken, setShowToken] = useState(false);
   const [config, setConfig] = useState<WhatsAppConfigType | null>(null);
+  /** Every number this account holds — one per branch (migration 040). */
+  const [numbers, setNumbers] = useState<WhatsAppConfigType[]>([]);
+  /** Branch name for the number in the form (used when adding one). */
+  const [label, setLabel] = useState('');
+  /** Row currently being renamed inline, and its draft name. */
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [savingRename, setSavingRename] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('unknown');
   const [resetReason, setResetReason] = useState<ResetReason>(null);
   const [statusMessage, setStatusMessage] = useState<string>('');
@@ -114,25 +122,33 @@ export function WhatsAppConfig() {
   const fetchConfig = useCallback(async (acctId: string) => {
     setLoading(true);
     try {
-      // Load form values from Supabase (shows what's in DB).
-      // Switched from `user_id` (which would only match the row's
-      // original author) to `account_id` so every member of the
-      // account sees the same saved configuration. UNIQUE(account_id)
-      // on the table guarantees the .maybeSingle() return type
-      // remains accurate.
-      const { data, error } = await supabase
+      // Load form values from Supabase (shows what's in DB), scoped by
+      // `account_id` so every member of the account sees the same saved
+      // configuration.
+      //
+      // Since migration 040 an account holds one row PER BRANCH, so the
+      // old `.maybeSingle()` would throw the moment a second number was
+      // connected. We load them all: the list below shows every branch,
+      // and the form edits the primary (or the first) until the user
+      // picks another or starts a new one.
+      const { data: rows, error } = await supabase
         .from('whatsapp_config')
         .select('*')
         .eq('account_id', acctId)
-        .maybeSingle();
+        .order('created_at', { ascending: true });
 
       if (error) {
-        console.error('Failed to load config row:', error);
+        console.error('Failed to load config rows:', error);
       }
+
+      setNumbers(rows ?? []);
+      const data =
+        rows?.find((r: WhatsAppConfigType) => r.is_primary) ?? rows?.[0] ?? null;
 
       if (data) {
         setConfig(data);
         setPhoneNumberId(data.phone_number_id || '');
+        setLabel(data.label || '');
         setWabaId(data.waba_id || '');
         setAccessToken(MASKED_TOKEN);
         setVerifyToken('');
@@ -211,10 +227,12 @@ export function WhatsAppConfig() {
     setMirrorMedia(next);
     setSavingMirror(true);
     try {
+      // Target this row, not the whole account: the setting belongs to
+      // the number whose media it mirrors.
       const { error } = await supabase
         .from('whatsapp_config')
         .update({ mirror_inbound_media: next })
-        .eq('account_id', accountId);
+        .eq('id', config.id);
       if (error) throw new Error(error.message);
       setConfig({ ...config, mirror_inbound_media: next });
     } catch (error) {
@@ -223,6 +241,39 @@ export function WhatsAppConfig() {
       toast.error(t('mirrorInboundSaveFailed'));
     } finally {
       setSavingMirror(false);
+    }
+  }
+
+  /**
+   * Rename a branch in place. Writes `label` straight through Supabase
+   * — the same route `handleToggleMirrorMedia` takes — because RLS
+   * already restricts whatsapp_config writes to admins and above, and
+   * a name needs no Meta round trip.
+   */
+  async function handleRename(id: string) {
+    if (savingRename) return;
+    const next = renameValue.trim();
+    setSavingRename(true);
+    try {
+      const { error } = await supabase
+        .from('whatsapp_config')
+        .update({ label: next || null })
+        .eq('id', id);
+      if (error) throw new Error(error.message);
+
+      setNumbers((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, label: next || null } : n)),
+      );
+      if (config?.id === id) {
+        setConfig({ ...config, label: next || null });
+        setLabel(next);
+      }
+      setRenamingId(null);
+    } catch (error) {
+      console.error('Failed to rename number:', error);
+      toast.error(t('branchRenameFailed'));
+    } finally {
+      setSavingRename(false);
     }
   }
 
@@ -246,6 +297,8 @@ export function WhatsAppConfig() {
       const payload: Record<string, unknown> = {
         phone_number_id: phoneNumberId.trim(),
         waba_id: wabaId.trim() || null,
+        // Branch name, so staff see "Rawang" rather than a 15-digit id.
+        label: label.trim() || null,
         verify_token: verifyToken.trim() || null,
         // Optional — only sent when the user filled it in. The server
         // requires it on first save or when changing numbers; for a
@@ -598,6 +651,150 @@ export function WhatsAppConfig() {
           </Alert>
         )}
 
+        {/* Connected numbers — one row per branch (migration 040).
+            Shown above the form so it is obvious the form edits ONE of
+            these, not "the" configuration. */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-foreground">
+              {t('connectedNumbers')}
+            </CardTitle>
+            <CardDescription className="text-muted-foreground">
+              {t('connectedNumbersDesc')}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {numbers.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                {t('noNumbersYet')}
+              </p>
+            ) : (
+              <ul className="divide-y divide-border rounded-lg border border-border">
+                {numbers.map((n) => {
+                  const active = config?.id === n.id;
+                  return (
+                    <li
+                      key={n.id}
+                      className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2.5 text-sm"
+                    >
+                      {renamingId === n.id ? (
+                        <span className="flex min-w-0 flex-1 items-center gap-2">
+                          <Input
+                            autoFocus
+                            value={renameValue}
+                            placeholder={t('branchLabelPlaceholder')}
+                            onChange={(e) => setRenameValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') void handleRename(n.id);
+                              if (e.key === 'Escape') setRenamingId(null);
+                            }}
+                            className="bg-muted border-border text-foreground placeholder:text-muted-foreground h-8"
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            disabled={savingRename}
+                            onClick={() => void handleRename(n.id)}
+                          >
+                            {t('branchRenameSave')}
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setRenamingId(null)}
+                          >
+                            {t('branchRenameCancel')}
+                          </Button>
+                        </span>
+                      ) : (
+                        <span className="min-w-0 flex-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRenamingId(n.id);
+                              setRenameValue(n.label ?? '');
+                            }}
+                            className="block max-w-full truncate text-left font-medium text-foreground underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none"
+                            title={t('branchRenameHint')}
+                          >
+                            {n.label?.trim() || t('branchUnnamed')}
+                          </button>
+                          <span className="block truncate text-xs tabular-nums text-muted-foreground">
+                            {n.phone_number_id}
+                          </span>
+                        </span>
+                      )}
+                      {n.is_primary && (
+                        <span className="rounded-full border border-primary-soft-2 bg-primary-soft px-2 py-0.5 text-[11px] font-medium text-primary">
+                          {t('primaryBadge')}
+                        </span>
+                      )}
+                      <span
+                        className={
+                          n.status === 'connected'
+                            ? 'inline-flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400'
+                            : 'inline-flex items-center gap-1.5 text-xs text-muted-foreground'
+                        }
+                      >
+                        <span
+                          className={
+                            n.status === 'connected'
+                              ? 'inline-block h-1.5 w-1.5 rounded-full bg-emerald-500'
+                              : 'inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/50'
+                          }
+                          aria-hidden
+                        />
+                        {n.status}
+                      </span>
+                      {!active && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setConfig(n);
+                            setPhoneNumberId(n.phone_number_id || '');
+                            setLabel(n.label || '');
+                            setWabaId(n.waba_id || '');
+                            setVerifyToken(n.verify_token || '');
+                            setPin('');
+                            setTokenEdited(false);
+                          }}
+                        >
+                          {t('editNumber')}
+                        </Button>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+
+            {numbers.length > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-3"
+                onClick={() => {
+                  // Clear the form for a new branch. The account's WABA
+                  // id carries over because every number sits under one
+                  // WABA — so adding branch seventeen is just a phone
+                  // number id and a name.
+                  setConfig(null);
+                  setPhoneNumberId('');
+                  setLabel('');
+                  setVerifyToken('');
+                  setPin('');
+                  setTokenEdited(false);
+                }}
+              >
+                {t('addAnotherNumber')}
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+
         {/* API Credentials */}
         <Card>
           <CardHeader>
@@ -607,6 +804,19 @@ export function WhatsAppConfig() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-muted-foreground">{t('branchLabel')}</Label>
+              <Input
+                placeholder={t('branchLabelPlaceholder')}
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                className="bg-muted border-border text-foreground placeholder:text-muted-foreground"
+              />
+              <p className="text-xs text-muted-foreground">
+                {t('branchLabelHint')}
+              </p>
+            </div>
+
             <div className="space-y-2">
               <Label className="text-muted-foreground">{t('phoneNumberId')}</Label>
               <Input

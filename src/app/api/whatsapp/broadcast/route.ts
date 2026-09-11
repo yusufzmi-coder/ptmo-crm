@@ -15,6 +15,7 @@ import {
   rateLimitResponse,
   RATE_LIMITS,
 } from '@/lib/rate-limit'
+import { resolveConfig, resolveFailureMessage } from '@/lib/whatsapp/resolve-config'
 
 interface BroadcastResult {
   phone: string
@@ -120,21 +121,18 @@ export async function POST(request: Request) {
       )
     }
 
-    const { data: config, error: configError } = await supabase
-      .from('whatsapp_config')
-      .select('*')
-      .eq('account_id', accountId)
-      .single()
-
-    if (configError || !config) {
+    // No `allowPrimary` — see broadcast-core.ts for why a broadcast
+    // never guesses which number it goes out on.
+    const resolvedConfig = await resolveConfig(supabase, accountId, {
+      columns: '*',
+    })
+    if (!resolvedConfig.ok) {
       return NextResponse.json(
-        {
-          error:
-            'WhatsApp not configured. Please set up your WhatsApp integration first.',
-        },
+        { error: resolveFailureMessage(resolvedConfig.reason) },
         { status: 400 }
       )
     }
+    const config = resolvedConfig.config
 
     const accessToken = decrypt(config.access_token)
 

@@ -29,6 +29,7 @@ import {
 import { resolveTemplateRow } from '@/lib/whatsapp/template-body';
 import type { MessageTemplate } from '@/types';
 import { findOrCreateContact } from '@/lib/api/v1/contacts';
+import { resolveConfig, resolveFailureMessage } from '@/lib/whatsapp/resolve-config';
 
 /** Thrown by createBroadcast on a caller-visible failure; route maps it. */
 export class BroadcastError extends Error {
@@ -110,18 +111,21 @@ export async function createBroadcast(
 
   // Config (fail fast + provides the audit trail owner already resolved
   // by the caller). Meta send needs phone_number_id + decrypted token.
-  const { data: config, error: configError } = await db
-    .from('whatsapp_config')
-    .select('*')
-    .eq('account_id', accountId)
-    .single();
-  if (configError || !config) {
+  // Deliberately NO `allowPrimary`: a broadcast reaches hundreds of
+  // parents at once, so sending from a guessed number is the most
+  // expensive mistake this codebase can make. With one number
+  // connected this resolves to it; with several it stops and asks.
+  const resolvedConfig = await resolveConfig(db, accountId, { columns: '*' });
+  if (!resolvedConfig.ok) {
+    // Say which of the two it is — nothing connected, or several
+    // connected and none chosen. They need different fixes.
     throw new BroadcastError(
       'whatsapp_not_configured',
-      'WhatsApp not configured. Please set up your WhatsApp integration first.',
+      resolveFailureMessage(resolvedConfig.reason),
       400
     );
   }
+  const config = resolvedConfig.config;
   const accessToken = decrypt(config.access_token);
 
   // Template row (once) for header/button components; guard a

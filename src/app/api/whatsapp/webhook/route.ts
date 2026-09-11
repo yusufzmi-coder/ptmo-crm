@@ -315,7 +315,9 @@ async function processWebhook(body: { entry?: WhatsAppWebhookEntry[] }) {
           // Default ON: the column is NOT NULL DEFAULT TRUE, but a row
           // read before migration 039 lands would have it undefined,
           // and losing attachments is the failure mode worth avoiding.
-          config.mirror_inbound_media !== false
+          config.mirror_inbound_media !== false,
+          // The number this delivery came in on (migration 040).
+          config.id
         )
       }
     }
@@ -586,7 +588,12 @@ async function processMessage(
   accessToken: string,
   // Per-account opt-out for the inbound-media mirror (migration 039).
   // See parseMessageContent for what it turns off.
-  mirrorMedia: boolean
+  mirrorMedia: boolean,
+  // Which of the account's numbers this message arrived on — the
+  // branch, for a multi-branch account (migration 040). Stamped onto
+  // the conversation so replies leave on the same number the parent
+  // wrote to.
+  configId: string
 ) {
   const senderPhone = normalizePhone(message.from)
   const contactName = contact.profile.name
@@ -605,7 +612,8 @@ async function processMessage(
   const convResult = await findOrCreateConversation(
     accountId,
     configOwnerUserId,
-    contactRecord.id
+    contactRecord.id,
+    configId
   )
   if (!convResult) return
   const conversation = convResult.conversation
@@ -1176,6 +1184,7 @@ async function findOrCreateConversation(
   accountId: string,
   configOwnerUserId: string,
   contactId: string,
+  configId: string,
 ) {
   // Look for an existing conversation in this account, oldest-first.
   //
@@ -1204,7 +1213,26 @@ async function findOrCreateConversation(
   }
 
   if (existingRows && existingRows.length > 0) {
-    return { conversation: existingRows[0], created: false }
+    const existing = existingRows[0]
+    // Threads that predate migration 040 carry no number. The inbound
+    // payload just told us which one they are on, so adopt it — that
+    // way old conversations gain their branch the first time a parent
+    // writes again, with no backfill job.
+    if (!existing.whatsapp_config_id) {
+      const { error: adoptError } = await supabaseAdmin()
+        .from('conversations')
+        .update({ whatsapp_config_id: configId })
+        .eq('id', existing.id)
+        .is('whatsapp_config_id', null)
+      if (adoptError) {
+        // Non-fatal: the message still belongs in this thread. Worst
+        // case the thread stays unbranded until the next inbound.
+        console.error('[webhook] could not stamp conversation number:', adoptError)
+      } else {
+        existing.whatsapp_config_id = configId
+      }
+    }
+    return { conversation: existing, created: false }
   }
 
   // Create new conversation. Same tenancy + audit split as
@@ -1215,6 +1243,7 @@ async function findOrCreateConversation(
       account_id: accountId,
       user_id: configOwnerUserId,
       contact_id: contactId,
+      whatsapp_config_id: configId,
     })
     .select()
     .single()

@@ -34,6 +34,12 @@ interface ConversationListProps {
    * or the tab was throttled. Optional so existing callers keep working.
    */
   resyncToken?: number;
+  /**
+   * Show each thread's branch. The parent passes true only when the
+   * account has more than one WhatsApp number — with a single branch
+   * the same chip on every row is noise, not information.
+   */
+  showBranch?: boolean;
 }
 
 const STATUS_COLORS: Record<ConversationStatus, string> = {
@@ -52,6 +58,7 @@ export function ConversationList({
   conversations,
   onConversationsLoaded,
   resyncToken = 0,
+  showBranch = false,
 }: ConversationListProps) {
   const t = useTranslations("Inbox.conversationList");
   
@@ -412,6 +419,7 @@ export function ConversationList({
                 key={conv.id}
                 conversation={conv}
                 isActive={conv.id === activeConversationId}
+                showBranch={showBranch}
                 onSelect={handleSelect}
                 t={t}
               />
@@ -428,6 +436,8 @@ interface ConversationItemProps {
   isActive: boolean;
   onSelect: (conversation: Conversation) => void;
   t: ReturnType<typeof useTranslations>;
+  /** See ConversationListProps.showBranch. */
+  showBranch?: boolean;
 }
 
 function ConversationItem({
@@ -435,6 +445,7 @@ function ConversationItem({
   isActive,
   onSelect,
   t,
+  showBranch = false,
 }: ConversationItemProps) {
   const contact = conversation.contact;
   const displayName = contact?.name || contact?.phone || t("unknown");
@@ -479,6 +490,16 @@ function ConversationItem({
           </span>
           <span className="shrink-0 text-[10px] text-muted-foreground">{timeAgo}</span>
         </div>
+        {showBranch && conversation.whatsapp_config && (
+          <div className="mt-0.5">
+            <span className="inline-flex max-w-full items-center rounded-full border border-primary-soft-2 bg-primary-soft px-1.5 py-0.5 text-[10px] font-medium text-primary">
+              <span className="truncate">
+                {conversation.whatsapp_config.label?.trim() ||
+                  conversation.whatsapp_config.phone_number_id}
+              </span>
+            </span>
+          </div>
+        )}
         <div className="mt-0.5 flex items-center justify-between gap-2">
           <p className="truncate text-xs text-muted-foreground">
             {conversation.last_message_text || t("noMessagesYet")}

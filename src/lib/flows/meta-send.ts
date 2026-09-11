@@ -16,6 +16,7 @@ import {
   isRecipientNotAllowedError,
 } from '@/lib/whatsapp/phone-utils'
 import { supabaseAdmin } from './admin-client'
+import { resolveConfig, resolveFailureMessage } from '@/lib/whatsapp/resolve-config'
 
 // ------------------------------------------------------------
 // Flows-side Meta sender (interactive variants).
@@ -82,14 +83,15 @@ export async function engineSendText(
     throw new Error(`contact phone invalid: ${contact.phone}`)
   }
 
-  const { data: config, error: configErr } = await db
-    .from('whatsapp_config')
-    .select('*')
-    .eq('account_id', args.accountId)
-    .single()
-  if (configErr || !config) {
-    throw new Error('WhatsApp not configured for this account')
+  // The thread's own number (migration 040).
+  const resolved = await resolveConfig(db, args.accountId, {
+    conversationId: args.conversationId,
+    columns: '*',
+  })
+  if (!resolved.ok) {
+    throw new Error(resolveFailureMessage(resolved.reason))
   }
+  const config = resolved.config
 
   const accessToken = decrypt(config.access_token)
 
@@ -192,14 +194,15 @@ export async function engineSendMedia(
     throw new Error(`contact phone invalid: ${contact.phone}`)
   }
 
-  const { data: config, error: configErr } = await db
-    .from('whatsapp_config')
-    .select('*')
-    .eq('account_id', args.accountId)
-    .single()
-  if (configErr || !config) {
-    throw new Error('WhatsApp not configured for this account')
+  // The thread's own number (migration 040).
+  const resolved = await resolveConfig(db, args.accountId, {
+    conversationId: args.conversationId,
+    columns: '*',
+  })
+  if (!resolved.ok) {
+    throw new Error(resolveFailureMessage(resolved.reason))
   }
+  const config = resolved.config
 
   const accessToken = decrypt(config.access_token)
 
@@ -344,14 +347,15 @@ async function sendInteractiveViaMeta(
     throw new Error(`contact phone invalid: ${contact.phone}`)
   }
 
-  const { data: config, error: configErr } = await db
-    .from('whatsapp_config')
-    .select('*')
-    .eq('account_id', input.accountId)
-    .single()
-  if (configErr || !config) {
-    throw new Error('WhatsApp not configured for this account')
+  // The thread's own number (migration 040).
+  const resolved = await resolveConfig(db, input.accountId, {
+    conversationId: input.conversationId,
+    columns: '*',
+  })
+  if (!resolved.ok) {
+    throw new Error(resolveFailureMessage(resolved.reason))
   }
+  const config = resolved.config
 
   const accessToken = decrypt(config.access_token)
 

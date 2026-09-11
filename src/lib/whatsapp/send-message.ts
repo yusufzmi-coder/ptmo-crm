@@ -35,6 +35,10 @@ import {
   type InteractiveMessagePayload,
 } from '@/lib/whatsapp/interactive';
 import { decrypt, encrypt, isLegacyFormat } from '@/lib/whatsapp/encryption';
+import {
+  resolveConfig,
+  resolveFailureMessage,
+} from '@/lib/whatsapp/resolve-config';
 import { supabaseAdmin } from '@/lib/flows/admin-client';
 import {
   sanitizePhoneForMeta,
@@ -251,20 +255,28 @@ export async function sendMessageToConversation(
     );
   }
 
-  // WhatsApp config, account-scoped.
-  const { data: config, error: configError } = await db
-    .from('whatsapp_config')
-    .select('*')
-    .eq('account_id', accountId)
-    .single();
+  // WhatsApp config — the number THIS THREAD arrived on (migration
+  // 040). An account can hold one number per branch, and a reply must
+  // leave on the same number the parent wrote to; anything else shows
+  // them a branch they never contacted and splits the thread on their
+  // phone. `resolveConfig` owns that rule — see resolve-config.ts.
+  // No `allowPrimary` here on purpose: this path talks to a parent, so
+  // an unresolvable number is an error, never a guess.
+  const resolved = await resolveConfig(db, accountId, {
+    conversationId,
+    columns: '*',
+  });
 
-  if (configError || !config) {
+  if (!resolved.ok) {
     throw new SendMessageError(
-      'whatsapp_not_configured',
-      'WhatsApp not configured. Please set up your WhatsApp integration first.',
+      resolved.reason === 'not_configured'
+        ? 'whatsapp_not_configured'
+        : 'whatsapp_number_unresolved',
+      resolveFailureMessage(resolved.reason),
       400
     );
   }
+  const config = resolved.config;
 
   const accessToken = decrypt(config.access_token);
 

@@ -162,6 +162,18 @@ export interface Conversation {
   user_id: string;
   contact_id: string;
   status: ConversationStatus;
+  /**
+   * The WhatsApp number this thread arrived on — the branch, for a
+   * multi-branch account (migration 040). Replies must go out on this
+   * number; see src/lib/whatsapp/resolve-config.ts.
+   */
+  whatsapp_config_id?: string | null;
+  /** Embedded branch, when the query asks for it. */
+  whatsapp_config?: {
+    id: string;
+    label: string | null;
+    phone_number_id: string;
+  } | null;
   assigned_agent_id?: string;
   last_message_text?: string;
   last_message_at?: string;
@@ -275,6 +287,18 @@ export interface MessageReaction {
 export interface WhatsAppConfig {
   id: string;
   user_id: string;
+  /**
+   * Human name for this number — the branch it serves (migration 040).
+   * NULL on rows saved before 040; the UI falls back to the
+   * phone_number_id until an admin names it.
+   */
+  label?: string | null;
+  /**
+   * The account's default number, used only where no conversation and
+   * no explicit choice supplies one. Exactly one row per account is
+   * true. See src/lib/whatsapp/resolve-config.ts for the full rule.
+   */
+  is_primary?: boolean;
   phone_number_id: string;
   waba_id?: string;
   access_token: string;
