@@ -701,6 +701,33 @@ export interface QuickReply {
   content_text?: string | null;
   /** Set when `kind === 'interactive'`. */
   interactive_payload?: InteractiveMessagePayload | null;
+  /**
+   * Branch this snippet is pinned to (migration 043). NULL — the
+   * default — means every branch, which is the right answer for
+   * anything using the `{{cawangan}}` token.
+   */
+  whatsapp_config_id?: string | null;
   created_at: string;
   updated_at: string;
+}
+
+/**
+ * A quick reply as one thread's branch sees it — what
+ * `GET /api/quick-replies?conversationId=…` returns.
+ *
+ * `content_text` and `interactive_payload` arrive already expanded, so
+ * the composer inserts them verbatim and never has to know about
+ * branches.
+ */
+export interface BranchedQuickReply extends QuickReply {
+  /**
+   * The snippet uses `{{cawangan}}` but the thread's branch could not
+   * be resolved, so it must not be offered — expanding would blank the
+   * token or send the braces to a parent.
+   */
+  branch_unresolved?: boolean;
+  /** Why expansion failed, when it broke Meta's interactive limits. */
+  branch_expand_error?: string;
+  /** Other centres this snippet names in its text. Empty is the norm. */
+  foreign_branches?: string[];
 }
