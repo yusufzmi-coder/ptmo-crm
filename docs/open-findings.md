@@ -3,8 +3,8 @@
 Six parallel audits ran against this repo on 2026-09-12 and landed 18
 commits. What follows is what they found and did **not** fix. Every item
 was re-verified against `78a71ef` before being written down, not recalled
-from memory — but nothing here has been fixed, so verify again before
-acting.
+from memory. Items are open unless their heading says otherwise, and
+even a fixed one is worth re-reading before you build on it.
 
 The audits themselves lived in scratch plan files that do not survive
 their sessions. This file exists so the next person does not re-audit
@@ -78,17 +78,30 @@ rows stay rendered until something else replaces them.
 same treatment: put `accountId` in the channel name, add it to the deps,
 and clear cached state on change.
 
-### Broadcasts can still strand
+### ~~Broadcasts can still strand~~ — FIXED
 
-`src/hooks/use-broadcast-sending.ts:402`
+`src/hooks/use-broadcast-sending.ts`
 
-Migration 048 fixed half of this — `whatsapp_config_id` is now a
-parameter, so the 400 `ambiguous` is gone. But the `broadcasts` row is
-still inserted with `status: 'sending'` **before** the first API call, so
-a failure still leaves a campaign permanently stuck in `sending`.
+Fixed in `5bbe6d5`, as prescribed: the row is created as `'draft'` and
+promoted to `'sending'` only by the first batch response that lands. A
+new catch around the pass stamps a terminal status on every exit path —
+`'failed'` once something has gone out, `'draft'` when nothing has — so
+no failure leaves a campaign in `'sending'` with nothing left to move it.
+The decisions live in `src/lib/broadcast-send-status.ts` with unit tests;
+the hook itself is not testable here (vitest runs `node`, no
+testing-library).
 
-Fix: insert as `'draft'`, flip to `'sending'` after the first successful
-send.
+Two things turned up alongside it and are fixed in the same commit range:
+
+- A batch whose contacts all lacked a phone was skipped, leaving those
+  rows `'pending'` and uncounted — a wholly unsendable campaign
+  finalized as `'sent'`. They are stamped `'failed'` now.
+- The wizard never wrote `broadcasts.whatsapp_config_id`, though
+  `broadcast-resume.ts` reads it (migration 048) to pick the number. With
+  several branches connected a resume refused rather than guessing. The
+  insert now freezes the named branch, and `/api/whatsapp/broadcast`
+  returns the number it resolved so a single-number account freezes one
+  too — before a second branch is connected.
 
 ---
 
