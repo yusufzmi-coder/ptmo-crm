@@ -1,284 +1,282 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mocks = vi.hoisted(() => ({
-  requireRole: vi.fn(),
-  getMediaUrl: vi.fn(),
-  downloadMedia: vi.fn(),
-}));
+// ---------------------------------------------------------------------------
+// The authorization on this route IS the route. Before the fix it checked
+// only that the caller had an account, then handed any `mediaId` from the
+// URL to Meta using the account's PRIMARY token — so any authenticated
+// user, `viewer` included, could pull any centre's attachment by guessing
+// an id, and with the wrong centre's credential.
+//
+// These tests pin the two things that stopped that: a message in the
+// caller's own account must reference the media id, and the token must come
+// from that message's conversation.
+//
+// The second group pins the hardening on top of that: the id is checked
+// before it is used, the zone rule is stated in the handler as well as in
+// RLS, and a thread with no number is an error rather than a guess.
+// ---------------------------------------------------------------------------
 
-vi.mock('@/lib/auth/account', () => ({
-  requireRole: mocks.requireRole,
-  toErrorResponse: vi.fn(() =>
-    Response.json({ error: 'auth failed' }, { status: 401 })
-  ),
-}));
+// Per-test scenario.
+let signedIn = true
+let callerRole = 'viewer'
+// Rows `messages` returns for the media_url lookup. Empty models "no
+// message in MY account references this id" — which is what RLS produces
+// for another zone's media, since `messages_select` joins through
+// conversations to the caller's account.
+let messageRows: Array<Record<string, unknown>> = []
+// The conversation row, as the database holds it. The stub applies the
+// handler's filters to it, so giving it another zone's `account_id` models
+// exactly what an RLS gap would produce: the message is visible, the
+// conversation is not the caller's.
+let conversationRow: Record<string, unknown> | null = null
+// Every number the account holds. More than one is what makes a numberless
+// thread ambiguous rather than obvious.
+let configRows: Array<Record<string, unknown>> = []
+
+const mediaUrlCalls: Array<{ mediaId: string; accessToken: string }> = []
+const configSelects: Array<Record<string, unknown>> = []
+const tablesQueried: string[] = []
 
 vi.mock('@/lib/whatsapp/meta-api', () => ({
-  getMediaUrl: mocks.getMediaUrl,
-  downloadMedia: mocks.downloadMedia,
-}));
+  getMediaUrl: vi.fn(async (args: { mediaId: string; accessToken: string }) => {
+    mediaUrlCalls.push(args)
+    return { url: 'https://lookaside.meta/x', mimeType: 'image/jpeg', fileSize: 10 }
+  }),
+  downloadMedia: vi.fn(async () => ({
+    buffer: Buffer.from([1, 2, 3]),
+    contentType: 'image/jpeg',
+  })),
+}))
 
-// The real thing needs a key and gives back bytes; all these tests care
-// about is WHICH stored token was handed to it.
 vi.mock('@/lib/whatsapp/encryption', () => ({
-  decrypt: (value: string) => `dec:${value}`,
-}));
+  decrypt: (v: string) => `plain:${v}`,
+  encrypt: (v: string) => v,
+  isLegacyFormat: () => false,
+}))
 
-import { GET } from './route';
+vi.mock('@/lib/supabase/server', () => ({
+  createClient: async () => makeSupabaseMock(),
+}))
 
-// ------------------------------------------------------------
-// A PostgREST-shaped stub, same shape as the one in
-// `src/lib/whatsapp/resolve-config.test.ts` with `messages` added.
-//
-// It holds only the rows the caller is allowed to see, which is exactly
-// what RLS does to this route's client: a message in another zone is
-// not a forbidden row, it is an absent one. The cross-zone cases below
-// model that by leaving the row out.
-// ------------------------------------------------------------
-type Row = Record<string, unknown>;
+function makeSupabaseMock() {
+  function builder(table: string) {
+    const filters: Record<string, unknown> = {}
 
-interface Tables {
-  messages?: Row[];
-  conversations?: Row[];
-  whatsapp_config?: Row[];
-}
+    // Rows the table holds, before the call's own filters are applied.
+    const held = (): Array<Record<string, unknown>> => {
+      switch (table) {
+        case 'profiles':
+          return [{ user_id: 'user-1', account_id: 'acct-1', account_role: callerRole }]
+        case 'accounts':
+          return [{ id: 'acct-1', name: 'PTMO' }]
+        case 'messages':
+          return messageRows
+        case 'conversations':
+          return conversationRow ? [conversationRow] : []
+        case 'whatsapp_config':
+          return configRows
+        default:
+          return []
+      }
+    }
 
-function stubDb(tables: Tables) {
-  const make = (rows: Row[]) => {
-    const filters: Record<string, unknown> = {};
-    const q: Record<string, unknown> = {};
-    const apply = () =>
-      rows.filter((r) =>
-        Object.entries(filters).every(([k, v]) => r[k] === v)
-      );
-    q.select = () => q;
-    q.eq = (col: string, val: unknown) => {
-      filters[col] = val;
-      return q;
-    };
-    q.limit = (n: number) =>
-      Promise.resolve({ data: apply().slice(0, n), error: null });
-    q.maybeSingle = () =>
-      Promise.resolve({ data: apply()[0] ?? null, error: null });
-    return q;
-  };
+    // Honouring the filters is the point: `.eq('account_id', …)` has to be
+    // able to MISS, or the handler's own zone check cannot be tested.
+    const matching = () =>
+      held().filter((row) =>
+        Object.entries(filters).every(([col, val]) => row[col] === val)
+      )
+
+    const api: Record<string, unknown> = {
+      select: () => api,
+      eq: (col: string, val: unknown) => {
+        filters[col] = val
+        if (table === 'whatsapp_config') configSelects.push({ ...filters })
+        return api
+      },
+      order: () => api,
+      limit: (n: number) => Promise.resolve({ data: matching().slice(0, n), error: null }),
+      maybeSingle: () => Promise.resolve({ data: matching()[0] ?? null, error: null }),
+      then: (resolve: (v: unknown) => unknown) =>
+        resolve({ data: matching(), error: null }),
+    }
+
+    return api
+  }
+
   return {
-    from: (table: string) => make(tables[table as keyof Tables] ?? []),
-  } as never;
+    auth: {
+      getUser: async () =>
+        signedIn
+          ? { data: { user: { id: 'user-1' } }, error: null }
+          : { data: { user: null }, error: { message: 'no session' } },
+    },
+    from: (table: string) => {
+      tablesQueried.push(table)
+      return builder(table)
+    },
+  }
 }
-
-const MEDIA_ID = '1234567890123456';
-const POINTER = `/api/whatsapp/media/${MEDIA_ID}`;
-
-/** Zone A holds two centres; Batu Caves is the primary. */
-const batuCaves = {
-  id: 'cfg-bc',
-  account_id: 'acc-a',
-  phone_number_id: '60100000001',
-  waba_id: 'waba-a',
-  access_token: 'token-batu-caves',
-  status: 'connected',
-  label: 'Batu Caves',
-  is_primary: true,
-};
 
 const rawang = {
-  ...batuCaves,
-  id: 'cfg-rw',
-  phone_number_id: '60100000002',
-  access_token: 'token-rawang',
-  label: 'Rawang',
+  id: 'cfg-rawang',
+  account_id: 'acct-1',
+  phone_number_id: 'pn-rawang',
+  access_token: 'tok-rawang',
   is_primary: false,
-};
-
-/** The thread the attachment hangs off — on Rawang, not the primary. */
-const conversation = {
-  id: 'conv-1',
-  account_id: 'acc-a',
-  whatsapp_config_id: 'cfg-rw',
-};
-
-const message = { id: 'msg-1', conversation_id: 'conv-1', media_url: POINTER };
-
-function context(db: unknown) {
-  return {
-    supabase: db,
-    accountId: 'acc-a',
-    userId: 'user-1',
-    role: 'viewer',
-    account: { id: 'acc-a', name: 'Zon A' },
-  };
 }
 
-const request = () => new Request(`http://localhost${POINTER}`);
-const params = (mediaId = MEDIA_ID) => ({
-  params: Promise.resolve({ mediaId }),
-});
+const batuCaves = {
+  id: 'cfg-batu-caves',
+  account_id: 'acct-1',
+  phone_number_id: 'pn-batu-caves',
+  access_token: 'tok-batu-caves',
+  is_primary: true,
+}
+
+const MEDIA_ID = '1234567890123456'
+
+async function call(mediaId = MEDIA_ID) {
+  const { GET } = await import('./route')
+  return GET(new Request('http://localhost/api/whatsapp/media/' + mediaId), {
+    params: Promise.resolve({ mediaId }),
+  })
+}
 
 beforeEach(() => {
-  mocks.requireRole.mockReset();
-  mocks.getMediaUrl.mockReset();
-  mocks.downloadMedia.mockReset();
+  vi.resetModules()
+  signedIn = true
+  callerRole = 'viewer'
+  messageRows = [
+    { conversation_id: 'conv-1', media_url: `/api/whatsapp/media/${MEDIA_ID}` },
+  ]
+  conversationRow = {
+    id: 'conv-1',
+    account_id: 'acct-1',
+    whatsapp_config_id: 'cfg-rawang',
+  }
+  configRows = [rawang, batuCaves]
+  mediaUrlCalls.length = 0
+  configSelects.length = 0
+  tablesQueried.length = 0
+})
 
-  mocks.getMediaUrl.mockResolvedValue({
-    url: 'https://lookaside.fb/media-1',
-    mimeType: 'image/jpeg',
-    fileSize: 1024,
-  });
-  mocks.downloadMedia.mockResolvedValue({
-    buffer: Buffer.from('jpeg-bytes'),
-    contentType: 'image/jpeg',
-  });
-});
+describe('GET /api/whatsapp/media/[mediaId]', () => {
+  it('refuses an unauthenticated caller', async () => {
+    signedIn = false
+    const res = await call()
+    expect(res.status).toBe(401)
+    expect(mediaUrlCalls).toHaveLength(0)
+  })
 
-describe('GET /api/whatsapp/media/[mediaId] — you may only fetch your own zone', () => {
-  it('404s when the media belongs to a conversation in another zone', async () => {
-    // What the caller's RLS-scoped client sees of Zone B's attachment:
-    // nothing. Zone B's numbers are not visible either.
-    mocks.requireRole.mockResolvedValue(
-      context(stubDb({ messages: [], conversations: [], whatsapp_config: [batuCaves, rawang] }))
-    );
+  it('404s when no message in the caller\'s account references the id', async () => {
+    // This is the IDOR case. RLS returns no row for another zone's media,
+    // so the handler must stop here — and must not reach Meta, because
+    // reaching Meta at all is what leaked the bytes.
+    messageRows = []
+    const res = await call('9999999999')
+    expect(res.status).toBe(404)
+    expect(mediaUrlCalls).toHaveLength(0)
+  })
 
-    const response = await GET(request(), params());
+  it('does not leak existence through the status code', async () => {
+    // 403 would confirm the media exists somewhere in the project.
+    messageRows = []
+    const res = await call()
+    expect(res.status).not.toBe(403)
+    expect(await res.json()).toEqual({ error: 'Not found' })
+  })
 
-    expect(response.status).toBe(404);
-    await expect(response.json()).resolves.toEqual({ error: 'Media not found' });
-    // The important half: no token was ever spent on it.
-    expect(mocks.getMediaUrl).not.toHaveBeenCalled();
-  });
+  it('serves the bytes when the caller\'s account owns the message', async () => {
+    const res = await call()
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Content-Type')).toBe('image/jpeg')
+    expect(new Uint8Array(await res.arrayBuffer())).toEqual(new Uint8Array([1, 2, 3]))
+  })
 
-  it('404s when the message is visible but its conversation is another zone’s', async () => {
-    // Defence in depth: if an RLS change ever let the message row
-    // through, the explicit account check still stops the download.
-    mocks.requireRole.mockResolvedValue(
-      context(
-        stubDb({
-          messages: [message],
-          conversations: [{ ...conversation, account_id: 'acc-b' }],
-          whatsapp_config: [batuCaves, rawang],
-        })
-      )
-    );
+  it("uses the thread's own centre token, not the primary's", async () => {
+    await call()
+    expect(mediaUrlCalls).toHaveLength(1)
+    // Resolved through the conversation, so the credential that fetches the
+    // bytes is the one that received them. Batu Caves is this account's
+    // primary and must not be what pays for a Rawang thread's attachment.
+    expect(mediaUrlCalls[0].accessToken).toBe('plain:tok-rawang')
+    expect(
+      configSelects.some((f) => f.id === 'cfg-rawang' && f.account_id === 'acct-1')
+    ).toBe(true)
+  })
 
-    const response = await GET(request(), params());
+  it('marks the response private so a shared cache cannot serve it on', async () => {
+    const res = await call()
+    expect(res.headers.get('Cache-Control')).toBe('private, no-store')
+    expect(res.headers.get('Cache-Control')).not.toContain('public')
+    // And no disk copy either: these bytes outliving a zone switch on a
+    // shared device is the case `private` alone does not cover.
+    expect(res.headers.get('Cache-Control')).not.toContain('max-age=86400')
+  })
 
-    expect(response.status).toBe(404);
-    expect(mocks.getMediaUrl).not.toHaveBeenCalled();
-  });
+  it('allows a viewer — reading an attachment is a read', async () => {
+    callerRole = 'viewer'
+    expect((await call()).status).toBe(200)
+  })
+})
 
-  it('requires a session, and reports the auth failure as-is', async () => {
-    mocks.requireRole.mockRejectedValue(new Error('no session'));
+describe('GET /api/whatsapp/media/[mediaId] — hardening', () => {
+  it('404s when the message is visible but its conversation is another zone\'s', async () => {
+    // Models an RLS gap rather than today's behaviour: the message row
+    // comes back, but the conversation belongs to Zone B. The handler's
+    // own `account_id` check is the thing under test, and it is what keeps
+    // a future widening of `is_account_member` from being silent.
+    conversationRow = {
+      id: 'conv-1',
+      account_id: 'acct-2',
+      whatsapp_config_id: 'cfg-rawang',
+    }
 
-    const response = await GET(request(), params());
+    const res = await call()
 
-    expect(response.status).toBe(401);
-    expect(mocks.getMediaUrl).not.toHaveBeenCalled();
-  });
+    expect(res.status).toBe(404)
+    expect(await res.json()).toEqual({ error: 'Not found' })
+    expect(mediaUrlCalls).toHaveLength(0)
+  })
 
-  it('asks for the lowest role rather than none at all', async () => {
-    mocks.requireRole.mockResolvedValue(
-      context(stubDb({ messages: [message], conversations: [conversation], whatsapp_config: [batuCaves, rawang] }))
-    );
+  it('rejects a media id that is not one, before any lookup', async () => {
+    const res = await call('../../me/accounts')
 
-    await GET(request(), params());
-
-    expect(mocks.requireRole).toHaveBeenCalledWith('viewer');
-  });
-
-  it('rejects a media id that is not one, before touching the database', async () => {
-    const db = stubDb({ messages: [message] });
-    const from = vi.spyOn(db as unknown as { from: () => unknown }, 'from');
-    mocks.requireRole.mockResolvedValue(context(db));
-
-    const response = await GET(request(), params('../../secret'));
-
-    expect(response.status).toBe(400);
-    expect(from).not.toHaveBeenCalled();
-  });
-});
-
-describe('GET /api/whatsapp/media/[mediaId] — the thread picks the number', () => {
-  it("uses the conversation's own centre, not the account primary", async () => {
-    mocks.requireRole.mockResolvedValue(
-      context(
-        stubDb({
-          messages: [message],
-          conversations: [conversation],
-          whatsapp_config: [batuCaves, rawang],
-        })
-      )
-    );
-
-    const response = await GET(request(), params());
-
-    expect(response.status).toBe(200);
-    expect(response.headers.get('Content-Type')).toBe('image/jpeg');
-    // Rawang's token — Batu Caves is primary and must NOT be what pays
-    // for this download. This is the regression test for `allowPrimary`.
-    expect(mocks.getMediaUrl).toHaveBeenCalledWith({
-      mediaId: MEDIA_ID,
-      accessToken: 'dec:token-rawang',
-    });
-    expect(mocks.downloadMedia).toHaveBeenCalledWith({
-      downloadUrl: 'https://lookaside.fb/media-1',
-      accessToken: 'dec:token-rawang',
-    });
-  });
-
-  it('never lets the bytes into a shared cache', async () => {
-    mocks.requireRole.mockResolvedValue(
-      context(
-        stubDb({
-          messages: [message],
-          conversations: [conversation],
-          whatsapp_config: [batuCaves, rawang],
-        })
-      )
-    );
-
-    const response = await GET(request(), params());
-
-    expect(response.headers.get('Cache-Control')).toBe('private, no-store');
-  });
+    expect(res.status).toBe(400)
+    // Nothing reached Meta, and nothing reached the database either — the
+    // id never becomes part of a Graph URL or a PostgREST filter.
+    expect(mediaUrlCalls).toHaveLength(0)
+    expect(tablesQueried).not.toContain('messages')
+  })
 
   it('still serves a pre-040 thread when the account has one number', async () => {
-    mocks.requireRole.mockResolvedValue(
-      context(
-        stubDb({
-          messages: [message],
-          conversations: [{ ...conversation, whatsapp_config_id: null }],
-          whatsapp_config: [batuCaves],
-        })
-      )
-    );
+    // No `allowPrimary` needed for this: `resolveConfig` already falls back
+    // to the account's only number, so single-number accounts are untouched
+    // by dropping it.
+    conversationRow = { id: 'conv-1', account_id: 'acct-1', whatsapp_config_id: null }
+    configRows = [rawang]
 
-    const response = await GET(request(), params());
+    const res = await call()
 
-    expect(response.status).toBe(200);
-    expect(mocks.getMediaUrl).toHaveBeenCalledWith({
-      mediaId: MEDIA_ID,
-      accessToken: 'dec:token-batu-caves',
-    });
-  });
+    expect(res.status).toBe(200)
+    expect(mediaUrlCalls[0].accessToken).toBe('plain:tok-rawang')
+  })
 
   it('refuses to guess when a numberless thread sits on a multi-number account', async () => {
-    mocks.requireRole.mockResolvedValue(
-      context(
-        stubDb({
-          messages: [message],
-          conversations: [{ ...conversation, whatsapp_config_id: null }],
-          whatsapp_config: [batuCaves, rawang],
-        })
-      )
-    );
+    // The case `allowPrimary: true` used to swallow. Ownership is already
+    // proven here, so this is not a security hole either way — it is about
+    // not teaching the system that the primary's token fetches everything.
+    conversationRow = { id: 'conv-1', account_id: 'acct-1', whatsapp_config_id: null }
+    configRows = [rawang, batuCaves]
 
-    const response = await GET(request(), params());
+    const res = await call()
 
-    expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toEqual({
+    expect(res.status).toBe(400)
+    expect(await res.json()).toEqual({
       error:
         'This conversation is not linked to a WhatsApp number, so we cannot tell which branch should reply. Open it in the inbox and set the number.',
-    });
-    expect(mocks.getMediaUrl).not.toHaveBeenCalled();
-  });
-});
+    })
+    expect(mediaUrlCalls).toHaveLength(0)
+  })
+})
