@@ -92,6 +92,13 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+interface BroadcastApiResponse {
+  error?: string;
+  results?: BroadcastApiResult[];
+  /** The number the route resolved and sent from. */
+  whatsapp_config_id?: string;
+}
+
 interface BroadcastApiResult {
   phone: string;
   status: 'sent' | 'failed';
@@ -417,6 +424,12 @@ export function useBroadcastSending(): UseBroadcastSendingReturn {
           // to move it (docs/open-findings.md, P1). It is promoted below
           // the moment a send call actually lands.
           status: INITIAL_BROADCAST_STATUS,
+          // Freeze the branch this campaign goes out on (migration 048).
+          // Left unset, a resume has nothing to read back and — with
+          // several numbers connected — refuses rather than guessing.
+          // Null here when the wizard didn't name one; the first send
+          // response below fills in whichever the route resolved.
+          whatsapp_config_id: payload.whatsappConfigId ?? null,
           total_recipients: contacts.length,
           sent_count: 0,
           delivered_count: 0,
@@ -543,7 +556,7 @@ export function useBroadcastSending(): UseBroadcastSendingReturn {
           // Send the batch, waiting out a 429 rather than writing the
           // whole batch off as failed. Only 429 is replayed — see
           // batchRetryDelayMs for why nothing else can be.
-          let data: { error?: string; results?: BroadcastApiResult[] } = {};
+          let data: BroadcastApiResponse = {};
           for (let attempt = 1; ; attempt++) {
             const res = await fetch('/api/whatsapp/broadcast', {
               method: 'POST',
@@ -564,7 +577,17 @@ export function useBroadcastSending(): UseBroadcastSendingReturn {
                 sendingStarted = true;
                 await supabase
                   .from('broadcasts')
-                  .update({ status: IN_FLIGHT_BROADCAST_STATUS })
+                  .update({
+                    status: IN_FLIGHT_BROADCAST_STATUS,
+                    // Single-number accounts send without naming a
+                    // branch; record the one the route chose, so the
+                    // campaign stays resumable after a second number
+                    // is connected.
+                    ...(payload.whatsappConfigId ||
+                    typeof data.whatsapp_config_id !== 'string'
+                      ? {}
+                      : { whatsapp_config_id: data.whatsapp_config_id }),
+                  })
                   .eq('id', broadcast.id);
               }
               break;

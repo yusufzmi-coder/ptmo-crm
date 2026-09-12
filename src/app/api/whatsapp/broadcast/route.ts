@@ -239,6 +239,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
+      // Which number this actually went out on. The caller freezes it
+      // onto the broadcast row (migration 048) so a resume days later
+      // sends from the same branch instead of re-deriving one.
+      whatsapp_config_id: config.id,
       total: recipients.length,
       sent: sentCount,
       failed: failedCount,
