@@ -42,6 +42,111 @@ BEGIN
     RAISE EXCEPTION 'public.accounts is missing — migration 017 did not apply';
   END IF;
 
+  -- Multi-number per account (040) — a branch is a whatsapp_config row,
+  -- so the label/is_primary columns and the conversation pointer are
+  -- what make branch attribution possible at all.
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'whatsapp_config'
+      AND column_name = 'is_primary'
+  ) THEN
+    RAISE EXCEPTION 'whatsapp_config.is_primary is missing — migration 040 did not apply';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'conversations'
+      AND column_name = 'whatsapp_config_id'
+  ) THEN
+    RAISE EXCEPTION 'conversations.whatsapp_config_id is missing — migration 040 did not apply';
+  END IF;
+
+  -- Co-viewer presence (041).
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'member_presence'
+      AND column_name = 'viewing_conversation_id'
+  ) THEN
+    RAISE EXCEPTION 'member_presence.viewing_conversation_id is missing — migration 041 did not apply';
+  END IF;
+
+  -- Multi-zone membership (044).
+  IF to_regclass('public.account_members') IS NULL THEN
+    RAISE EXCEPTION 'public.account_members is missing — migration 044 did not apply';
+  END IF;
+
+  -- The backfill is the whole reason 044 is safe to land on a live
+  -- database: without it every existing user loses access the moment
+  -- is_account_member starts reading memberships.
+  IF EXISTS (
+    SELECT 1 FROM profiles p
+    WHERE p.account_id IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1 FROM account_members m
+        WHERE m.user_id = p.user_id AND m.account_id = p.account_id
+      )
+  ) THEN
+    RAISE EXCEPTION 'a profile has no matching account_members row — the 044 backfill did not run';
+  END IF;
+
+  -- Dropping this index is what lets one person own several zones.
+  -- Re-creating it (an upstream merge, a re-run of 017) would break
+  -- multi-zone ownership quietly, so assert it is gone.
+  IF to_regclass('public.idx_accounts_one_per_owner') IS NOT NULL THEN
+    RAISE EXCEPTION 'idx_accounts_one_per_owner still exists — one-account-per-owner would block multi-zone ownership';
+  END IF;
+
+  -- The zone switcher and the cross-zone helper. Checked by name AND
+  -- arity: a signature change would leave the old function in place
+  -- and the new call sites failing at runtime.
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public' AND p.proname = 'set_active_account'
+      AND pg_get_function_identity_arguments(p.oid) = 'p_account_id uuid'
+  ) THEN
+    RAISE EXCEPTION 'set_active_account(uuid) is missing — migration 044 did not apply';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public' AND p.proname = 'is_account_member_any'
+  ) THEN
+    RAISE EXCEPTION 'is_account_member_any is missing — migration 044 did not apply';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public' AND p.proname = 'my_accounts'
+  ) THEN
+    RAISE EXCEPTION 'my_accounts is missing — migration 044 did not apply';
+  END IF;
+
+  -- SECURITY DEFINER hardening (046).
+  --
+  -- ORDERING: these two assertions only hold once 046 has landed.
+  -- They must not be committed ahead of it, or CI goes red on a
+  -- correct tree. 046 asserts the same thing at apply time; this
+  -- catches a REGRESSION on every later PR, which is the part that
+  -- actually decays over time.
+  --
+  -- These four are SECURITY DEFINER and mutate counters. Postgres
+  -- grants EXECUTE to PUBLIC by default, so before 046 any JWT could
+  -- call them with postgres privileges and no tenant check at all.
+  IF has_function_privilege('public', 'public._bcast_bump(uuid, text, int)'::regprocedure, 'EXECUTE')
+     OR has_function_privilege('public', 'public.record_webhook_failure(uuid, int)'::regprocedure, 'EXECUTE')
+     OR has_function_privilege('public', 'public.recompute_broadcast_counts(uuid)'::regprocedure, 'EXECUTE')
+     OR has_function_privilege('public', 'public.claim_ai_reply_slot(uuid, integer)'::regprocedure, 'EXECUTE')
+  THEN
+    RAISE EXCEPTION 'a SECURITY DEFINER counter function is EXECUTE-able by PUBLIC (migration 046 regressed)';
+  END IF;
+
+  -- Column-level backstop for the 034 trigger. Belt and braces: the
+  -- trigger checks at run time, this closes it at the catalog level.
+  -- set_active_account (044) is unaffected — it is SECURITY DEFINER
+  -- owned by postgres, so it runs as the table owner.
+  IF has_column_privilege('authenticated', 'public.profiles', 'account_role', 'UPDATE')
+     OR has_column_privilege('authenticated', 'public.profiles', 'account_id', 'UPDATE')
+  THEN
+    RAISE EXCEPTION 'authenticated can UPDATE a profiles privilege column (migration 046 regressed)';
+  END IF;
+
   RAISE NOTICE 'schema verification passed';
 END
 $$;
