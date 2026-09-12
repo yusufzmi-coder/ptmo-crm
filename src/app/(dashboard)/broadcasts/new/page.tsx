@@ -45,6 +45,10 @@ export default function NewBroadcastPage() {
   >({});
   const [headerMediaUrl, setHeaderMediaUrl] = useState('');
   const [name, setName] = useState('');
+  // The number the campaign goes out on — for Minda Optima, the branch
+  // (migration 040). Step 4 resolves it, and only shows a picker when
+  // the account holds more than one.
+  const [whatsappConfigId, setWhatsappConfigId] = useState<string | null>(null);
 
   async function handleSend() {
     if (!template) return;
@@ -62,6 +66,7 @@ export default function NewBroadcastPage() {
         },
         variables,
         headerMediaUrl,
+        whatsappConfigId,
       });
       router.push(`/broadcasts/${broadcastId}`);
     } catch (err) {
@@ -219,6 +224,8 @@ export default function NewBroadcastPage() {
             <Step4ScheduleSend
               name={name}
               onNameChange={setName}
+              whatsappConfigId={whatsappConfigId}
+              onWhatsappConfigIdChange={setWhatsappConfigId}
               template={template}
               audience={audience}
               onSend={handleSend}

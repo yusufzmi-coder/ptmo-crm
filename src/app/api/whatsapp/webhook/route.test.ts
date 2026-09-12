@@ -52,6 +52,7 @@ vi.mock('@supabase/supabase-js', () => ({
                 Promise.resolve({
                   data: [
                     {
+                      id: 'cfg-1',
                       account_id: 'acc-1',
                       user_id: 'user-1',
                       access_token: 'enc',
@@ -62,23 +63,51 @@ vi.mock('@supabase/supabase-js', () => ({
                 }),
             }),
           }
-        case 'conversations':
-          // findOrCreateConversation: select().eq().eq().order().limit()
-          return {
-            select: () => ({
-              eq: () => ({
-                eq: () => ({
-                  order: () => ({
-                    limit: () =>
-                      Promise.resolve({
-                        data: [h.state.conversation],
-                        error: null,
-                      }),
-                  }),
-                }),
+        case 'conversations': {
+          // findOrCreateConversation runs up to four shapes since
+          // migrations 040/042: the number-scoped lookup, the
+          // `.is(null)` orphan lookup, the `.is(null)`-guarded adoption
+          // UPDATE, and the insert. A flat chainable builder serves all
+          // of them; `.is()` is what tells the orphan path apart.
+          let nullFiltered = false
+          let mode: 'select' | 'update' | 'insert' = 'select'
+          const c: Record<string, unknown> = {
+            select: () => c,
+            eq: () => c,
+            order: () => c,
+            is: () => {
+              nullFiltered = true
+              return c
+            },
+            update: () => {
+              mode = 'update'
+              return c
+            },
+            insert: () => {
+              mode = 'insert'
+              return c
+            },
+            limit: () =>
+              Promise.resolve({
+                // No unbranded thread by default, so the orphan lookup
+                // misses and the scoped lookup answers with the canned
+                // conversation — the pre-040 behaviour these tests assume.
+                data: nullFiltered ? [] : [h.state.conversation],
+                error: null,
               }),
-            }),
+            single: () =>
+              Promise.resolve({ data: h.state.conversation, error: null }),
+            maybeSingle: () =>
+              Promise.resolve({ data: h.state.conversation, error: null }),
+            // The adoption UPDATE ends on a bare-awaited `.select()`.
+            then: (resolve: (v: unknown) => unknown) =>
+              resolve({
+                data: mode === 'update' ? [] : [h.state.conversation],
+                error: null,
+              }),
           }
+          return c
+        }
         case 'broadcast_recipients':
           // flagBroadcastReplyIfAny: select().eq().eq().in().order().limit()
           return {

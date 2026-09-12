@@ -12,7 +12,9 @@
     "signingIn": "Signing in...",
     "signIn": "Sign in",
     "noAccount": "Don't have an account?",
-    "createAccount": "Create account"
+    "createAccount": "Create account",
+    "or": "or",
+    "continueWithGoogle": "Continue with Google"
   },
   "Sidebar": {
     "title": "CRM PTMO OPERATION DEPT",
@@ -215,7 +217,12 @@
       "send": "Send",
       "quickReplyNamePrompt": "Name this quick reply:",
       "quickReplySaved": "Saved as a quick reply.",
-      "quickReplySaveError": "Couldn't save the quick reply."
+      "quickReplySaveError": "Couldn't save the quick reply.",
+      "quickRepliesFor": "Replying as {branch}",
+      "quickReplyPinned": "{branch} only",
+      "quickReplyUnavailable": "Needs a branch",
+      "quickReplyUnavailableHint": "This snippet fills in the branch name, but this thread is not linked to a WhatsApp number.",
+      "quickReplyForeignBranch": "Names {branches}"
     },
     "bubble": {
       "photo": "Photo",
@@ -805,7 +812,9 @@
         "sending": "Sending...",
         "preparing": "Preparing...",
         "progressDesc": "Processing {current} of {total} recipients...",
-        "toastFailedPreview": "Failed to load preview data"
+        "toastFailedPreview": "Failed to load preview data",
+        "sendFrom": "Send from",
+        "sendFromHint": "Replies and this campaign go out on this number. Parents see the branch they know."
       }
     }
   },

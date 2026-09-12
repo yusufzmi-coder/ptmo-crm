@@ -91,7 +91,7 @@ function makeSupabaseMock() {
 
     const b: Record<string, unknown> = {}
     const chain = () => b
-    for (const m of ['select', 'eq', 'in', 'order', 'limit', 'update', 'delete']) {
+    for (const m of ['select', 'eq', 'is', 'in', 'order', 'limit', 'update', 'delete']) {
       b[m] = vi.fn(chain)
     }
     b.insert = vi.fn((payload: Record<string, unknown>) => {
@@ -110,8 +110,19 @@ function makeSupabaseMock() {
     })
     b.single = vi.fn(terminal)
     b.maybeSingle = vi.fn(terminal)
-    b.then = (resolve: (v: unknown) => unknown) =>
-      resolve(didInsert ? insertResult() : selectResult())
+    b.then = (resolve: (v: unknown) => unknown) => {
+      if (didInsert) return resolve(insertResult())
+      const r = selectResult() as { data: unknown; error: unknown }
+      // Bare-awaited selects return ROWS. Two readers rely on that:
+      // resolveConfig lists the account's numbers with `.limit(2)`
+      // (migration 040), and the contact_id path looks a thread up by
+      // number with `.limit(1)` (migration 042). Handing either a
+      // single-row object makes `rows.length` undefined.
+      if (table === 'whatsapp_config' || table === 'conversations') {
+        return resolve({ data: r.data ? [r.data] : [], error: r.error })
+      }
+      return resolve(r)
+    }
     return b
   }
 
@@ -204,11 +215,15 @@ describe('POST /api/whatsapp/send — contact_id template path', () => {
     expect(json.success).toBe(true)
     expect(json.whatsapp_message_id).toBe('wamid-1')
 
-    // A conversation was created for this contact.
+    // A conversation was created for this contact, carrying the number
+    // it belongs to. Without that stamp the thread is unsendable: the
+    // send core refuses to guess a branch for anything that talks to a
+    // parent, so this reply and every later one would 400 forever.
     expect(conversationInserts).toHaveLength(1)
     expect(conversationInserts[0]).toMatchObject({
       account_id: 'acct-1',
       contact_id: 'contact-1',
+      whatsapp_config_id: 'cfg-1',
     })
 
     // The template was sent to the contact's number.

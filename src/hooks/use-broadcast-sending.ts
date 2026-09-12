@@ -51,6 +51,13 @@ interface BroadcastPayload {
    * falls back to the template's stored URL only when this is empty.
    */
   headerMediaUrl?: string;
+  /**
+   * Which connected number the campaign goes out on — for Minda Optima,
+   * which branch (migration 040). Optional while the account holds a
+   * single number; once it holds several the API refuses to guess, so
+   * the wizard must supply one.
+   */
+  whatsappConfigId?: string | null;
 }
 
 interface UseBroadcastSendingReturn {
@@ -518,6 +525,7 @@ export function useBroadcastSending(): UseBroadcastSendingReturn {
                 recipients: apiRecipients,
                 template_name: payload.template.name,
                 template_language: payload.template.language ?? 'en_US',
+                whatsapp_config_id: payload.whatsappConfigId ?? undefined,
               }),
             });
 

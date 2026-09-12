@@ -98,6 +98,20 @@ describe("middleware — refreshed auth cookies survive redirects", () => {
     expect(res.cookies.get(ROTATED.name)?.value).toBe(ROTATED.value);
   });
 
+  it("redirects a signed-out user off /ops to /login", async () => {
+    // /ops shipped after the protected list was written, so an
+    // unauthenticated visit rendered a broken shell instead of the
+    // login page. RLS kept the data safe; the redirect keeps it sane.
+    mockUser = null;
+    refreshedCookies = [ROTATED];
+
+    const res = await middleware(
+      new NextRequest("https://app.test/ops/unanswered"),
+    );
+
+    expect(res.headers.get("location")).toContain("/login");
+  });
+
   it("passes through (no redirect) for a signed-in user on a protected page", async () => {
     mockUser = { id: "user-1" };
     refreshedCookies = [ROTATED];

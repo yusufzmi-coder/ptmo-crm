@@ -12,7 +12,9 @@
     "signingIn": "로그인 중...",
     "signIn": "로그인",
     "noAccount": "계정이 없으신가요?",
-    "createAccount": "계정 만들기"
+    "createAccount": "계정 만들기",
+    "or": "또는",
+    "continueWithGoogle": "Google로 계속하기"
   },
   "Sidebar": {
     "title": "CRM PTMO OPERATION DEPT",
@@ -215,7 +217,12 @@
       "send": "보내기",
       "quickReplyNamePrompt": "이 빠른 답장의 이름을 지정하세요:",
       "quickReplySaved": "빠른 답장으로 저장되었습니다.",
-      "quickReplySaveError": "빠른 답장을 저장하지 못했습니다."
+      "quickReplySaveError": "빠른 답장을 저장하지 못했습니다.",
+      "quickRepliesFor": "답장 주체: {branch}",
+      "quickReplyPinned": "{branch} 전용",
+      "quickReplyUnavailable": "지점 정보 필요",
+      "quickReplyUnavailableHint": "이 스니펫은 지점 이름을 채워 넣지만, 이 대화는 WhatsApp 번호에 연결되어 있지 않습니다.",
+      "quickReplyForeignBranch": "{branches} 언급"
     },
     "bubble": {
       "photo": "사진",
@@ -805,7 +812,9 @@
         "sending": "전송 중...",
         "preparing": "준비 중...",
         "progressDesc": "수신자 {total}명 중 {current}명 처리 중...",
-        "toastFailedPreview": "미리보기 데이터를 불러오지 못했습니다"
+        "toastFailedPreview": "미리보기 데이터를 불러오지 못했습니다",
+        "sendFrom": "Send from",
+        "sendFromHint": "Replies and this campaign go out on this number. Parents see the branch they know."
       }
     }
   },

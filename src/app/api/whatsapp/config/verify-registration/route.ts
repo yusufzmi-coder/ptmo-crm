@@ -5,6 +5,7 @@ import {
   getSubscribedApps,
   verifyPhoneNumber,
 } from '@/lib/whatsapp/meta-api'
+import { resolveConfig, resolveFailureMessage } from '@/lib/whatsapp/resolve-config'
 
 /**
  * GET /api/whatsapp/config/verify-registration
@@ -28,7 +29,7 @@ import {
  * rather than a generic error toast. The combined `live` flag is
  * what the UI badges on.
  */
-export async function GET() {
+export async function GET(request: Request) {
   const supabase = await createClient()
   const {
     data: { user },
@@ -38,9 +39,9 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // whatsapp_config is one-row-per-account post-017. Resolve the
-  // caller's account_id so a teammate who joined an existing account
-  // sees the same registration state as the admin who set it up.
+  // Resolve the caller's account_id so a teammate who joined an
+  // existing account sees the same registration state as the admin who
+  // set it up.
   const { data: profile } = await supabase
     .from('profiles')
     .select('account_id')
@@ -55,19 +56,32 @@ export async function GET() {
     })
   }
 
-  const { data: config } = await supabase
-    .from('whatsapp_config')
-    .select('*')
-    .eq('account_id', accountId)
-    .maybeSingle()
+  // Since migration 040 an account may hold many numbers, so this can
+  // no longer read "the" config row — `.maybeSingle()` here threw
+  // PGRST116 the moment a second branch was connected, breaking the
+  // diagnostic exactly when it became most useful. `?id=` checks one
+  // number; without it we fall back to the account primary, which is
+  // the same rule every other thread-less job applies.
+  const url = new URL(request.url)
+  const requestedId = url.searchParams.get('id')
 
-  if (!config) {
+  const resolved = await resolveConfig(supabase, accountId, {
+    configId: requestedId ?? undefined,
+    allowPrimary: true,
+    columns: '*',
+  })
+
+  if (!resolved.ok) {
     return NextResponse.json({
       live: false,
       checks: { config_exists: false },
-      message: 'No WhatsApp configuration saved yet.',
+      message:
+        resolved.reason === 'not_configured'
+          ? 'No WhatsApp configuration saved yet.'
+          : resolveFailureMessage(resolved.reason),
     })
   }
+  const config = resolved.config as unknown as Record<string, string>
 
   let accessToken: string
   try {

@@ -546,9 +546,149 @@ export async function DELETE(request: Request) {
       )
     }
 
+    // Re-seat the primary if we just removed it. Without this an account
+    // can hold fifteen numbers and no primary, and every job that has no
+    // conversation to take a number from — template sync, media fetch —
+    // fails `ambiguous` with no way to repair it from the UI.
+    await ensurePrimaryExists(supabase, accountId)
+
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error in WhatsApp config DELETE:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+
+/**
+ * PATCH /api/whatsapp/config?id=<id>
+ *
+ * Mark a connected number as the account default. `is_primary` was
+ * written exactly once, on the first insert, with no way to move it —
+ * so an account that connected its branches in the wrong order was
+ * stuck sending every thread-less job from whichever number happened to
+ * be first. This is the repair.
+ *
+ * The one-primary-per-account rule is a partial unique index
+ * (`idx_whatsapp_config_one_primary`, migration 040), so the old row is
+ * cleared before the new one is set — the reverse order trips the index.
+ */
+export async function PATCH(request: Request) {
+  try {
+    const supabase = await createClient()
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const accountId = await resolveAccountId(supabase, user.id)
+    if (!accountId) {
+      return NextResponse.json(
+        { error: 'Your profile is not linked to an account.' },
+        { status: 403 },
+      )
+    }
+
+    const url = new URL(request.url)
+    const targetId = url.searchParams.get('id')
+    if (!targetId) {
+      return NextResponse.json(
+        { error: 'Pass ?id=<number id> to say which number to make primary.' },
+        { status: 400 },
+      )
+    }
+
+    // Scope the existence check to the account so a caller cannot probe
+    // for, or promote, another tenant's number.
+    const { data: target } = await supabase
+      .from('whatsapp_config')
+      .select('id')
+      .eq('id', targetId)
+      .eq('account_id', accountId)
+      .maybeSingle()
+
+    if (!target) {
+      return NextResponse.json(
+        { error: 'That WhatsApp number does not belong to this account.' },
+        { status: 404 },
+      )
+    }
+
+    const { error: clearError } = await supabase
+      .from('whatsapp_config')
+      .update({ is_primary: false })
+      .eq('account_id', accountId)
+      .eq('is_primary', true)
+
+    if (clearError) {
+      console.error('Error clearing previous primary:', clearError)
+      return NextResponse.json(
+        { error: 'Failed to update the default number' },
+        { status: 500 },
+      )
+    }
+
+    const { error: setError } = await supabase
+      .from('whatsapp_config')
+      .update({ is_primary: true })
+      .eq('id', targetId)
+      .eq('account_id', accountId)
+
+    if (setError) {
+      console.error('Error setting primary:', setError)
+      return NextResponse.json(
+        { error: 'Failed to update the default number' },
+        { status: 500 },
+      )
+    }
+
+    return NextResponse.json({ success: true, primary_id: targetId })
+  } catch (error) {
+    console.error('Error in WhatsApp config PATCH:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+/**
+ * Guarantee the account still has a primary number, promoting the
+ * oldest remaining one if it does not. Best-effort: a failure here must
+ * not fail the delete that called it, but it is logged because the
+ * resulting state (numbers, no primary) is user-visible.
+ */
+async function ensurePrimaryExists(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  accountId: string,
+) {
+  const { data: existingPrimary } = await supabase
+    .from('whatsapp_config')
+    .select('id')
+    .eq('account_id', accountId)
+    .eq('is_primary', true)
+    .limit(1)
+
+  if (existingPrimary && existingPrimary.length > 0) return
+
+  const { data: candidates } = await supabase
+    .from('whatsapp_config')
+    .select('id')
+    .eq('account_id', accountId)
+    .order('created_at', { ascending: true })
+    .limit(1)
+
+  if (!candidates || candidates.length === 0) return
+
+  const { error } = await supabase
+    .from('whatsapp_config')
+    .update({ is_primary: true })
+    .eq('id', candidates[0].id)
+    .eq('account_id', accountId)
+
+  if (error) {
+    console.error('Could not re-seat the primary WhatsApp number:', error)
   }
 }

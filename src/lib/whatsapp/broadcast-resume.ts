@@ -147,7 +147,7 @@ export async function planBroadcastResume(
 ): Promise<ResumePlan> {
   const { data: broadcast, error: bcError } = await db
     .from('broadcasts')
-    .select('id, template_name, template_language')
+    .select('id, template_name, template_language, whatsapp_config_id')
     .eq('id', broadcastId)
     .eq('account_id', accountId)
     .maybeSingle();
@@ -206,17 +206,34 @@ export async function planBroadcastResume(
     );
   }
 
-  // Deliberately NO `allowPrimary`: a broadcast reaches hundreds of
-  // parents at once, so sending from a guessed number is the most
-  // expensive mistake this codebase can make. With one number
-  // connected this resolves to it; with several it stops and asks.
-  const resolvedConfig = await resolveConfig(db, accountId, { columns: '*' });
+  // Send on the number the FIRST pass used, read off the broadcast
+  // (migration 048) rather than re-derived. Re-deriving it is the whole
+  // bug: days later there is no conversation to take a number from, so
+  // any fallback would mail the leftovers of a Batu Caves campaign from
+  // whichever branch happened to be the account default.
+  //
+  // Deliberately NO `allowPrimary` on the fallback either. A broadcast
+  // reaches hundreds of parents at once, so a guessed number is the
+  // most expensive mistake this codebase can make. Pre-048 rows carry
+  // no number: with one connected this still resolves to it, and with
+  // several it stops and asks rather than picking.
+  const frozenConfigId = (
+    broadcast as { whatsapp_config_id?: string | null }
+  ).whatsapp_config_id;
+
+  const resolvedConfig = await resolveConfig(db, accountId, {
+    configId: frozenConfigId ?? undefined,
+    columns: '*',
+  });
   if (!resolvedConfig.ok) {
-    // Say which of the two it is — nothing connected, or several
-    // connected and none chosen. They need different fixes.
+    // `not_found` here means the branch was disconnected since the
+    // campaign ran — there is genuinely nothing left to send from, and
+    // silently switching numbers would be worse than refusing.
     throw new BroadcastError(
       'whatsapp_not_configured',
-      resolveFailureMessage(resolvedConfig.reason),
+      resolvedConfig.reason === 'not_found'
+        ? 'The WhatsApp number this broadcast was sent from is no longer connected, so it cannot be resumed.'
+        : resolveFailureMessage(resolvedConfig.reason),
       400
     );
   }

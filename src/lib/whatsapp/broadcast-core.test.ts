@@ -61,17 +61,20 @@ function makeDb(rpcResult: { data: unknown; error: unknown }) {
   const database = {
     from(table: string) {
       if (table === 'whatsapp_config') {
-        return {
-          select: () => ({
-            eq: () => ({
-              single: () =>
-                Promise.resolve({
-                  data: { phone_number_id: 'pn-1', access_token: 'enc' },
-                  error: null,
-                }),
-            }),
-          }),
+        // Since migration 040 resolveConfig LISTS the account's numbers
+        // (`.limit(2)`) instead of assuming one row, so the chain has to
+        // terminate on `.limit()` as well as `.single()`. One row means
+        // "the only number", which is what broadcasts require — they
+        // refuse to fall back to the primary.
+        const row = { id: 'cfg-1', phone_number_id: 'pn-1', access_token: 'enc' };
+        const chain: Record<string, unknown> = {
+          select: () => chain,
+          eq: () => chain,
+          limit: () => Promise.resolve({ data: [row], error: null }),
+          maybeSingle: () => Promise.resolve({ data: row, error: null }),
+          single: () => Promise.resolve({ data: row, error: null }),
         };
+        return chain;
       }
       if (table === 'message_templates') {
         const chain: Record<string, unknown> = {
@@ -141,6 +144,128 @@ describe('createBroadcast atomicity (#370)', () => {
     // there is no separate parent insert that could survive as an orphan.
     expect(calls.rpc).toHaveLength(1);
     expect(calls.usedDirectInsert).toBe(0);
+  });
+});
+
+// ============================================================
+// Which number a campaign leaves on (migration 040). A broadcast
+// reaches hundreds of parents at once, so the resolver deliberately
+// refuses to guess a branch — the caller must name one.
+// ============================================================
+
+/**
+ * Supabase fake holding `numbers` rows on the account. `.eq('id', …)`
+ * marks the by-id lookup resolveConfig uses for an explicit choice;
+ * everything else is the account-wide list it uses otherwise.
+ */
+function multiNumberDb(numbers: { id: string; phone_number_id: string }[]) {
+  const calls = { rpc: [] as { name: string; args: unknown }[] };
+  const database = {
+    from(table: string) {
+      if (table === 'whatsapp_config') {
+        let byId: string | null = null;
+        const chain: Record<string, unknown> = {
+          select: () => chain,
+          eq: (col: string, val: unknown) => {
+            if (col === 'id') byId = val as string;
+            return chain;
+          },
+          limit: () =>
+            Promise.resolve({
+              // `.limit(2)` only needs to distinguish 0 / 1 / many.
+              data: numbers.map((n) => ({ ...n, access_token: 'enc' })),
+              error: null,
+            }),
+          maybeSingle: () => {
+            const row = numbers.find((n) => n.id === byId) ?? null;
+            return Promise.resolve({
+              data: row ? { ...row, access_token: 'enc' } : null,
+              error: null,
+            });
+          },
+        };
+        return chain;
+      }
+      if (table === 'message_templates') {
+        const chain: Record<string, unknown> = {
+          select: () => chain,
+          eq: () => chain,
+          maybeSingle: () => Promise.resolve({ data: null, error: null }),
+        };
+        return chain;
+      }
+      throw new Error(`unexpected table: ${table}`);
+    },
+    rpc(name: string, args: unknown) {
+      calls.rpc.push({ name, args });
+      return Promise.resolve({
+        data: [{ broadcast_id: 'b-1', recipient_id: 'r-1', contact_id: 'c1' }],
+        error: null,
+      });
+    },
+  } as unknown as SupabaseClient;
+  return { db: database, calls };
+}
+
+const TWO_NUMBERS = [
+  { id: 'cfg-rawang', phone_number_id: 'pn-rawang' },
+  { id: 'cfg-batu-caves', phone_number_id: 'pn-batu-caves' },
+];
+
+describe('createBroadcast — choosing the number (migration 040)', () => {
+  it('refuses to pick a branch when several are connected and none is named', async () => {
+    const { db, calls } = multiNumberDb(TWO_NUMBERS);
+
+    await expect(
+      createBroadcast(db, 'acc', 'user', {
+        templateName: 'promo',
+        recipients: [{ to: '+14155550123' }],
+      })
+    ).rejects.toMatchObject({ status: 400 });
+
+    // Nothing was persisted — a campaign sent from a guessed branch is
+    // the most expensive mistake this codebase can make.
+    expect(calls.rpc).toHaveLength(0);
+  });
+
+  it('sends from the branch the caller named', async () => {
+    const { db, calls } = multiNumberDb(TWO_NUMBERS);
+
+    const plan = await createBroadcast(db, 'acc', 'user', {
+      templateName: 'promo',
+      recipients: [{ to: '+14155550123' }],
+      configId: 'cfg-batu-caves',
+    });
+
+    expect(plan.broadcastId).toBe('b-1');
+    expect(calls.rpc).toHaveLength(1);
+  });
+
+  it("refuses a number that belongs to someone else's account", async () => {
+    const { db, calls } = multiNumberDb(TWO_NUMBERS);
+
+    await expect(
+      createBroadcast(db, 'acc', 'user', {
+        templateName: 'promo',
+        recipients: [{ to: '+14155550123' }],
+        configId: 'cfg-another-tenant',
+      })
+    ).rejects.toMatchObject({ status: 400 });
+    expect(calls.rpc).toHaveLength(0);
+  });
+
+  it('still resolves without a named branch while one number is connected', async () => {
+    // The single-number account every install starts as — existing
+    // callers keep working untouched.
+    const { db, calls } = multiNumberDb([TWO_NUMBERS[0]]);
+
+    const plan = await createBroadcast(db, 'acc', 'user', {
+      templateName: 'promo',
+      recipients: [{ to: '+14155550123' }],
+    });
+
+    expect(plan.broadcastId).toBe('b-1');
+    expect(calls.rpc).toHaveLength(1);
   });
 });
 

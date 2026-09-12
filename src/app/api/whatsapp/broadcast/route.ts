@@ -90,6 +90,10 @@ export async function POST(request: Request) {
       template_name,
       template_language,
       template_params,
+      // Which connected number the campaign goes out on — for Minda
+      // Optima, which branch (migration 040). Optional while an account
+      // holds a single number; required once it holds several.
+      whatsapp_config_id,
     } = body
 
     // Normalize to a list of {phone, params} regardless of shape.
@@ -122,8 +126,12 @@ export async function POST(request: Request) {
     }
 
     // No `allowPrimary` — see broadcast-core.ts for why a broadcast
-    // never guesses which number it goes out on.
+    // never guesses which number it goes out on. The caller names one
+    // instead; without a name this resolves only while the account has
+    // exactly one number, and otherwise stops and asks.
     const resolvedConfig = await resolveConfig(supabase, accountId, {
+      configId:
+        typeof whatsapp_config_id === 'string' ? whatsapp_config_id : undefined,
       columns: '*',
     })
     if (!resolvedConfig.ok) {
