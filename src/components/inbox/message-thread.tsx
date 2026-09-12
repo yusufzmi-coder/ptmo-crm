@@ -7,6 +7,7 @@ import { usePresence } from "@/hooks/use-presence";
 import { PresenceDot } from "@/components/presence/presence-dot";
 import { presenceLabel } from "@/lib/presence";
 import { setFocusedConversation } from "@/lib/presence-focus";
+import { isOptimistic, optimisticId } from "@/lib/inbox/optimistic";
 import { cn } from "@/lib/utils";
 import type {
   Conversation,
@@ -394,7 +395,7 @@ export function MessageThread({
             // the pill doesn't double up after a successful POST.
             const tempIdx = prev.findIndex(
               (r) =>
-                r.id.startsWith("temp-") &&
+                isOptimistic(r.id) &&
                 r.message_id === row.message_id &&
                 r.actor_type === row.actor_type &&
                 r.actor_id === row.actor_id,
@@ -481,7 +482,7 @@ export function MessageThread({
     async (text: string, replyToId?: string) => {
       if (!conversation) return;
 
-      const tempId = `temp-${Date.now()}`;
+      const tempId = optimisticId();
 
       // Optimistic update — shows the message immediately with "sending" status
       const optimisticMsg: Message = {
@@ -546,7 +547,7 @@ export function MessageThread({
           ? payload.caption || payload.filename || "Document"
           : payload.caption;
 
-      const tempId = `temp-${Date.now()}`;
+      const tempId = optimisticId();
       const optimisticMsg: Message = {
         id: tempId,
         conversation_id: conversation.id,
@@ -604,7 +605,7 @@ export function MessageThread({
     async (payload: InteractiveMessagePayload, replyToId?: string) => {
       if (!conversation) return;
 
-      const tempId = `temp-${Date.now()}`;
+      const tempId = optimisticId();
       // Optimistic bubble — renders the buttons/list immediately via the
       // interactive_payload, same as the persisted row will.
       const optimisticMsg: Message = {
@@ -684,7 +685,7 @@ export function MessageThread({
       if (!conversation) return;
 
       const renderedBody = renderTemplateBody(template.body_text, values.body);
-      const tempId = `temp-${Date.now()}`;
+      const tempId = optimisticId();
 
       const optimisticMsg: Message = {
         id: tempId,
@@ -799,7 +800,7 @@ export function MessageThread({
         console.warn("[reactions] missing user or conversation");
         return;
       }
-      if (messageId.startsWith("temp-")) {
+      if (isOptimistic(messageId)) {
         toast.error("Wait for the message to finish sending");
         return;
       }
@@ -823,7 +824,7 @@ export function MessageThread({
         return [
           ...prev,
           {
-            id: `temp-${Date.now()}`,
+            id: optimisticId(),
             message_id: messageId,
             conversation_id: convId,
             actor_type: "agent",

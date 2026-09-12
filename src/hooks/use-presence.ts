@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/client";
@@ -20,6 +20,10 @@ import {
 // tab would appear online forever. ~15s keeps "offline" responsive
 // without busy-spinning.
 const RE_DERIVE_MS = 15_000;
+
+// Distinguishes the realtime topic of one mounted hook from another's.
+// See the comment at its use site.
+let nextInstanceId = 0;
 
 type PresenceMap = Map<string, PresenceRow>;
 
@@ -59,7 +63,13 @@ export function usePresence(enabled = true): UsePresenceResult {
   // conversation list and the open thread), so each instance gets its
   // own topic. The topic is only a routing name — the postgres_changes
   // filter below is what decides which rows arrive.
-  const instanceId = useId();
+  //
+  // A module counter rather than `useId()`: React 19 renders ids as
+  // `«r0»`, and feeding non-ASCII from React's private id format into a
+  // realtime topic name ties a wire-level identifier to an internal
+  // React detail. This hook is client-only (no SSR hydration to match),
+  // so a plain counter is both sufficient and stable across re-renders.
+  const [instanceId] = useState(() => String(nextInstanceId++));
 
   // Presence rows keyed by user_id, held in immutable state — each
   // update replaces the Map so React renders and the derived getters

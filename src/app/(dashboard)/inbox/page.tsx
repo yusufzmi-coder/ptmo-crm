@@ -8,6 +8,7 @@ import {
   CONVERSATION_SELECT,
   normalizeConversation,
 } from "@/lib/inbox/conversations";
+import { reconcileIncomingMessage } from "@/lib/inbox/optimistic";
 import type { Conversation, Message, Contact, ConversationStatus } from "@/types";
 import { useRealtime } from "@/hooks/use-realtime";
 import { ConversationList } from "@/components/inbox/conversation-list";
@@ -232,15 +233,12 @@ function InboxPageInner() {
           activeConversation &&
           newMsg.conversation_id === activeConversation.id
         ) {
-          setMessages((prev) => {
-            // Avoid duplicates
-            if (prev.some((m) => m.id === newMsg.id)) return prev;
-            // Replace optimistic message if it exists
-            const withoutOptimistic = prev.filter(
-              (m) => !m.id.startsWith("temp-")
-            );
-            return [...withoutOptimistic, newMsg];
-          });
+          // Dedupes, and retires at most the ONE optimistic bubble this
+          // row plausibly is. The realtime channel is unfiltered, so an
+          // inbound message, an AI auto-reply, or a second agent in the
+          // same thread all land here — none of them may take this
+          // agent's in-flight (or failed) bubble with them.
+          setMessages((prev) => reconcileIncomingMessage(prev, newMsg));
         }
 
         // Update conversation list preview. We need to know *synchronously*
@@ -256,10 +254,21 @@ function InboxPageInner() {
                     ...c,
                     last_message_text: newMsg.content_text ?? "",
                     last_message_at: newMsg.created_at,
+                    // Only the CUSTOMER's messages are unread. The server
+                    // agrees — bump_conversation_on_inbound (migration
+                    // 037) fires on inbound only — so bumping here for
+                    // our own agent replies and AI auto-replies showed a
+                    // badge the database never had. It self-corrected
+                    // milliseconds later off the conversation UPDATE that
+                    // follows a send, but survived whenever that event
+                    // was dropped, leaving a permanent phantom count on a
+                    // thread the team had already answered.
                     unread_count:
-                      activeConversation?.id === newMsg.conversation_id
-                        ? 0
-                        : c.unread_count + 1,
+                      newMsg.sender_type !== "customer"
+                        ? c.unread_count
+                        : activeConversation?.id === newMsg.conversation_id
+                          ? 0
+                          : c.unread_count + 1,
                   }
                 : c,
             ),

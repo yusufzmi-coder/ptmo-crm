@@ -144,7 +144,7 @@ export function MessageComposer({
   const t = useTranslations("Inbox.composer");
 
   const [text, setText] = useState("");
-  const [sending, setSending] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [drafting, setDrafting] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -220,11 +220,26 @@ export function MessageComposer({
     el.style.height = `${Math.min(el.scrollHeight, 96)}px`;
   }, []);
 
-  const handleSend = useCallback(async () => {
+  // What actually prevents a double-send is `setText("")`: the second
+  // submit re-reads `text`, finds it empty, and bails on `!trimmed`.
+  // React flushes state for discrete events (keydown, click) before the
+  // next one is handled, so a fast Enter-Enter or a double-click cannot
+  // slip a second copy through.
+  //
+  // `submitting` is only a re-entrancy latch for THIS submit. It is
+  // deliberately NOT held for the duration of the network call: the send
+  // is fire-and-forget by design (MessageThread renders an optimistic
+  // bubble and reconciles it when the row arrives), and an agent
+  // covering sixteen branches must be able to type and send the next
+  // message while the previous one is still in the air. An earlier
+  // version wrapped this in `async` + `try/finally`, which read as if it
+  // awaited the send — it never did, since `onSend` returns void, so the
+  // latch cleared in the same tick regardless.
+  const handleSend = useCallback(() => {
     const trimmed = text.trim();
-    if (!trimmed || sending || sessionExpired) return;
+    if (!trimmed || submitting || sessionExpired) return;
 
-    setSending(true);
+    setSubmitting(true);
     try {
       onSend(trimmed, replyTo?.id);
       setText("");
@@ -232,9 +247,9 @@ export function MessageComposer({
         textareaRef.current.style.height = "auto";
       }
     } finally {
-      setSending(false);
+      setSubmitting(false);
     }
-  }, [text, sending, sessionExpired, onSend, replyTo?.id]);
+  }, [text, submitting, sessionExpired, onSend, replyTo?.id]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -754,7 +769,7 @@ export function MessageComposer({
             size="sm"
             canAct={!readOnly}
             gateReason="send messages"
-            disabled={!text.trim() || sessionExpired || sending}
+            disabled={!text.trim() || sessionExpired || submitting}
             onClick={handleSend}
             className="h-9 w-9 shrink-0 bg-primary p-0 hover:bg-primary/90 disabled:opacity-40"
           >
