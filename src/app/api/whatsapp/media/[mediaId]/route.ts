@@ -1,58 +1,79 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireRole, toErrorResponse } from '@/lib/auth/account'
 import { getMediaUrl, downloadMedia } from '@/lib/whatsapp/meta-api'
 import { decrypt } from '@/lib/whatsapp/encryption'
 import { resolveConfig, resolveFailureMessage } from '@/lib/whatsapp/resolve-config'
 
+// Proxy for inbound media that was NOT mirrored into storage — the
+// fallback the webhook falls back to when the mirror is off or refused
+// the file (webhook/route.ts, `verifyAndBuildUrl`). The bytes still live
+// on Meta's side, so this route re-fetches them with the branch's token.
+//
+// It used to take `mediaId` straight from the URL and hand it to Meta
+// with the account's PRIMARY token, checking only that the caller had an
+// account at all. Two problems, both fixed here:
+//
+//   1. No ownership check. Any authenticated user — `viewer` included,
+//      since the route had no role gate either — could fetch any media id
+//      the shared WABA token could reach, which in a 16-centre
+//      single-WABA deployment is every centre's attachments.
+//   2. `allowPrimary: true` meant centre B's media was downloaded with
+//      centre A's token. Tokens are per-`whatsapp_config` row, so under
+//      the zone model that is one zone's credential reaching for another
+//      zone's file.
+
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: Promise<{ mediaId: string }> }
 ) {
   try {
+    // `viewer` is the floor: this is reading an attachment in a thread the
+    // caller can already open.
+    const ctx = await requireRole('viewer')
+
     const { mediaId } = await params
-
     if (!mediaId) {
-      return NextResponse.json(
-        { error: 'Media ID is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Media ID is required' }, { status: 400 })
     }
 
-    const supabase = await createClient()
+    // Ownership check, and the authorization for this whole route.
+    //
+    // `messages.media_url` holds exactly this path for un-mirrored inbound
+    // media, so the row is the proof that the caller's account received
+    // this media id. The query runs on the caller's RLS client, and
+    // `messages_select` (017:511-518) only exposes rows whose conversation
+    // is in the caller's account — which under 044 means their ACTIVE
+    // zone. So Postgres, not this handler, is what refuses another zone's
+    // media, and the 404 below is just how that refusal is reported.
+    //
+    // Not `.maybeSingle()`: Meta ids repeat across numbers (migration
+    // 009), so two rows can legitimately share one `media_url` and
+    // maybeSingle would error instead of answering.
+    const { data: rows, error: lookupError } = await ctx.supabase
+      .from('messages')
+      .select('conversation_id')
+      .eq('media_url', `/api/whatsapp/media/${mediaId}`)
+      .limit(1)
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+    if (lookupError) {
+      console.error('[whatsapp media] message lookup failed:', lookupError)
+      return NextResponse.json({ error: 'Failed to fetch media' }, { status: 500 })
     }
 
-    // Resolve the caller's account_id — whatsapp_config is one-per-
-    // account post-multi-user, so a teammate fetching media for a
-    // conversation in the shared inbox needs the account's config,
-    // not their personal (non-existent) row.
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('account_id')
-      .eq('user_id', user.id)
-      .maybeSingle()
-    const accountId = profile?.account_id as string | undefined
-    if (!accountId) {
-      return NextResponse.json(
-        { error: 'Your profile is not linked to an account.' },
-        { status: 403 },
-      )
+    const conversationId = rows?.[0]?.conversation_id as string | undefined
+    if (!conversationId) {
+      // Deliberately not 403: a 403 would confirm the media exists
+      // somewhere else in the project.
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
-    // Fetch and decrypt WhatsApp config
-    // Downloading media from Meta uses the WABA-level access token, so
-    // any of the account's numbers serves — this never messages anyone.
-    const resolvedConfig = await resolveConfig(supabase, accountId, {
+    // The thread's own number, so the token that fetches the bytes is the
+    // one that received them. `allowPrimary` stays on ONLY as the fallback
+    // for threads that predate migration 040 and carry no number at all —
+    // by this point ownership is already established, and a download
+    // messages nobody.
+    const resolvedConfig = await resolveConfig(ctx.supabase, ctx.accountId, {
+      conversationId,
       allowPrimary: true,
       columns: '*',
     })
@@ -62,14 +83,10 @@ export async function GET(
         { status: 400 }
       )
     }
-    const config = resolvedConfig.config
 
-    const accessToken = decrypt(config.access_token)
+    const accessToken = decrypt(resolvedConfig.config.access_token)
 
-    // Get the download URL from Meta
     const mediaInfo = await getMediaUrl({ mediaId, accessToken })
-
-    // Download the binary data
     const { buffer, contentType } = await downloadMedia({
       downloadUrl: mediaInfo.url,
       accessToken,
@@ -79,14 +96,17 @@ export async function GET(
       status: 200,
       headers: {
         'Content-Type': contentType || mediaInfo.mimeType || 'application/octet-stream',
-        'Cache-Control': 'public, max-age=86400',
+        // `private`, not `public`. This is one account's attachment behind
+        // a per-caller authorization check; a shared cache holding it
+        // under the URL alone could serve it to someone the check would
+        // have refused.
+        'Cache-Control': 'private, max-age=86400',
       },
     })
   } catch (error) {
-    console.error('Error in WhatsApp media GET:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch media' },
-      { status: 500 }
-    )
+    // Maps UnauthorizedError / ForbiddenError from requireRole to 401/403
+    // and logs anything else as a 500 — same shape as every other route
+    // that uses the auth helper.
+    return toErrorResponse(error)
   }
 }
