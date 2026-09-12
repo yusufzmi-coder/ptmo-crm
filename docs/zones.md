@@ -148,6 +148,52 @@ reject the redirect the proxy route answers with.
 | 046 | lock four `SECURITY DEFINER` functions that were callable by anyone |
 | 048 | `broadcasts.whatsapp_config_id`, so a resumed broadcast keeps its number |
 
+## What is not built yet
+
+Migration 044 provides the model. **Nothing in `src/` calls it.** Verified:
+
+```
+set_active_account     0 callers
+my_accounts            0 callers
+is_account_member_any  0 callers
+```
+
+There is no zone switcher component, and `use-auth` exposes no zone state.
+So today a zone can only be switched by running `set_active_account` in
+SQL, and the active zone's name is displayed nowhere.
+
+That is a deliberate stopping point, not an oversight — the membership
+layer was landed and proven first, because widening it later is far more
+dangerous than adding UI later. But it means the feature is unusable by
+staff until the following exists. In dependency order:
+
+1. **Server context.** `getCurrentAccount()` already returns the active
+   zone and needs no change. Add a `listMyZones()` wrapper over
+   `my_accounts()`, and an `assertZone(request, ctx)` helper.
+2. **`GET`/`POST /api/account/zones`** — list zones, and switch via
+   `set_active_account`.
+3. **Header switcher.** Expose `zones`, `activeZone`, `switchZone()` from
+   `src/hooks/use-auth.tsx` — it is the only client-side auth provider, so
+   everything else follows it. Hide the control entirely when the user
+   belongs to one zone, so zone staff see no change at all.
+   `switchZone()` must tear down realtime subscriptions and clear cached
+   state before reloading — see the realtime note in
+   `docs/open-findings.md`.
+4. **`X-Zone-Id` guard** on the write paths where a mistake is most
+   expensive: `whatsapp/send`, `whatsapp/broadcast`, `whatsapp/media`,
+   `whatsapp/react`. Compare against the real active zone, answer **409**
+   on mismatch. This is the mitigation for the one-active-zone-per-user
+   limitation above — without it, a stale tab can reply into the wrong
+   zone, which is the single most costly failure this design can produce.
+5. **HQ roll-up dashboard** — a `SECURITY DEFINER` RPC checking
+   `is_account_member_any()` and returning aggregates only. Reuse the
+   existing pure logic in `src/lib/ops/` rather than rewriting it.
+
+Not affected and needing no work, verified: the inbound webhook (it
+resolves the account from `phone_number_id`, not the active zone), the
+`/api/v1` public API (an API key is already bound to one account), and the
+automation/flow engines (service-role with an explicit `account_id`).
+
 ## If you change this
 
 Run `supabase test db --local supabase/tests` before and after. If your
