@@ -40,8 +40,14 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
 
   if (!user) return null;
 
+  // `h-dvh`, not `h-screen`: on iOS Safari `100vh` is the LARGE viewport
+  // — it includes the strip behind the toolbar. Combined with the
+  // `overflow-hidden` here and below, the bottom of the layout (in the
+  // inbox, the composer and its send button) renders under the toolbar
+  // with no scroll that can reach it. `100dvh` tracks the viewport that
+  // is actually visible.
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-dvh overflow-hidden bg-background">
       {/* Reports this tab's online/away presence once we know a user is
           signed in. Headless — renders nothing. */}
       <PresenceHeartbeat />

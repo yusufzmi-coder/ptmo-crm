@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { realtimeTopic } from "@/lib/realtime/channel";
 import type { Message, Conversation } from "@/types";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
@@ -12,7 +13,25 @@ interface RealtimeEvent<T> {
 }
 
 interface UseRealtimeOptions {
+  /**
+   * Base topic name. Scoped to `accountId` before use — see
+   * `realtimeTopic`. Never reaches the wire on its own.
+   */
   channelName: string;
+  /**
+   * The caller's ACTIVE zone, from `useAuth()`. Required, and required
+   * to be live rather than captured once: both `.on()` subscriptions
+   * below are unfiltered, so RLS alone decides which rows arrive, and
+   * RLS answers for whichever zone is active at the time. When the user
+   * switches zone the database simply stops serving the old rows — but
+   * the channel, and every piece of state the caller built from it,
+   * would otherwise carry on as if nothing had happened. Keying the
+   * topic on the account is what makes the effect below tear the old
+   * subscription down and build a new one.
+   *
+   * `null` while the profile is still resolving; the hook stays idle.
+   */
+  accountId: string | null | undefined;
   onMessageEvent?: (event: RealtimeEvent<Message>) => void;
   onConversationEvent?: (event: RealtimeEvent<Conversation>) => void;
   enabled?: boolean;
@@ -20,6 +39,7 @@ interface UseRealtimeOptions {
 
 export function useRealtime({
   channelName,
+  accountId,
   onMessageEvent,
   onConversationEvent,
   enabled = true,
@@ -39,13 +59,15 @@ export function useRealtime({
     onConversationRef.current = onConversationEvent;
   });
 
+  const topic = realtimeTopic(channelName, accountId);
+
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || !topic) return;
 
     const supabase = createClient();
 
     const channel = supabase
-      .channel(channelName)
+      .channel(topic)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "messages" },
@@ -79,7 +101,9 @@ export function useRealtime({
       channelRef.current = null;
       setIsConnected(false);
     };
-  }, [channelName, enabled]);
+    // `topic` carries the account, so a zone switch changes it and the
+    // cleanup above runs before the new subscription is built.
+  }, [topic, enabled]);
 
   const unsubscribe = useCallback(() => {
     if (channelRef.current) {

@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { realtimeTopic } from "@/lib/realtime/channel";
+import { useAuth } from "@/hooks/use-auth";
 import type { Conversation } from "@/types";
 
 /**
@@ -10,16 +12,24 @@ import type { Conversation } from "@/types";
  * Inbox nav entry when the user is elsewhere in the app.
  *
  * Lives on its own realtime channel (distinct from the inbox page's
- * "inbox-realtime") so both can coexist without sharing state.
+ * "inbox-realtime") so both can coexist without sharing state. Both are
+ * scoped to the active zone — the badge is a count of the CURRENT zone's
+ * unanswered threads, and carrying the previous zone's number across a
+ * switch is the same staleness the inbox itself had.
  */
 export function useTotalUnread(): number {
+  const { accountId } = useAuth();
   const [total, setTotal] = useState(0);
 
   // Keep a live local mirror of {id: unread_count} so INSERT/UPDATE/DELETE
   // events can adjust the total in O(1) without refetching.
   const countsRef = useRef<Map<string, number>>(new Map());
 
+  const topic = realtimeTopic("total-unread-realtime", accountId);
+
   useEffect(() => {
+    if (!topic) return;
+
     const supabase = createClient();
     let cancelled = false;
 
@@ -43,7 +53,7 @@ export function useTotalUnread(): number {
     })();
 
     const channel = supabase
-      .channel("total-unread-realtime")
+      .channel(topic)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "conversations" },
@@ -67,8 +77,16 @@ export function useTotalUnread(): number {
     return () => {
       cancelled = true;
       supabase.removeChannel(channel);
+      // Drop this zone's tally as its channel goes away. Runs before the
+      // next zone's effect, so the badge never shows the old number over
+      // the new zone. Clearing matters beyond the brief gap until the
+      // fetch lands: the mirror is keyed by conversation id, and threads
+      // that exist only in the old zone share no id with anything in the
+      // new one, so nothing would ever overwrite them.
+      countsRef.current = new Map();
+      setTotal(0);
     };
-  }, []);
+  }, [topic]);
 
   return total;
 }

@@ -1,6 +1,34 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+/**
+ * The only `/api/whatsapp/**` paths callable without a session.
+ *
+ * Meta drives this endpoint itself: GET answers the hub subscription
+ * challenge against a stored `verify_token`, and POST carries the inbound
+ * payload signed with `x-hub-signature-256`. The route authenticates both
+ * on its own, so the session gate below must let them through.
+ *
+ * This used to be `!pathname.includes('/webhook')`, which matched the
+ * substring anywhere in the path — so any route that merely happened to
+ * have a `webhook` segment (`/api/whatsapp/templates/webhook`, say) fell
+ * out of the gate on spelling alone. An allowlist of full paths cannot
+ * widen by accident: a new public endpoint has to be named here.
+ */
+const PUBLIC_WHATSAPP_PATHS = new Set(['/api/whatsapp/webhook'])
+
+/** Exact-path membership, tolerating one trailing slash. */
+function isPublicWhatsAppPath(pathname: string): boolean {
+  // Depending on `trailingSlash` and how Meta stored the callback URL, the
+  // same endpoint can arrive with or without the trailing slash. Normalise
+  // it rather than listing both spellings.
+  const normalized =
+    pathname.length > 1 && pathname.endsWith('/')
+      ? pathname.slice(0, -1)
+      : pathname
+  return PUBLIC_WHATSAPP_PATHS.has(normalized)
+}
+
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
@@ -69,17 +97,35 @@ export async function middleware(request: NextRequest) {
     return withRefreshedCookies(NextResponse.redirect(url))
   }
 
-  // Protected pages - redirect to login if not authenticated
-  const protectedPaths = ['/dashboard', '/inbox', '/ops', '/contacts', '/pipelines', '/broadcasts', '/automations', '/settings']
+  // Protected pages - redirect to login if not authenticated.
+  // This must list every top-level segment under the (dashboard) route
+  // group. It has drifted twice now — /ops was missing until it was
+  // noticed, and /flows, /agents and /notifications shipped without ever
+  // being added, so an unauthenticated visit rendered a broken shell
+  // instead of the login page. Nothing links the group to this array, so
+  // when you add a page under (dashboard), add its segment here too.
+  const protectedPaths = [
+    '/agents',
+    '/automations',
+    '/broadcasts',
+    '/contacts',
+    '/dashboard',
+    '/flows',
+    '/inbox',
+    '/notifications',
+    '/ops',
+    '/pipelines',
+    '/settings',
+  ]
   if (!user && protectedPaths.some(path => request.nextUrl.pathname.startsWith(path))) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return withRefreshedCookies(NextResponse.redirect(url))
   }
 
-  // API routes that need auth (not webhooks)
+  // API routes that need auth, minus the explicit public allowlist above.
   if (!user && request.nextUrl.pathname.startsWith('/api/whatsapp/') &&
-      !request.nextUrl.pathname.includes('/webhook')) {
+      !isPublicWhatsAppPath(request.nextUrl.pathname)) {
     return withRefreshedCookies(
       NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     )

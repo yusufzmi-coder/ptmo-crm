@@ -22,6 +22,17 @@ import { resolveConfig, resolveFailureMessage } from '@/lib/whatsapp/resolve-con
 //      the zone model that is one zone's credential reaching for another
 //      zone's file.
 
+/**
+ * Meta media ids are numeric strings. `mediaId` is interpolated into the
+ * Graph URL by `getMediaUrl` and used as a PostgREST filter value below,
+ * so pin its shape here rather than letting either of those be the first
+ * thing to see whatever the URL carried. The ownership lookup would
+ * already 404 an id like `../../me/accounts`, which makes this the second
+ * lock on the same door — cheap, and it keeps that ordering from becoming
+ * load-bearing.
+ */
+const MEDIA_ID_PATTERN = /^[A-Za-z0-9_-]{1,256}$/
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ mediaId: string }> }
@@ -32,7 +43,7 @@ export async function GET(
     const ctx = await requireRole('viewer')
 
     const { mediaId } = await params
-    if (!mediaId) {
+    if (!mediaId || !MEDIA_ID_PATTERN.test(mediaId)) {
       return NextResponse.json({ error: 'Media ID is required' }, { status: 400 })
     }
 
@@ -67,14 +78,43 @@ export async function GET(
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
+    // Say the zone rule once in the application too.
+    //
+    // The RLS above is what actually refuses another zone, and this repeats
+    // it — on purpose. `docs/zones.md` is explicit that the whole model
+    // rests on one condition inside `is_account_member`, that ~119 policies
+    // lean on it, and that widening it turns no test red. If that ever
+    // happens, this route answers 404 instead of handing over the bytes,
+    // and the test below fails loudly rather than the breach being silent.
+    const { data: conversation, error: conversationError } = await ctx.supabase
+      .from('conversations')
+      .select('id')
+      .eq('id', conversationId)
+      .eq('account_id', ctx.accountId)
+      .maybeSingle()
+
+    if (conversationError) {
+      console.error('[whatsapp media] conversation lookup failed:', conversationError)
+      return NextResponse.json({ error: 'Failed to fetch media' }, { status: 500 })
+    }
+    if (!conversation) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
     // The thread's own number, so the token that fetches the bytes is the
-    // one that received them. `allowPrimary` stays on ONLY as the fallback
-    // for threads that predate migration 040 and carry no number at all —
-    // by this point ownership is already established, and a download
-    // messages nobody.
+    // one that received them.
+    //
+    // No `allowPrimary`. It would only ever fire for a thread carrying no
+    // number on an account holding several, and in that case there is no
+    // evidence for which centre the media belongs to — `resolveConfig`
+    // already falls back to the account's only number when there is only
+    // one, so pre-040 single-number accounts are untouched either way. The
+    // primary is a guess, and this route exists to stop guessing: a named
+    // error tells staff to set the thread's number, where a silent guess
+    // teaches everyone that the primary's token is the one that fetches
+    // everything.
     const resolvedConfig = await resolveConfig(ctx.supabase, ctx.accountId, {
       conversationId,
-      allowPrimary: true,
       columns: '*',
     })
     if (!resolvedConfig.ok) {
@@ -96,11 +136,14 @@ export async function GET(
       status: 200,
       headers: {
         'Content-Type': contentType || mediaInfo.mimeType || 'application/octet-stream',
-        // `private`, not `public`. This is one account's attachment behind
-        // a per-caller authorization check; a shared cache holding it
-        // under the URL alone could serve it to someone the check would
-        // have refused.
-        'Cache-Control': 'private, max-age=86400',
+        // `private` already keeps this out of shared caches. `no-store` on
+        // top of it is about the disk copy: a browser cache holding one
+        // zone's attachments for a day outlives a zone switch, and this is
+        // a shared-device deployment. Nothing is lost by it — the inbox
+        // memoises the blob in `src/lib/media/blob-cache.ts`, and
+        // `next.config.ts` forces `no-store` on `/api/*` anyway, so the
+        // 24h here was never reaching a real cache to begin with.
+        'Cache-Control': 'private, no-store',
       },
     })
   } catch (error) {

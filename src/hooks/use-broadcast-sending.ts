@@ -7,6 +7,12 @@ import {
   BATCH_SEND_ATTEMPTS,
   batchRetryDelayMs,
 } from '@/lib/broadcast-retry';
+import {
+  INITIAL_BROADCAST_STATUS,
+  IN_FLIGHT_BROADCAST_STATUS,
+  finalBroadcastStatus,
+  statusAfterAbort,
+} from '@/lib/broadcast-send-status';
 import { normalizeKey } from '@/lib/contacts/dedupe';
 import { Contact, MessageTemplate } from '@/types';
 
@@ -84,6 +90,13 @@ const INSERT_BATCH_SIZE = 200;
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+interface BroadcastApiResponse {
+  error?: string;
+  results?: BroadcastApiResult[];
+  /** The number the route resolved and sent from. */
+  whatsapp_config_id?: string;
 }
 
 interface BroadcastApiResult {
@@ -357,6 +370,12 @@ export function useBroadcastSending(): UseBroadcastSendingReturn {
 
     const supabase = createClient();
 
+    // Set once the row exists, so a throw below can stamp it terminal.
+    let broadcastRow: { id: string } | null = null;
+    // Flipped by the first batch call that lands. Until then nothing has
+    // reached Meta and an abort leaves a plain draft.
+    let sendingStarted = false;
+
     try {
       // ── Step 0: Resolve current user ──────────────────────────────
       // broadcasts.user_id is NOT NULL + guarded by RLS
@@ -399,7 +418,18 @@ export function useBroadcastSending(): UseBroadcastSendingReturn {
             customField: payload.audience.customField,
             excludeTagIds: payload.audience.excludeTagIds,
           },
-          status: 'sending',
+          // NOT 'sending'. The row used to be created as in-flight
+          // ahead of the first API call, so any failure before Step 5
+          // left a campaign pulsing "sending" forever with nothing left
+          // to move it (docs/open-findings.md, P1). It is promoted below
+          // the moment a send call actually lands.
+          status: INITIAL_BROADCAST_STATUS,
+          // Freeze the branch this campaign goes out on (migration 048).
+          // Left unset, a resume has nothing to read back and — with
+          // several numbers connected — refuses rather than guessing.
+          // Null here when the wizard didn't name one; the first send
+          // response below fills in whichever the route resolved.
+          whatsapp_config_id: payload.whatsappConfigId ?? null,
           total_recipients: contacts.length,
           sent_count: 0,
           delivered_count: 0,
@@ -415,6 +445,7 @@ export function useBroadcastSending(): UseBroadcastSendingReturn {
           `Failed to create broadcast: ${broadcastError?.message ?? 'unknown error'}`,
         );
       }
+      broadcastRow = broadcast;
 
       // ── Step 3: Insert recipient rows ─────────────────────────────
       // Custom values are fetched BEFORE the insert so each row can
@@ -455,15 +486,9 @@ export function useBroadcastSending(): UseBroadcastSendingReturn {
           // Previous impl logged and marched on — the broadcast then ran
           // with an incomplete recipient set, so webhook status updates
           // couldn't find some rows and the aggregate counts drifted.
-          // Flip the broadcast to failed so the user sees the problem
-          // immediately, then throw to abort the send loop.
-          await supabase
-            .from('broadcasts')
-            .update({
-              status: 'failed',
-              failed_count: contacts.length,
-            })
-            .eq('id', broadcast.id);
+          // Throw to abort the send loop; the catch below stamps the
+          // broadcast terminal. Counts stay trigger-owned (migrations
+          // 003/005) — nothing was sent, so nothing is written here.
           throw new Error(
             `Failed to insert recipient batch ${i / INSERT_BATCH_SIZE + 1}: ${recipientError.message}`,
           );
@@ -510,13 +535,28 @@ export function useBroadcastSending(): UseBroadcastSendingReturn {
             ...(messageParams ? { messageParams } : {}),
           }));
 
-        if (apiRecipients.length === 0) continue;
+        if (apiRecipients.length === 0) {
+          // Skipping left these rows 'pending' forever AND uncounted, so
+          // a wholly unsendable campaign finalized as 'sent'. Stamp them
+          // with the same message the per-result path uses.
+          for (const recipient of batch) {
+            failedCount++;
+            await supabase
+              .from('broadcast_recipients')
+              .update({
+                status: 'failed',
+                error_message: 'No phone number on contact',
+              })
+              .eq('id', recipient.id);
+          }
+          continue;
+        }
 
         try {
           // Send the batch, waiting out a 429 rather than writing the
           // whole batch off as failed. Only 429 is replayed — see
           // batchRetryDelayMs for why nothing else can be.
-          let data: { error?: string; results?: BroadcastApiResult[] } = {};
+          let data: BroadcastApiResponse = {};
           for (let attempt = 1; ; attempt++) {
             const res = await fetch('/api/whatsapp/broadcast', {
               method: 'POST',
@@ -530,7 +570,28 @@ export function useBroadcastSending(): UseBroadcastSendingReturn {
             });
 
             data = await res.json();
-            if (res.ok) break;
+            if (res.ok) {
+              // First call to land — the campaign is genuinely in
+              // flight now, so promote it out of draft. Done once.
+              if (!sendingStarted) {
+                sendingStarted = true;
+                await supabase
+                  .from('broadcasts')
+                  .update({
+                    status: IN_FLIGHT_BROADCAST_STATUS,
+                    // Single-number accounts send without naming a
+                    // branch; record the one the route chose, so the
+                    // campaign stays resumable after a second number
+                    // is connected.
+                    ...(payload.whatsappConfigId ||
+                    typeof data.whatsapp_config_id !== 'string'
+                      ? {}
+                      : { whatsapp_config_id: data.whatsapp_config_id }),
+                  })
+                  .eq('id', broadcast.id);
+              }
+              break;
+            }
 
             const retryIn =
               attempt < BATCH_SEND_ATTEMPTS
@@ -610,7 +671,10 @@ export function useBroadcastSending(): UseBroadcastSendingReturn {
       // Aggregate counts are maintained by the DB trigger (migration
       // 003); we only flip the final status here.
       setProgress(95);
-      const finalStatus = failedCount === totalRecipients ? 'failed' : 'sent';
+      const finalStatus = finalBroadcastStatus({
+        total: totalRecipients,
+        failed: failedCount,
+      });
       await supabase
         .from('broadcasts')
         .update({ status: finalStatus })
@@ -618,6 +682,24 @@ export function useBroadcastSending(): UseBroadcastSendingReturn {
 
       setProgress(100);
       return broadcast.id;
+    } catch (err) {
+      // Anything escaping the pass — a failed recipient read-back, a
+      // rejected Supabase update, a non-JSON error body — used to leave
+      // the row in 'sending' with nothing left to move it. Stamp a
+      // terminal status before rethrowing so the wizard still surfaces
+      // the error. Recipient rows keep their 'pending'/'failed' status,
+      // so the detail page goes on offering Resume (issue #472).
+      if (broadcastRow) {
+        try {
+          await supabase
+            .from('broadcasts')
+            .update({ status: statusAfterAbort({ sendingStarted }) })
+            .eq('id', broadcastRow.id);
+        } catch {
+          // Best-effort: the original error is the one worth reporting.
+        }
+      }
+      throw err;
     } finally {
       setIsProcessing(false);
     }
