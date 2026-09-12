@@ -22,8 +22,40 @@ export const HEARTBEAT_MS = 30_000;
  */
 export const OFFLINE_AFTER_MS = 75_000;
 
-/** No input / hidden tab for this long flips the client to 'away'. */
-export const IDLE_AFTER_MS = 5 * 60_000;
+/**
+ * How long a tab must go without any sign of its human before it reports
+ * 'away'.
+ *
+ * One clock, not two. The previous rule had a second trigger — a hidden
+ * tab reported 'away' immediately — and that turned out to be the
+ * sharper edge of the two. An agent alt-tabbing to a spreadsheet for
+ * thirty seconds dropped straight out of 'online', which took their eye
+ * icon off the thread they were in the middle of answering. Switching
+ * away for half a minute is not the same as leaving, and the guard
+ * cannot tell the difference from the status alone.
+ *
+ * So both cases now measure the same thing: how long since this tab last
+ * saw its human. Input events say so, and so does the tab becoming
+ * visible again. Fifteen minutes is deliberately generous — it has to
+ * cover stepping out to the toilet, fetching a drink, or turning to talk
+ * to someone at the next desk, because during all of those the agent is
+ * still the person handling that parent. Past it they have genuinely
+ * left the work, and the thread should look free to a colleague.
+ */
+export const AWAY_AFTER_MS = 15 * 60_000;
+
+/**
+ * What this tab should report right now, given when it last saw its
+ * human. Pure so the threshold is testable without a DOM — the caller
+ * (PresenceHeartbeat) owns the event listeners that keep `lastActiveAt`
+ * current.
+ */
+export function deriveReportedStatus(
+  lastActiveAt: number,
+  now: number,
+): StoredPresence {
+  return now - lastActiveAt > AWAY_AFTER_MS ? "away" : "online";
+}
 
 /** What the active client reports (and what the DB stores). */
 export type StoredPresence = "online" | "away";
@@ -172,11 +204,14 @@ export function summarize(statuses: PresenceStatus[]): {
  * Who ELSE currently has `conversationId` open — the guard against two
  * agents answering the same parent (migration 041).
  *
- * Deliberately strict: only members deriving to "online" count. "away"
- * means a hidden tab or five idle minutes, which is someone who left
- * the thread open, not someone about to type — warning about them would
- * train the team to ignore the warning. "offline" is a stale heartbeat,
- * i.e. a crashed or closed tab, whose pointer must never linger.
+ * Only members deriving to "online" count, and since AWAY_AFTER_MS
+ * became a single generous clock that is the right line to draw: a tab
+ * reporting 'online' has seen its human within the last fifteen minutes,
+ * which covers stepping out briefly. "away" now means a quarter of an
+ * hour with no sign of anyone — someone who left a thread open, not
+ * someone about to type, and warning about them would train the team to
+ * ignore the warning. "offline" is a stale heartbeat, i.e. a crashed or
+ * closed tab, whose pointer must never linger.
  *
  * Returns user ids sorted, so the rendered list doesn't reshuffle on
  * every re-derive tick.

@@ -4,7 +4,11 @@ import { useEffect, useRef } from "react";
 
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { HEARTBEAT_MS, IDLE_AFTER_MS, type StoredPresence } from "@/lib/presence";
+import {
+  deriveReportedStatus,
+  HEARTBEAT_MS,
+  type StoredPresence,
+} from "@/lib/presence";
 import {
   getFocusedConversation,
   subscribeFocusedConversation,
@@ -17,9 +21,9 @@ import { getTabId } from "@/lib/presence-tab";
  * presence to the `member_presence` table via the `touch_presence` RPC
  * roughly every HEARTBEAT_MS.
  *
- * The client only ever reports 'online' or 'away':
- *   - 'away'   when the tab is hidden, or no user input for IDLE_AFTER_MS
- *   - 'online' otherwise
+ * The client only ever reports 'online' or 'away', off ONE clock: how
+ * long since this tab last saw its human (input, or the tab becoming
+ * visible again). Past AWAY_AFTER_MS it reports 'away'.
  * It keeps heartbeating while away (so the row stays fresh, i.e. not
  * offline). When the tab closes the beats simply stop and viewers derive
  * 'offline' from staleness — no unreliable unload write needed.
@@ -48,11 +52,15 @@ export function PresenceHeartbeat() {
       lastActivityRef.current = Date.now();
     };
 
-    const currentStatus = (): StoredPresence => {
-      if (typeof document !== "undefined" && document.hidden) return "away";
-      if (Date.now() - lastActivityRef.current > IDLE_AFTER_MS) return "away";
-      return "online";
-    };
+    // A hidden tab used to report 'away' on the spot. That read as
+    // "gone" for an agent who alt-tabbed to a spreadsheet for thirty
+    // seconds, and took their eye icon off a thread they were in the
+    // middle of answering. Being hidden now just means no activity is
+    // observable, so the same clock runs — and returning to the tab
+    // marks activity through `onReturn` below, which is what makes a
+    // short switch away cost nothing.
+    const currentStatus = (): StoredPresence =>
+      deriveReportedStatus(lastActivityRef.current, Date.now());
 
     const beat = async () => {
       if (cancelled) return;

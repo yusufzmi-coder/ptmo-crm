@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  AWAY_AFTER_MS,
   OFFLINE_AFTER_MS,
   type CoViewerRow,
   coViewers,
   derivePresence,
+  deriveReportedStatus,
   formatLastSeen,
   pickUserRow,
   presenceLabel,
@@ -259,5 +261,41 @@ describe("coViewers with per-tab rows (045)", () => {
     expect(
       coViewers([viewer(ME), viewer(ME), viewer("amal")], CONV, ME, NOW),
     ).toEqual(["amal"]);
+  });
+});
+
+// ---- deriveReportedStatus -------------------------------------
+// What a tab reports about itself. One clock: how long since it last
+// saw its human. Replaces the old pair of rules, where a hidden tab
+// reported 'away' the instant it was hidden.
+
+describe("deriveReportedStatus", () => {
+  const since = (ms: number) => NOW - ms;
+
+  it("stays online through a short switch to another window", () => {
+    // The regression that motivated the single clock: alt-tabbing to a
+    // spreadsheet for thirty seconds used to drop the agent out of
+    // 'online' immediately, taking their eye icon off a thread they
+    // were halfway through answering.
+    expect(deriveReportedStatus(since(30_000), NOW)).toBe("online");
+  });
+
+  it("stays online across a toilet break", () => {
+    expect(deriveReportedStatus(since(5 * 60_000), NOW)).toBe("online");
+    expect(deriveReportedStatus(since(10 * 60_000), NOW)).toBe("online");
+  });
+
+  it("goes away once the tab has genuinely been left", () => {
+    expect(deriveReportedStatus(since(AWAY_AFTER_MS + 1_000), NOW)).toBe("away");
+    expect(deriveReportedStatus(since(60 * 60_000), NOW)).toBe("away");
+  });
+
+  it("holds online exactly at the threshold and flips just past it", () => {
+    expect(deriveReportedStatus(since(AWAY_AFTER_MS), NOW)).toBe("online");
+    expect(deriveReportedStatus(since(AWAY_AFTER_MS + 1), NOW)).toBe("away");
+  });
+
+  it("treats a just-mounted tab as online", () => {
+    expect(deriveReportedStatus(NOW, NOW)).toBe("online");
   });
 });
