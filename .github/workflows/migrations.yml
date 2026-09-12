@@ -69,3 +69,28 @@ jobs:
       # just the absence of an error.
       - name: Verify the resulting schema
         run: supabase db query --local --file supabase/ci/verify-schema.sql
+
+      # The step above proves the schema EXISTS. It cannot prove the RLS
+      # policies WORK, and that distinction is the whole reason this step
+      # was added.
+      #
+      # Migration 044 keeps every zone apart with a single SQL function,
+      # `is_account_member()`, scoped to the caller's ACTIVE zone. Large
+      # parts of this application query their tables with no account_id
+      # filter at all — ~41 client-side mutations, all of src/lib/ops/,
+      # src/lib/dashboard/queries.ts — and are correct only because that
+      # function narrows them. Widen it and nothing throws, no existing
+      # test goes red, and one zone's staff quietly start reading
+      # another's parents.
+      #
+      # supabase/tests/ closes that gap: it queries real tables as real
+      # authenticated personas, through the real policies, and counts
+      # rows. The suite is verified to BITE — removing the active-zone
+      # condition from `is_account_member()` turns 8 of its assertions
+      # red — so a green run here means something.
+      # The path is passed explicitly rather than relying on a default:
+      # `supabase test db` takes it as a required argument, and naming the
+      # directory also means a test file added outside it fails loudly
+      # instead of being skipped silently.
+      - name: Prove zone isolation under RLS
+        run: supabase test db --local supabase/tests
