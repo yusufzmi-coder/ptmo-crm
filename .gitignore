@@ -48,3 +48,6 @@ supabase/.temp/
 
 # brand master artwork — large binary, lives in Drive not git
 brand/MindaOptima-logo.ai
+
+# skrip ujian sementara — jangan commit
+_scratch/
