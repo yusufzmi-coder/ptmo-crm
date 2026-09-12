@@ -49,6 +49,43 @@ export interface CoViewerRow extends PresenceRow {
 }
 
 /**
+ * Collapse one member's per-tab rows (migration 045) into the single row
+ * that should represent them.
+ *
+ * Since 045 a member has one row per open dashboard tab, and those rows
+ * disagree on purpose: the inbox tab reports 'online' on thread X while
+ * a backgrounded /dashboard tab in the same browser reports 'away' on
+ * nothing. Anything asking "is this person here?" wants the most present
+ * of those, not an arbitrary one — picking arbitrarily is precisely the
+ * bug 045 fixes, just moved from the database into the client.
+ *
+ * Order: 'online' beats 'away', and within a tier the freshest heartbeat
+ * wins. An unparseable timestamp sorts oldest rather than throwing — a
+ * malformed row must not decide who is present.
+ */
+export function pickUserRow(
+  rows: Iterable<PresenceRow>,
+): PresenceRow | undefined {
+  let best: PresenceRow | undefined;
+  let bestRank = -1;
+  let bestSeen = -Infinity;
+
+  for (const row of rows) {
+    const rank = row.status === "online" ? 1 : 0;
+    const seen = new Date(row.last_seen_at).getTime();
+    const seenSafe = Number.isNaN(seen) ? -Infinity : seen;
+
+    if (rank > bestRank || (rank === bestRank && seenSafe > bestSeen)) {
+      best = row;
+      bestRank = rank;
+      bestSeen = seenSafe;
+    }
+  }
+
+  return best;
+}
+
+/**
  * Derive the user-facing presence for a member. A missing row, or a
  * heartbeat staler than OFFLINE_AFTER_MS, reads as offline; otherwise
  * the member's last reported status (online / away) stands.
@@ -143,6 +180,11 @@ export function summarize(statuses: PresenceStatus[]): {
  *
  * Returns user ids sorted, so the rendered list doesn't reshuffle on
  * every re-derive tick.
+ *
+ * Deduplicated by user since migration 045: one member can now supply
+ * several rows — one per open tab — and two of an agent's own tabs both
+ * pointing at this thread is one person to warn about, not two. Without
+ * the Set the banner would read "Amal, Amal are also in this chat".
  */
 export function coViewers(
   rows: Iterable<CoViewerRow>,
@@ -151,12 +193,12 @@ export function coViewers(
   now: number,
 ): string[] {
   if (!conversationId) return [];
-  const out: string[] = [];
+  const out = new Set<string>();
   for (const row of rows) {
     if (!row.user_id || row.user_id === selfUserId) continue;
     if (row.viewing_conversation_id !== conversationId) continue;
     if (derivePresence(row.status, row.last_seen_at, now) !== "online") continue;
-    out.push(row.user_id);
+    out.add(row.user_id);
   }
-  return out.sort();
+  return [...out].sort();
 }

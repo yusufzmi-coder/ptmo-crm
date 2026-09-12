@@ -9,6 +9,7 @@ import {
   getFocusedConversation,
   subscribeFocusedConversation,
 } from "@/lib/presence-focus";
+import { getTabId } from "@/lib/presence-tab";
 
 /**
  * PresenceHeartbeat — headless. Mount ONCE per signed-in dashboard tab
@@ -82,6 +83,12 @@ export function PresenceHeartbeat() {
         // the RPC drops it unless the conversation is in the caller's
         // own account.
         p_viewing_conversation_id: getFocusedConversation(),
+        // Which tab is reporting (migration 045). Before this, every
+        // dashboard tab wrote the same row, so a backgrounded tab's
+        // ('away', no thread) kept overwriting the inbox tab's
+        // ('online', thread X) and the co-viewer guard went blind
+        // roughly half the time.
+        p_tab_id: getTabId(),
       });
       if (error && !cancelled) {
         // Non-fatal: presence is best-effort. Log once per failure so a
