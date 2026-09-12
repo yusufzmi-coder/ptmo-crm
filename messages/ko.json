@@ -61,6 +61,20 @@
     "menuSettings": "설정",
     "menuSignOut": "로그아웃"
   },
+  "ZoneSwitcher": {
+    "menuLabel": "구역 전환",
+    "currentZone": "구역: {zone}",
+    "openZoneMenu": "구역 전환 — 현재 {zone}",
+    "stillIn": "현재 {zone}에 있습니다.",
+    "errorNotMember": "해당 구역에 대한 접근 권한이 없습니다.",
+    "errorFailed": "구역을 전환하지 못했습니다. 다시 시도해 주세요.",
+    "role": {
+      "owner": "소유자",
+      "admin": "관리자",
+      "agent": "상담원",
+      "viewer": "뷰어"
+    }
+  },
   "ModeToggle": {
     "switchMode": "{mode} 모드로 전환"
   },
