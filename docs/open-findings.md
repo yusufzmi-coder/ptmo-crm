@@ -17,24 +17,17 @@ system.
 
 ## P1 — worth fixing before real parent data
 
-### Media download is an IDOR
+### ~~Media download is an IDOR~~ — FIXED in `cf23bf4`
 
-`src/app/api/whatsapp/media/[mediaId]/route.ts`
+Kept here only so nobody re-reports it. The route now takes
+`requireRole('viewer')`, proves ownership by looking the `media_url` up on
+the caller's own RLS-scoped `messages` (so a row exists only if the
+caller's active zone received it), answers **404** rather than 403 so the
+status cannot confirm the media exists elsewhere, resolves the token from
+that message's conversation, and serves `Cache-Control: private`.
 
-The route calls `supabase.auth.getUser()` and nothing else. There is no
-`requireRole`, and no check that `mediaId` belongs to a message in the
-caller's account. Any authenticated user — including a `viewer`, and
-including someone who only belongs to a different zone — can fetch any
-centre's attachment by guessing a media id.
-
-It compounds: line 56 passes `allowPrimary: true`, so the fetch uses the
-**primary** number's token regardless of which centre the media belongs
-to. The comment at line 37 is also stale — it describes config as
-one-per-account, which migration 040 ended.
-
-Fix: `requireRole('viewer')`, assert the `mediaId` appears on a `messages`
-row joining to a `conversations` row in the caller's account, then
-`resolveConfig` by that conversation rather than `allowPrimary`.
+`allowPrimary` survives only as the fallback for pre-040 threads with no
+number, and by then ownership is already proven.
 
 ### Middleware does not gate every authenticated route
 
