@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { readdirSync } from "node:fs";
+import { join } from "node:path";
 import { NextRequest } from "next/server";
 
 // --- Scenario knobs the mock reads -----------------------------------------
@@ -207,5 +209,47 @@ describe("middleware — the public webhook is an allowlist, not a substring", (
     );
 
     expect(res.status).not.toBe(401);
+  });
+});
+
+describe("middleware — every (dashboard) segment is gated", () => {
+  // The reason `protectedPaths` drifted twice is that nothing connected it
+  // to the route tree: /ops was missing until someone noticed, then /flows,
+  // /agents and /notifications shipped unguarded. Reviewing the array tells
+  // you nothing, because the omission is the page that ISN'T named in it.
+  //
+  // So derive the expectation from the filesystem instead of restating the
+  // list. Every top-level directory in the (dashboard) route group is a
+  // page behind the app shell, and every one of them must redirect an
+  // anonymous visitor. Add a page under (dashboard) without touching
+  // middleware.ts and this test fails with that segment's name.
+  const segments = readdirSync(
+    join(import.meta.dirname, "app", "(dashboard)"),
+    { withFileTypes: true },
+  )
+    .filter((entry) => entry.isDirectory())
+    // Route groups `(x)`, private folders `_x` and dynamic segments `[x]`
+    // are not top-level paths of their own.
+    .filter((entry) => !/^[([_]/.test(entry.name))
+    .map((entry) => entry.name)
+    .sort();
+
+  it("finds the route group (guards against a silently empty glob)", () => {
+    // Without this, a moved or renamed (dashboard) directory would make
+    // `segments` empty and every assertion below would vacuously pass.
+    expect(segments.length).toBeGreaterThanOrEqual(11);
+    expect(segments).toContain("dashboard");
+  });
+
+  it.each(segments)("redirects an anonymous visitor off /%s", async (segment) => {
+    mockUser = null;
+    refreshedCookies = [ROTATED];
+
+    const res = await middleware(
+      new NextRequest(`https://app.test/${segment}`),
+    );
+
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toContain("/login");
   });
 });
