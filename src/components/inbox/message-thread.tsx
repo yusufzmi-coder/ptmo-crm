@@ -7,6 +7,7 @@ import { usePresence } from "@/hooks/use-presence";
 import { PresenceDot } from "@/components/presence/presence-dot";
 import { presenceLabel } from "@/lib/presence";
 import { setFocusedConversation } from "@/lib/presence-focus";
+import { configDisplayName } from "@/lib/whatsapp/resolve-config";
 import { isOptimistic, optimisticId } from "@/lib/inbox/optimistic";
 import { cn } from "@/lib/utils";
 import type {
@@ -83,6 +84,12 @@ interface MessageThreadProps {
    * mobile only.
    */
   onBack?: () => void;
+  /**
+   * True when the account holds more than one WhatsApp number, i.e.
+   * when naming the branch tells the agent something. Same gate the
+   * conversation list uses, so the two surfaces agree.
+   */
+  showBranch?: boolean;
   /**
    * Increment to force the messages + reactions fetch effects to refire.
    * Parent bumps this on realtime reconnect / tab visibility → visible
@@ -162,6 +169,7 @@ export function MessageThread({
   onStatusChange,
   onAssignChange,
   onBack,
+  showBranch = false,
   resyncToken = 0,
   onRefresh,
   contactPanelOpen,
@@ -900,10 +908,17 @@ export function MessageThread({
     (s) => s.value === conversation.status
   );
   // The branch this thread belongs to, named if an admin has named it.
+  //
+  // Gated on `showBranch` (the account holding more than one number),
+  // matching the conversation list. Migration 040 backfills the config
+  // on single-number accounts, so without the gate the header claimed
+  // "replying as …" for tenants who have no second branch to confuse it
+  // with — contradicting the comment below it, which promised exactly
+  // the opposite.
   const branchName =
-    conversation.whatsapp_config?.label?.trim() ||
-    conversation.whatsapp_config?.phone_number_id ||
-    null;
+    showBranch && conversation.whatsapp_config
+      ? configDisplayName(conversation.whatsapp_config)
+      : null;
   const assignedAgentId = conversation.assigned_agent_id ?? null;
   const currentAssignee = profiles.find((p) => p.user_id === assignedAgentId);
   const assignLabel = assignedAgentId
@@ -956,11 +971,10 @@ export function MessageThread({
             <p className="truncate text-xs text-muted-foreground">
               {contact.phone}
               {/* Which of our numbers this thread is on — the branch
-                  (migration 040). An agent covering sixteen branches
-                  needs to know who they are speaking AS before they
-                  type, not after the parent replies "who is this?".
-                  Only rendered when the thread carries a branch, so a
-                  single-number account sees nothing new. */}
+                  (migration 040). Context while reading; the binding
+                  copy lives in the composer, where the agent actually
+                  is when they decide what to send. This line truncates
+                  and that one does not. */}
               {branchName && (
                 <>
                   <span aria-hidden> · </span>
@@ -1250,6 +1264,8 @@ export function MessageThread({
         onOpenTemplates={handleOpenTemplates}
         replyTo={replyTo}
         onClearReply={() => setReplyTo(null)}
+        branchName={branchName}
+        coViewerNames={coViewerNames}
       />
 
       <TemplatePicker

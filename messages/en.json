@@ -222,7 +222,10 @@
       "quickReplyPinned": "{branch} only",
       "quickReplyUnavailable": "Needs a branch",
       "quickReplyUnavailableHint": "This snippet fills in the branch name, but this thread is not linked to a WhatsApp number.",
-      "quickReplyForeignBranch": "Names {branches}"
+      "quickReplyForeignBranch": "Names {branches}",
+      "replyingAsBranch": "Replying as {branch}",
+      "typeMessageAsBranch": "Type a message as {branch}... (Shift+Enter for new line)",
+      "alsoViewing": "{names} {count, plural, one {is} other {are}} also in this chat — check before you reply."
     },
     "bubble": {
       "photo": "Photo",

@@ -8,6 +8,7 @@ import {
   normalizeConversations,
 } from "@/lib/inbox/conversations";
 import { cn } from "@/lib/utils";
+import { configDisplayName } from "@/lib/whatsapp/resolve-config";
 import type { Conversation, ConversationStatus, Tag } from "@/types";
 import { Search, ChevronDown, X, Eye } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
@@ -505,8 +506,7 @@ function ConversationItem({
           <div className="mt-0.5">
             <span className="inline-flex max-w-full items-center rounded-full border border-primary-soft-2 bg-primary-soft px-1.5 py-0.5 text-[10px] font-medium text-primary">
               <span className="truncate">
-                {conversation.whatsapp_config.label?.trim() ||
-                  conversation.whatsapp_config.phone_number_id}
+                {configDisplayName(conversation.whatsapp_config)}
               </span>
             </span>
           </div>

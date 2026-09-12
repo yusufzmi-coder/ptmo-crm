@@ -22,6 +22,8 @@ import {
   Plus,
   MessageSquareDashed,
   Zap,
+  Building2,
+  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GatedButton } from "@/components/ui/gated-button";
@@ -118,6 +120,32 @@ interface MessageComposerProps {
   onOpenTemplates: () => void;
   replyTo?: ReplyDraft | null;
   onClearReply?: () => void;
+  /**
+   * The branch this thread replies AS — `whatsapp_config.label`, or the
+   * raw number when an admin has not named it. Null on a single-number
+   * account, where naming the branch on every reply is noise.
+   *
+   * The thread header names the branch too, but it does so as the tail
+   * of a `truncate`d 12px muted line, ~300px and a scrolling message
+   * list away from the textarea — and on a laptop-width column with a
+   * 12-digit Malaysian number in front of it, `truncate` eats it
+   * entirely. The one fact standing between an agent and a parent
+   * hearing from a centre they never contacted cannot be the first
+   * thing dropped when space runs short, so it is repeated here, where
+   * the typing happens.
+   */
+  branchName?: string | null;
+  /**
+   * Teammates with this same thread open right now.
+   *
+   * MessageThread shows this as a banner, but the banner sits ABOVE the
+   * message list: the agent scrolls down to read what the parent asked,
+   * and by the time they reach the composer it has left the viewport.
+   * Two or three people share this inbox and a newest-first sort lands
+   * them all on the same unanswered message, so a collision is the
+   * common case rather than the rare one.
+   */
+  coViewerNames?: string[];
 }
 
 function formatDuration(seconds: number): string {
@@ -140,8 +168,11 @@ export function MessageComposer({
   onOpenTemplates,
   replyTo,
   onClearReply,
+  branchName,
+  coViewerNames,
 }: MessageComposerProps) {
   const t = useTranslations("Inbox.composer");
+  const coViewers = coViewerNames ?? [];
 
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -551,7 +582,46 @@ export function MessageComposer({
   // ---- Render --------------------------------------------------------
 
   return (
-    <div className="border-t border-border bg-card p-3">
+    <div
+      className={cn(
+        "border-t bg-card p-3",
+        // A co-viewer recolours the whole composer edge. The banner up
+        // in the thread is the polite announcement; this is the thing
+        // still on screen at the moment of typing, and an agent who has
+        // scrolled past the banner has no other signal left.
+        coViewers.length > 0 ? "border-amber-500/50" : "border-border",
+      )}
+    >
+      {/* Who this reply goes out as, and who else is already here. Both
+          live above the textarea rather than in the header: this is the
+          last surface the agent looks at before pressing Enter. */}
+      {(branchName || coViewers.length > 0) && (
+        <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+          {branchName && (
+            <span className="inline-flex max-w-full items-center gap-1 rounded-full border border-primary-soft-2 bg-primary-soft px-2 py-0.5 text-xs font-semibold text-primary">
+              <Building2 className="h-3 w-3 shrink-0" aria-hidden />
+              {/* Deliberately NOT truncated. If the name is long enough
+                  to wrap, it wraps — this is the string that must never
+                  be the one that disappears. */}
+              <span className="break-words">
+                {t("replyingAsBranch", { branch: branchName })}
+              </span>
+            </span>
+          )}
+          {coViewers.length > 0 && (
+            <span
+              role="status"
+              className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-400"
+            >
+              <Eye className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              {t("alsoViewing", {
+                names: coViewers.join(", "),
+                count: coViewers.length,
+              })}
+            </span>
+          )}
+        </div>
+      )}
       {replyTo && (
         <div className="mb-2">
           <ReplyQuote
@@ -751,7 +821,13 @@ export function MessageComposer({
                 ? t("readOnlyPlaceholder")
                 : sessionExpired
                   ? t("sessionExpiredPlaceholder")
-                  : t("typeMessagePlaceholder")
+                  : // Belt and braces with the pill above: the pill can
+                    // scroll out of a short composer once a long draft
+                    // grows the textarea, but the placeholder sits
+                    // inside the field the cursor is already in.
+                    branchName
+                    ? t("typeMessageAsBranch", { branch: branchName })
+                    : t("typeMessagePlaceholder")
             }
             disabled={sessionExpired || readOnly}
             rows={1}

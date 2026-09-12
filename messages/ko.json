@@ -222,7 +222,10 @@
       "quickReplyPinned": "{branch} 전용",
       "quickReplyUnavailable": "지점 정보 필요",
       "quickReplyUnavailableHint": "이 스니펫은 지점 이름을 채워 넣지만, 이 대화는 WhatsApp 번호에 연결되어 있지 않습니다.",
-      "quickReplyForeignBranch": "{branches} 언급"
+      "quickReplyForeignBranch": "{branches} 언급",
+      "replyingAsBranch": "{branch}(으)로 답장",
+      "typeMessageAsBranch": "{branch}(으)로 메시지 입력... (줄바꿈은 Shift+Enter)",
+      "alsoViewing": "{names}님도 이 대화를 보고 있습니다 — 답장 전에 확인하세요."
     },
     "bubble": {
       "photo": "사진",

@@ -638,6 +638,7 @@ function InboxPageInner() {
             onStatusChange={handleStatusChange}
             onAssignChange={handleAssignChange}
             onBack={handleCloseConversation}
+            showBranch={numberCount > 1}
             resyncToken={resyncToken}
             onRefresh={handleManualRefresh}
             contactPanelOpen={contactPanelOpen}
