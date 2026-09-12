@@ -584,7 +584,11 @@ export function MessageComposer({
   return (
     <div
       className={cn(
-        "border-t bg-card p-3",
+        // `shrink-0` because the textarea auto-grows: without it the
+        // composer is the flex child that gets squeezed when the thread
+        // is long. The bottom pad clears the iPhone home indicator —
+        // `max()` so it stays the normal 0.75rem everywhere else.
+        "shrink-0 border-t bg-card p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]",
         // A co-viewer recolours the whole composer edge. The banner up
         // in the thread is the polite announcement; this is the thing
         // still on screen at the moment of typing, and an agent who has

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRealtime } from "@/hooks/use-realtime";
+import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -200,8 +201,13 @@ export function UnansweredBoard() {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, []);
+  // Scoped to the active zone so the channel is rebuilt on a switch;
+  // this board reloads wholesale on any event, so it has no cached rows
+  // of its own to clear beyond what that reload replaces.
+  const { accountId } = useAuth();
   const { isConnected } = useRealtime({
     channelName: "ops-unanswered-board",
+    accountId,
     onMessageEvent: scheduleReload,
     onConversationEvent: scheduleReload,
   });

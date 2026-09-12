@@ -11,6 +11,7 @@ import {
 import { reconcileIncomingMessage } from "@/lib/inbox/optimistic";
 import type { Conversation, Message, Contact, ConversationStatus } from "@/types";
 import { useRealtime } from "@/hooks/use-realtime";
+import { useAuth } from "@/hooks/use-auth";
 import { ConversationList } from "@/components/inbox/conversation-list";
 import { MessageThread } from "@/components/inbox/message-thread";
 import { ContactSidebar } from "@/components/inbox/contact-sidebar";
@@ -26,15 +27,38 @@ const CONTACT_PANEL_STORAGE_KEY = "wacrm:inbox:contact-panel-open";
 // boundary or the production build bails to CSR and errors out. Thin
 // wrapper supplies it; the inner component holds all the inbox state.
 export default function InboxPage() {
+  const { accountId } = useAuth();
+
+  // The `key` is how a zone switch clears the inbox.
+  //
+  // Every piece of inbox state is local: conversations, messages and the
+  // per-thread unread counts live in `InboxPageInner`, but the composer
+  // draft, the conversation list's own rows, thread scroll position and
+  // the `reactions:${conversationId}` channel live inside children this
+  // component cannot reach. Resetting the state we own would leave the
+  // rest showing the previous zone. Remounting the subtree discards all
+  // of it at once, and the children refetch on mount as they already do.
+  //
+  // RLS stops the DATABASE from serving another zone's rows, but it
+  // cannot reach into state this client already holds — see
+  // `docs/zones.md`.
+  //
+  // Holding back until `accountId` resolves keeps this from firing on
+  // first load, when it settles null → uuid and would remount the whole
+  // inbox for no reason.
   return (
     <Suspense fallback={null}>
-      <InboxPageInner />
+      {accountId ? <InboxPageInner key={accountId} /> : null}
     </Suspense>
   );
 }
 
 function InboxPageInner() {
   const t = useTranslations("Inbox.page");
+  // Same value the `key` above is built from, so it cannot drift: this
+  // component only exists for one zone, and the realtime topic below is
+  // scoped to it.
+  const { accountId } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   /**
@@ -361,6 +385,7 @@ function InboxPageInner() {
   // throttle) are simply lost. We need a way to catch up.
   const { isConnected } = useRealtime({
     channelName: "inbox-realtime",
+    accountId,
     onMessageEvent: handleMessageEvent,
     onConversationEvent: handleConversationEvent,
     enabled: true,
@@ -580,7 +605,7 @@ function InboxPageInner() {
   const hasActiveConv = !!activeConversation;
 
   return (
-    <div className="-m-4 flex h-[calc(100vh-3.5rem)] flex-col overflow-hidden sm:-m-6">
+    <div className="-m-4 flex h-[calc(100dvh-3.5rem)] flex-col overflow-hidden sm:-m-6">
       {/* WhatsApp connection banner — in the flex column, not absolute,
           so it pushes the panels down instead of overlapping them. */}
       {whatsappConnected === false && (
