@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/card";
 import { CheckCircle, UsersRound } from "lucide-react";
 import { BrandAuthHeader } from "@/components/brand/brand-logo";
+import { GoogleButton } from "@/components/auth/google-button";
 
 // `useSearchParams` opts the component out of static prerendering
 // unless wrapped in Suspense — same pattern as /login.
@@ -224,6 +225,27 @@ function SignupPageInner() {
               {loading ? "Creating account..." : "Create account"}
             </Button>
           </form>
+
+          <div className="my-5 flex items-center gap-3">
+            <span className="h-px flex-1 bg-border" />
+            <span className="text-xs uppercase tracking-wide text-muted-foreground">
+              or
+            </span>
+            <span className="h-px flex-1 bg-border" />
+          </div>
+
+          {/* Google needs no email confirmation step, so this skips the
+              "check your email" screen the password form shows and goes
+              straight to the invitation or the dashboard. */}
+          <GoogleButton
+            label="Continue with Google"
+            next={
+              inviteToken
+                ? `/join/${encodeURIComponent(inviteToken)}`
+                : "/dashboard"
+            }
+            disabled={loading}
+          />
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Already have an account?{" "}
