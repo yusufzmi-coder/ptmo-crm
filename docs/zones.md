@@ -107,6 +107,34 @@ and cached state cleared — `usePresence` calls `setRows(new Map())` when
 `accountId` changes. The database will not serve the old zone's rows
 after a switch, but stale client state can still display them.
 
+## Media
+
+The storage buckets were world-readable until 047: `anon` could fetch any
+zone's attachments without authenticating, and migration 039 mirrors
+every inbound WhatsApp attachment into one of them.
+
+Media privacy now inherits zone isolation from the **same** mechanism as
+everything else, not a second one. A media pointer carries
+`account-<id>` as its first path segment, and the proxy route compares
+that against the caller's **active** account — so the ACTIVE ZONE rule
+above governs attachments too.
+
+`avatars` is the exception: it is pathed `<user_id>/`, so its policy
+allows the owner plus teammates in the active zone.
+
+**Outgoing signed URLs are the only place an outside party reads our
+storage.** Meta fetches media itself — `sendMediaMessage` sends
+`{ link }` — so those links must be real signed URLs, not proxy
+pointers. They live one hour and are generated at send time only. Never
+store one: a stored signed URL is a public URL with a delay on it.
+
+That `{ link }` requirement reaches four paths, not one — the inbox
+composer and public API, the Flows media node, templates sent with a
+header, and template *creation*, which fetches the bytes server-side to
+get a Resumable-Upload handle. The last one reads straight from storage
+rather than over HTTP, because it uses `redirect: "manual"` and would
+reject the redirect the proxy route answers with.
+
 ## Migrations
 
 | # | What |
