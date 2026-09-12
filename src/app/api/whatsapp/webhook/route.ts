@@ -1186,7 +1186,11 @@ async function findOrCreateConversation(
   contactId: string,
   configId: string,
 ) {
-  // Look for an existing conversation in this account, oldest-first.
+  // Look for this contact's thread ON THIS NUMBER, oldest-first
+  // (migration 042). Scoping the lookup to `configId` is what keeps a
+  // parent who writes to two branches from having the second branch's
+  // message filed into the first branch's thread — where the reply
+  // would then leave on the first branch's number.
   //
   // We deliberately do NOT use `.single()` here. `.single()` errors on
   // *both* 0 rows and ≥2 rows, and the old code treated any error as
@@ -1197,13 +1201,14 @@ async function findOrCreateConversation(
   // snowballing into a wall of duplicate chats (issue #363).
   //
   // Ordering oldest-first and taking one row makes the lookup resolve to
-  // the same canonical survivor the dedup migration (036) keeps, so any
-  // pre-existing duplicates converge instead of compounding.
+  // the same canonical survivor the dedup migrations (036, then 042)
+  // keep, so any pre-existing duplicates converge instead of compounding.
   const { data: existingRows, error: findError } = await supabaseAdmin()
     .from('conversations')
     .select('*')
     .eq('account_id', accountId)
     .eq('contact_id', contactId)
+    .eq('whatsapp_config_id', configId)
     .order('created_at', { ascending: true })
     .limit(1)
 
@@ -1213,26 +1218,50 @@ async function findOrCreateConversation(
   }
 
   if (existingRows && existingRows.length > 0) {
-    const existing = existingRows[0]
-    // Threads that predate migration 040 carry no number. The inbound
-    // payload just told us which one they are on, so adopt it — that
-    // way old conversations gain their branch the first time a parent
-    // writes again, with no backfill job.
-    if (!existing.whatsapp_config_id) {
-      const { error: adoptError } = await supabaseAdmin()
-        .from('conversations')
-        .update({ whatsapp_config_id: configId })
-        .eq('id', existing.id)
-        .is('whatsapp_config_id', null)
-      if (adoptError) {
-        // Non-fatal: the message still belongs in this thread. Worst
-        // case the thread stays unbranded until the next inbound.
-        console.error('[webhook] could not stamp conversation number:', adoptError)
-      } else {
-        existing.whatsapp_config_id = configId
-      }
+    return { conversation: existingRows[0], created: false }
+  }
+
+  // No thread on this number yet. Before opening one, check for a
+  // thread that predates migration 040 and carries no number at all:
+  // the inbound payload just told us which number it is on, so adopt it
+  // rather than stranding the parent's history in an unbranded thread
+  // and starting a second one beside it. 042's index allows at most one
+  // unbranded row per (account, contact), so this is unambiguous.
+  //
+  // The `.is(null)` filter is repeated on the UPDATE so two concurrent
+  // deliveries on DIFFERENT numbers cannot both claim the same orphan:
+  // the loser updates zero rows and falls through to creating its own.
+  const { data: orphanRows, error: orphanError } = await supabaseAdmin()
+    .from('conversations')
+    .select('*')
+    .eq('account_id', accountId)
+    .eq('contact_id', contactId)
+    .is('whatsapp_config_id', null)
+    .order('created_at', { ascending: true })
+    .limit(1)
+
+  if (orphanError) {
+    console.error('Error finding unbranded conversation:', orphanError)
+    return null
+  }
+
+  if (orphanRows && orphanRows.length > 0) {
+    const orphan = orphanRows[0]
+    const { data: adopted, error: adoptError } = await supabaseAdmin()
+      .from('conversations')
+      .update({ whatsapp_config_id: configId })
+      .eq('id', orphan.id)
+      .is('whatsapp_config_id', null)
+      .select()
+
+    if (adoptError) {
+      console.error('[webhook] could not stamp conversation number:', adoptError)
+    } else if (adopted && adopted.length > 0) {
+      return { conversation: adopted[0], created: false }
     }
-    return { conversation: existing, created: false }
+    // Lost the claim (or could not stamp) — fall through and open this
+    // number's own thread rather than writing into a branch that now
+    // belongs to someone else.
   }
 
   // Create new conversation. Same tenancy + audit split as
@@ -1251,14 +1280,18 @@ async function findOrCreateConversation(
   if (createError) {
     // Lost a race: a concurrent inbound delivery created the
     // conversation between our lookup and insert, and the unique index
-    // (migration 036) rejected the duplicate. Re-resolve the winning
+    // (migration 042) rejected the duplicate. Re-resolve the winning
     // row instead of dropping the message — mirrors findOrCreateContact.
+    // Scoped to this number, like the lookup above: the racing delivery
+    // we lost to is the one on the same number, and resolving to any
+    // other branch's thread is the wrong-number bug by another route.
     if (isUniqueViolation(createError)) {
       const { data: raced } = await supabaseAdmin()
         .from('conversations')
         .select('*')
         .eq('account_id', accountId)
         .eq('contact_id', contactId)
+        .eq('whatsapp_config_id', configId)
         .order('created_at', { ascending: true })
         .limit(1)
       if (raced && raced.length > 0) {

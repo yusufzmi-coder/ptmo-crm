@@ -23,6 +23,10 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { findExistingContact, isUniqueViolation } from '@/lib/contacts/dedupe';
 import { sanitizePhoneForMeta, isValidE164 } from '@/lib/whatsapp/phone-utils';
 import { SendMessageError } from '@/lib/whatsapp/send-message';
+import {
+  resolveConfig,
+  resolveFailureMessage,
+} from '@/lib/whatsapp/resolve-config';
 import { resolveAuditUserId, ContactError } from '@/lib/api/v1/contacts';
 
 export interface ResolvedConversation {
@@ -30,6 +34,8 @@ export interface ResolvedConversation {
   contactId: string;
   /** True if this call created the contact (vs matched an existing one). */
   contactCreated: boolean;
+  /** The number the thread belongs to — see the note on branches below. */
+  configId: string;
 }
 
 /**
@@ -37,12 +43,26 @@ export interface ResolvedConversation {
  * `accountId`. Throws `SendMessageError` (shared with the send core,
  * so the route maps one error family) on a bad phone, a missing
  * WhatsApp config, or a DB failure.
+ *
+ * Which branch does an API-initiated thread belong to?
+ * ---------------------------------------------------
+ * This path is outbound-first: the parent has never written, so there is
+ * no thread whose number we must honour. The caller may name one with
+ * `configId`; otherwise we fall back to the account primary, which is
+ * the same rule `resolveConfig` applies to every other thread-less job.
+ *
+ * The resolved number is then STAMPED on the conversation. That matters
+ * more than the choice itself: without it the thread is left unbranded,
+ * and the send core — which refuses to guess a number for anything that
+ * talks to a parent — rejects this send and every later reply in the
+ * same thread.
  */
 export async function resolveConversationByPhone(
   db: SupabaseClient,
   accountId: string,
   phone: string,
-  name?: string | null
+  name?: string | null,
+  configId?: string | null
 ): Promise<ResolvedConversation> {
   const sanitized = sanitizePhoneForMeta(phone);
   if (!isValidE164(sanitized)) {
@@ -53,22 +73,25 @@ export async function resolveConversationByPhone(
     );
   }
 
-  // Fail fast (and create nothing) when the account has no WhatsApp
-  // connected — the same error the send would raise anyway.
-  // Existence check only — `limit(1)` rather than `maybeSingle()` so an
-  // account with several numbers (migration 040) does not error here.
-  const { data: configRows } = await db
-    .from('whatsapp_config')
-    .select('id')
-    .eq('account_id', accountId)
-    .limit(1);
-  if (!configRows || configRows.length === 0) {
+  // Resolve the number BEFORE creating anything. Two reasons: the send
+  // would fail without one anyway, and a conversation created without a
+  // number is permanently unsendable (see the note above), so an
+  // unresolvable number must leave no rows behind.
+  const resolvedConfig = await resolveConfig(db, accountId, {
+    configId: configId ?? undefined,
+    allowPrimary: true,
+    columns: 'id',
+  });
+  if (!resolvedConfig.ok) {
     throw new SendMessageError(
-      'whatsapp_not_configured',
-      'WhatsApp not configured. Please set up your WhatsApp integration first.',
+      resolvedConfig.reason === 'not_configured'
+        ? 'whatsapp_not_configured'
+        : 'whatsapp_number_unresolved',
+      resolveFailureMessage(resolvedConfig.reason),
       400
     );
   }
+  const resolvedConfigId = resolvedConfig.config.id;
 
   // Audit user for created rows = the single account-wide default used
   // by every public-API write (see resolveAuditUserId), so a contact
@@ -139,38 +162,46 @@ export async function resolveConversationByPhone(
   }
 
   // ---- conversation -------------------------------------------
-  // One conversation per (account, contact) — same convention as the
-  // webhook. Order oldest-first and take one row rather than
-  // `.maybeSingle()`, which errors on ≥2 rows: if duplicates predate the
-  // unique index (migration 036), we resolve to the canonical survivor
+  // One conversation per (account, contact, number) — same convention as
+  // the webhook, since migration 042. Order oldest-first and take one row
+  // rather than `.maybeSingle()`, which errors on ≥2 rows: if duplicates
+  // predate the unique index, we resolve to the canonical survivor
   // instead of falling through and creating yet another (issue #363).
   const conversationId = await findOrCreateConversationRow(
     db,
     accountId,
     contactId,
-    ownerUserId
+    ownerUserId,
+    resolvedConfigId
   );
 
-  return { conversationId, contactId, contactCreated };
+  return {
+    conversationId,
+    contactId,
+    contactCreated,
+    configId: resolvedConfigId,
+  };
 }
 
 /**
  * Find (oldest-first) or create the single conversation for
- * `(accountId, contactId)`. Handles the unique-index race the same way
- * the inbound webhook does: on a 23505 from a concurrent create,
- * re-resolve the winning row rather than failing the send.
+ * `(accountId, contactId, configId)`. Handles the unique-index race the
+ * same way the inbound webhook does: on a 23505 from a concurrent
+ * create, re-resolve the winning row rather than failing the send.
  */
 async function findOrCreateConversationRow(
   db: SupabaseClient,
   accountId: string,
   contactId: string,
-  ownerUserId: string
+  ownerUserId: string,
+  configId: string
 ): Promise<string> {
   const { data: existing, error: findErr } = await db
     .from('conversations')
     .select('id')
     .eq('account_id', accountId)
     .eq('contact_id', contactId)
+    .eq('whatsapp_config_id', configId)
     .order('created_at', { ascending: true })
     .limit(1);
 
@@ -183,12 +214,46 @@ async function findOrCreateConversationRow(
     return existing[0].id;
   }
 
+  // No thread on this number. Adopt an unbranded one if the contact has
+  // it — a thread created before migration 040, or by an older build of
+  // this very function, which would otherwise sit unsendable forever
+  // while a second thread accumulated the history beside it. Mirrors the
+  // inbound webhook; `.is(null)` on the UPDATE keeps two concurrent
+  // callers on different numbers from both claiming it.
+  const { data: orphan, error: orphanErr } = await db
+    .from('conversations')
+    .select('id')
+    .eq('account_id', accountId)
+    .eq('contact_id', contactId)
+    .is('whatsapp_config_id', null)
+    .order('created_at', { ascending: true })
+    .limit(1);
+
+  if (orphanErr) {
+    console.error('[resolve-conversation] orphan lookup error:', orphanErr);
+    throw new SendMessageError('db_error', 'Failed to resolve conversation', 500);
+  }
+
+  if (orphan && orphan.length > 0) {
+    const { data: adopted } = await db
+      .from('conversations')
+      .update({ whatsapp_config_id: configId })
+      .eq('id', orphan[0].id)
+      .is('whatsapp_config_id', null)
+      .select('id');
+    if (adopted && adopted.length > 0) {
+      return adopted[0].id;
+    }
+    // Lost the claim — fall through and open this number's own thread.
+  }
+
   const { data: newConv, error: convErr } = await db
     .from('conversations')
     .insert({
       account_id: accountId,
       user_id: ownerUserId,
       contact_id: contactId,
+      whatsapp_config_id: configId,
     })
     .select('id')
     .single();
@@ -200,6 +265,7 @@ async function findOrCreateConversationRow(
         .select('id')
         .eq('account_id', accountId)
         .eq('contact_id', contactId)
+        .eq('whatsapp_config_id', configId)
         .order('created_at', { ascending: true })
         .limit(1);
       if (raced && raced.length > 0) {
