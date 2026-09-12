@@ -471,8 +471,12 @@ export function TemplateManager() {
     }
     setUploadingHeader(true);
     try {
-      const { publicUrl } = await uploadAccountMedia('chat-media', file);
-      setForm((f) => ({ ...f, header_media_url: publicUrl }));
+      // A pointer, not a public URL — the bucket is private as of 047.
+      // Both things that consume this resolve it server-side:
+      // `ensureImageHeaderHandle` reads the bytes straight out of storage
+      // when submitting the template to Meta, and the send path signs it.
+      const { pointerUrl } = await uploadAccountMedia('chat-media', file);
+      setForm((f) => ({ ...f, header_media_url: pointerUrl }));
       toast.success(t('toastUploadSuccess'));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('toastUploadFailed'));

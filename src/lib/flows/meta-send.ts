@@ -9,6 +9,7 @@ import {
 } from '@/lib/whatsapp/meta-api'
 import type { InteractiveMessagePayload } from '@/lib/whatsapp/interactive'
 import { decrypt } from '@/lib/whatsapp/encryption'
+import { metaFetchableLink } from '@/lib/media/outbound-link'
 import {
   sanitizePhoneForMeta,
   isValidE164,
@@ -206,13 +207,21 @@ export async function engineSendMedia(
 
   const accessToken = decrypt(config.access_token)
 
+  // `flow-media` is private as of migration 047, so a flow node's stored
+  // `media_url` is a pointer at our authenticated route. Meta fetches the
+  // link itself and cannot authenticate, so mint a short-lived signed URL
+  // for the send. Resolved once, outside `attempt`, because the retry loop
+  // below re-sends to phone-number variants and should not re-sign each
+  // time. A link that is not one of our pointers passes through unchanged.
+  const link = await metaFetchableLink(db, args.link)
+
   const attempt = async (phone: string): Promise<string> => {
     const r = await sendMediaMessage({
       phoneNumberId: config.phone_number_id,
       accessToken,
       to: phone,
       kind: args.kind,
-      link: args.link,
+      link,
       caption: args.caption,
       filename: args.filename,
     })

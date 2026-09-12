@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Loader2, Upload, Trash2, Mail, CircleAlert } from 'lucide-react';
 
 import { createClient } from '@/lib/supabase/client';
+import { mediaProxyPath } from '@/lib/media/proxy-url';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -131,10 +132,11 @@ export function ProfileForm() {
         if (uploadError) {
           throw new Error(t('uploadFailed', { message: uploadError.message }));
         }
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from('avatars').getPublicUrl(path);
-        nextAvatarUrl = publicUrl;
+        // A pointer at the authenticated media route, not a public URL.
+        // Migration 047 made `avatars` private; an `<img src>` still works
+        // because the route answers with a redirect to a signed URL, and
+        // 047's policy lets teammates in the same zone read each other's.
+        nextAvatarUrl = mediaProxyPath('avatars', path);
       } else if (removeAvatar) {
         nextAvatarUrl = null;
       }

@@ -1,5 +1,6 @@
 import { downloadMedia } from "./meta-api";
 import { extensionForMime } from "@/lib/media/filename";
+import { mediaProxyPath } from "@/lib/media/proxy-url";
 import { buildMediaPath, MEDIA_MAX_BYTES } from "@/lib/storage/upload-media";
 
 /**
@@ -11,7 +12,7 @@ import { buildMediaPath, MEDIA_MAX_BYTES } from "@/lib/storage/upload-media";
  * the proxy route behind it re-fetched from Meta on every single view,
  * so an attachment quietly became unviewable a month after it arrived.
  * Outbound media never had the problem: the composer uploads to
- * `chat-media` (migration 023) and stores a durable public URL. This
+ * `chat-media` (migration 023) and stores a durable pointer to it. This
  * puts inbound on the same footing.
  *
  * Everything here is BEST EFFORT and returns `null` rather than
@@ -31,7 +32,6 @@ export interface MirrorStorage {
       body: Uint8Array | Buffer,
       options: { contentType: string; cacheControl: string; upsert: boolean },
     ): Promise<{ error: { message: string } | null }>;
-    getPublicUrl(path: string): { data: { publicUrl: string } };
   };
 }
 
@@ -142,9 +142,10 @@ export function mirrorFileName(args: {
 /**
  * Download the bytes from Meta and put them in `chat-media`.
  *
- * @returns the durable public URL, or `null` if the mirror was skipped
- *          or failed — in which case the caller must fall back to the
- *          proxy URL.
+ * @returns a durable pointer at the authenticated media route
+ *          (`/api/media/chat-media/<path>`), or `null` if the mirror was
+ *          skipped or failed — in which case the caller falls back to the
+ *          Meta proxy URL, which still works while Meta holds the bytes.
  */
 export async function mirrorInboundMedia(
   args: MirrorInboundMediaArgs,
@@ -226,10 +227,12 @@ export async function mirrorInboundMedia(
       return null;
     }
 
-    const {
-      data: { publicUrl },
-    } = storage.from(MIRROR_BUCKET).getPublicUrl(path);
-    return publicUrl || null;
+    // A pointer at the authenticated media route, not a public URL.
+    // `chat-media` is private as of migration 047, so `getPublicUrl()`
+    // would hand back a string that 400s — and this value is PERSISTED
+    // to `messages.media_url`, so storing one is how every mirrored
+    // attachment would silently stop rendering.
+    return mediaProxyPath(MIRROR_BUCKET, path);
   } catch (error) {
     console.warn(
       `[mirror-media] could not mirror ${mediaId}:`,

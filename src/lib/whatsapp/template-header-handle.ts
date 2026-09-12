@@ -1,6 +1,9 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
+
 import { uploadResumableMedia } from '@/lib/whatsapp/meta-api'
 import type { TemplatePayload } from '@/lib/whatsapp/template-validators'
 import { isDeliverableUrl } from '@/lib/webhooks/ssrf'
+import { parseMediaProxyPath } from '@/lib/media/proxy-url'
 
 /**
  * Meta requires an `example.header_handle` (from the Resumable Upload
@@ -22,6 +25,10 @@ const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png']
 export async function ensureImageHeaderHandle(
   payload: TemplatePayload,
   accessToken: string,
+  // Needed only when `header_media_url` is one of our own storage
+  // pointers. Optional so the pasted-public-link path — and the tests
+  // covering it — need no client at all.
+  db?: SupabaseClient,
 ): Promise<void> {
   if (payload.header_type !== 'image') return
   if (payload.header_handle) return // already have one
@@ -32,6 +39,38 @@ export async function ensureImageHeaderHandle(
     throw new Error(
       'Image-header templates need META_APP_ID set (used for Meta’s Resumable Upload). Add it to your environment, or remove the image header.',
     )
+  }
+
+  // Our own upload (migration 047 made the buckets private, so the
+  // template form now stores `/api/media/<bucket>/<path>`). Read the bytes
+  // straight out of storage rather than over HTTP: a relative pointer is
+  // not fetchable at all, and the authenticated route answers with a 307
+  // to a signed URL, which the `redirect: 'manual'` below deliberately
+  // refuses to follow. Going direct also takes our own files off the
+  // SSRF-guarded path entirely — there is no URL to guard.
+  const pointer = parseMediaProxyPath(payload.header_media_url)
+  if (pointer) {
+    if (!db) {
+      throw new Error(
+        'Could not read the uploaded header image: no storage client was provided.',
+      )
+    }
+    const { data, error } = await db.storage
+      .from(pointer.bucket)
+      .download(pointer.objectPath)
+    if (error || !data) {
+      throw new Error(
+        `Could not read the uploaded header image: ${error?.message ?? 'not found'}`,
+      )
+    }
+    await attachHandle({
+      payload,
+      appId,
+      accessToken,
+      bytes: new Uint8Array(await data.arrayBuffer()),
+      contentType: (data.type || '').split(';')[0].trim().toLowerCase(),
+    })
+    return
   }
 
   // SSRF guard: `header_media_url` is caller-supplied (any authenticated
@@ -62,12 +101,38 @@ export async function ensureImageHeaderHandle(
     throw new Error(`Header image URL returned ${res.status}. It must be publicly reachable.`)
   }
 
-  const contentType = (res.headers.get('content-type') || '').split(';')[0].trim().toLowerCase()
+  await attachHandle({
+    payload,
+    appId,
+    accessToken,
+    bytes: new Uint8Array(await res.arrayBuffer()),
+    contentType: (res.headers.get('content-type') || '')
+      .split(';')[0]
+      .trim()
+      .toLowerCase(),
+  })
+}
+
+/**
+ * Validate the sample against Meta's image-header limits, upload it, and
+ * write the resulting handle onto the payload.
+ *
+ * Shared by both byte sources — a storage download and an HTTP fetch — so
+ * the size and type rules cannot drift between "the user uploaded a file"
+ * and "the user pasted a link".
+ */
+async function attachHandle(args: {
+  payload: TemplatePayload
+  appId: string
+  accessToken: string
+  bytes: Uint8Array
+  contentType: string
+}): Promise<void> {
+  const { payload, appId, accessToken, bytes, contentType } = args
+
   if (contentType && !ALLOWED_IMAGE_TYPES.includes(contentType)) {
     throw new Error(`Header image must be JPEG or PNG (got ${contentType}).`)
   }
-
-  const bytes = new Uint8Array(await res.arrayBuffer())
   if (bytes.byteLength === 0) {
     throw new Error('Header image is empty.')
   }

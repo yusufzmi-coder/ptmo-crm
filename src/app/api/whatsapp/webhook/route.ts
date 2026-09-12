@@ -993,7 +993,12 @@ async function parseMessageContent(
   // receipt, so the `/api/whatsapp/media/<id>` proxy URL we used to
   // store is a pointer with an expiry date on it — every inbound
   // attachment silently became "Photo unavailable" a month later.
-  // Mirroring stores a durable public URL instead.
+  // Mirroring stores a pointer at our own copy instead, which does not
+  // expire: `/api/media/chat-media/<path>`, served by an authenticated
+  // route that signs on demand. It is a pointer rather than a public URL
+  // because migration 047 made the bucket private — the value here is
+  // persisted to `messages.media_url`, so a public URL would be a stored
+  // link that stops resolving.
   //
   // The mirror is strictly best-effort. `mirrorInboundMedia` swallows
   // its own failures and returns null, and we fall back to the proxy

@@ -277,9 +277,10 @@ vi.mock('@supabase/supabase-js', () => ({
             h.state.storageUploads.push({ bucket, path, options })
             return Promise.resolve({ error: h.state.storageUploadError })
           },
-          getPublicUrl: (path: string) => ({
-            data: { publicUrl: `https://cdn.test/${bucket}/${path}` },
-          }),
+          // No `getPublicUrl` stub: migration 047 made the bucket
+          // private, so the mirror must not build a public URL. Leaving
+          // it out means a reintroduced call fails loudly here instead of
+          // persisting a link that 400s.
         }
       },
     },
@@ -524,7 +525,7 @@ describe('inbound webhook: inbound media is mirrored (#466)', () => {
     image: { id: '1234567890123456', mime_type: 'image/jpeg', caption: 'hi' },
   }
 
-  it('stores a durable bucket URL instead of the expiring proxy path', async () => {
+  it('stores a durable bucket pointer instead of the expiring proxy path', async () => {
     await runWebhook(IMAGE_MESSAGE)
 
     expect(h.state.storageUploads).toHaveLength(1)
@@ -533,11 +534,21 @@ describe('inbound webhook: inbound media is mirrored (#466)', () => {
       'account-acc-1/inbound/1234567890123456-image-1700000000.jpg',
     )
     expect(h.state.upsertCalls[0].row).toMatchObject({
+      // Our own copy, reached through the authenticated media route. Not
+      // a public URL: 047 made `chat-media` private, and this column is
+      // persisted, so a public URL would be a stored link that 400s for
+      // every attachment ever received.
       media_url:
-        'https://cdn.test/chat-media/account-acc-1/inbound/1234567890123456-image-1700000000.jpg',
+        '/api/media/chat-media/account-acc-1/inbound/1234567890123456-image-1700000000.jpg',
       // Meta's MIME type used to be discarded outright (`void mediaType`).
       media_type: 'image/jpeg',
     })
+    // Still not the Meta proxy — that is the expiring path this mirror
+    // exists to replace, and the fallback test below covers when it IS
+    // used.
+    expect(h.state.upsertCalls[0].row.media_url).not.toContain(
+      '/api/whatsapp/media/',
+    )
   })
 
   it('falls back to the proxy URL when the upload is refused', async () => {
