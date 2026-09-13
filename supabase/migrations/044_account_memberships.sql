@@ -135,13 +135,95 @@ ALTER TABLE account_members ENABLE ROW LEVEL SECURITY;
 -- pre-migration world is valid the moment this lands. Nobody's
 -- access changes: each user is a member of exactly the one account
 -- they were already in, with the role they already had.
+--
+-- THE NULL ROLE, AND WHY IT IS HANDLED EXPLICITLY
+-- -----------------------------------------------
+-- `profiles.account_role` has been nullable with no default since
+-- 017:122. This backfill originally read
+--
+--   WHERE p.account_id IS NOT NULL AND p.account_role IS NOT NULL
+--
+-- which quietly skipped any profile that had an account but no role.
+-- After this migration `is_account_member()` answers from
+-- account_members, so a profile with no membership row is refused by
+-- all ~119 policies — every table, every query, no error, just empty
+-- screens. The user cannot tell it apart from "there is no data".
+--
+-- Being honest about the before-state: such a user is ALREADY broken
+-- today. 017's helper inlines the same CASE that `account_role_rank`
+-- now names, and that CASE has no ELSE, so it returns NULL for a NULL
+-- role and `NULL >= 1` is not true. So this is not a regression 044
+-- introduces — it is a pre-existing inconsistency that 044 would carry
+-- forward invisibly and make much harder to diagnose.
+--
+-- Fixing it here rather than leaving it:
+--
+--   * The fallback is 'viewer', the LOWEST rank in the hierarchy
+--     (owner 4 > admin 3 > agent 2 > viewer 1). Read-only. Nobody is
+--     promoted to owner or admin by this migration, and COALESCE can
+--     only ever fire where the stored role was absent — an existing
+--     role is never overwritten.
+--   * It is announced, not silent: the NOTICE below names how many
+--     profiles took the fallback, and
+--     supabase/preflight/release-preflight-accounts.sql lists them by
+--     user so they can be reviewed and corrected BEFORE this runs.
+--   * The assertion at the end refuses to let the migration commit if
+--     any profile with an account still lacks a membership row.
+--
+-- If a NULL-role profile turns out to be an account someone should NOT
+-- be able to read, the answer is to remove the profile's account_id
+-- before running this — not to leave the row out and hope. Use the
+-- preflight file to make that call deliberately.
 -- ============================================================
 INSERT INTO account_members (user_id, account_id, role)
-SELECT p.user_id, p.account_id, p.account_role
+SELECT p.user_id,
+       p.account_id,
+       COALESCE(p.account_role, 'viewer'::account_role_enum)
 FROM profiles p
 WHERE p.account_id IS NOT NULL
-  AND p.account_role IS NOT NULL
 ON CONFLICT (user_id, account_id) DO NOTHING;
+
+-- Bring the cache on `profiles` into line with the grant just made.
+-- `profiles.account_role` is a cache of account_members.role for the
+-- active zone (see set_active_account below), and getCurrentAccount(),
+-- use-auth and touch_presence all read it. Leaving it NULL here would
+-- mean the database says "viewer" and the application says "no role",
+-- which is the kind of split that produces a bug six months from now.
+--
+-- Only NULLs are touched. A stored role is never rewritten.
+UPDATE profiles p
+   SET account_role = 'viewer'::account_role_enum
+ WHERE p.account_id IS NOT NULL
+   AND p.account_role IS NULL;
+
+DO $$
+DECLARE
+  v_orphans INT;
+  v_viewers INT;
+BEGIN
+  SELECT count(*) INTO v_orphans
+    FROM profiles p
+   WHERE p.account_id IS NOT NULL
+     AND NOT EXISTS (
+       SELECT 1 FROM account_members m
+        WHERE m.user_id = p.user_id
+          AND m.account_id = p.account_id
+     );
+
+  IF v_orphans > 0 THEN
+    RAISE EXCEPTION
+      '044: % profile(s) have an account but no membership row — they would be locked out of every table. Refusing to continue.',
+      v_orphans;
+  END IF;
+
+  SELECT count(*) INTO v_viewers
+    FROM account_members m
+    JOIN profiles p ON p.user_id = m.user_id AND p.account_id = m.account_id
+   WHERE m.role = 'viewer';
+
+  RAISE NOTICE '044: backfill complete; % active membership(s) hold the viewer role', v_viewers;
+END
+$$;
 
 -- ============================================================
 -- 4. DROP THE ONE-ACCOUNT-PER-OWNER CONSTRAINT

@@ -1,4 +1,5 @@
 import type { Message } from "@/types";
+import { resolveStoredMediaUrl } from "./proxy-url";
 
 /**
  * The set of media in a thread that the lightbox can page through, built
@@ -41,10 +42,13 @@ export function collectMediaGallery(messages: Message[]): MediaGalleryItem[] {
   const items: MediaGalleryItem[] = [];
   for (const message of messages) {
     const kind = galleryKind(message);
-    if (!kind || !message.media_url) continue;
+    // Pre-047 rows hold an absolute public-bucket URL that no longer
+    // resolves; the lightbox must get the proxy pointer instead.
+    const url = resolveStoredMediaUrl(message.media_url);
+    if (!kind || !url) continue;
     items.push({
       messageId: message.id,
-      url: message.media_url,
+      url,
       kind,
       caption: message.content_text || undefined,
       createdAt: message.created_at,
