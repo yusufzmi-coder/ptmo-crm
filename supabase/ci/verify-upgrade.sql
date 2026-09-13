@@ -1,13 +1,15 @@
 -- ============================================================
--- verify-upgrade — did 042-050 handle the rows that were already there?
+-- verify-upgrade — did 042-049 handle the rows that were already there?
 --
 -- Run by the "upgrade path" job in .github/workflows/migrations.yml,
--- after 042-050 are applied on top of seed-legacy-state.sql.
+-- after 042-049 are applied on top of seed-legacy-state.sql.
 --
 -- verify-schema.sql asserts that objects EXIST. This file asserts what
 -- happened to DATA, which is the half a blank-database replay can never
 -- reach. Every assertion below corresponds to a specific way one of the
--- four backfilling migrations could quietly do the wrong thing.
+-- three backfilling migrations could quietly do the wrong thing — plus,
+-- for media, the opposite: proof that NOTHING in the release touched
+-- `messages.media_url` at all.
 -- ============================================================
 DO $$
 DECLARE
@@ -103,45 +105,55 @@ BEGIN
   END IF;
 
   -- ==========================================================
-  -- 050 — legacy attachment links, and only those, are rewritten
+  -- Media — the release must leave messages.media_url ALONE
+  --
+  -- A backfill migration that rewrote these rows in place was written
+  -- and withdrawn: in SQL there is no way to tell our storage host from
+  -- any other *.supabase.co, so a row holding a URL from a different
+  -- project would have been rewritten into a pointer at OUR bucket.
+  -- The host check lives in `parseLegacyPublicUrl()` instead, and the
+  -- mapping happens at render time.
+  --
+  -- So the assertion is inverted from what it was. Every one of these
+  -- four rows must come through 042-049 byte for byte. If any of them
+  -- changes, a migration has grown a media backfill without the host
+  -- validation that made removing the last one necessary.
   -- ==========================================================
   SELECT media_url INTO v_url
     FROM messages WHERE id = '99999999-0000-0000-0000-000000000001';
-  IF v_url <> '/api/media/chat-media/account-bbbbbbbb-0000-0000-0000-000000000001/1736-foto.jpg' THEN
-    RAISE EXCEPTION '050: the legacy image URL was not rewritten correctly (got %)', v_url;
+  IF v_url <> 'https://demo.supabase.co/storage/v1/object/public/chat-media/account-bbbbbbbb-0000-0000-0000-000000000001/1736-foto.jpg' THEN
+    RAISE EXCEPTION
+      'media: the legacy image URL was modified by a migration (got %) — this release has no media backfill', v_url;
   END IF;
 
-  -- Percent-encoding must survive byte for byte: the proxy route decodes
-  -- each segment, so a double-encoded or decoded path resolves to the
-  -- wrong object — or to none.
   SELECT media_url INTO v_url
     FROM messages WHERE id = '99999999-0000-0000-0000-000000000002';
-  IF v_url <> '/api/media/chat-media/account-bbbbbbbb-0000-0000-0000-000000000001/surat%20ibu%20bapa.pdf' THEN
-    RAISE EXCEPTION '050: the encoded filename did not round-trip (got %)', v_url;
+  IF v_url <> 'https://demo.supabase.co/storage/v1/object/public/chat-media/account-bbbbbbbb-0000-0000-0000-000000000001/surat%20ibu%20bapa.pdf' THEN
+    RAISE EXCEPTION
+      'media: the encoded legacy URL was modified by a migration (got %)', v_url;
   END IF;
 
   SELECT media_url INTO v_url
     FROM messages WHERE id = '99999999-0000-0000-0000-000000000003';
   IF v_url <> '/api/whatsapp/media/wamid-abc' THEN
-    RAISE EXCEPTION '050: the inbound proxy pointer was modified (got %)', v_url;
+    RAISE EXCEPTION 'media: the inbound proxy pointer was modified (got %)', v_url;
   END IF;
 
-  -- The one that matters for "do not expose arbitrary external URLs":
-  -- an operator's own link is not ours to rewrite, and it must not be
-  -- turned into something the media proxy would try to serve.
+  -- The one that matters most for "do not expose arbitrary external
+  -- URLs": an operator's own link is not ours to rewrite, and nothing
+  -- in the database may turn it into something the media proxy serves.
   SELECT media_url INTO v_url
     FROM messages WHERE id = '99999999-0000-0000-0000-000000000004';
   IF v_url <> 'https://cdn.example.com/brosur.png' THEN
-    RAISE EXCEPTION '050: an external URL was rewritten (got %)', v_url;
+    RAISE EXCEPTION 'media: an external URL was rewritten (got %)', v_url;
   END IF;
 
-  SELECT count(*) INTO v_count
-    FROM messages
-   WHERE media_url LIKE '%/storage/v1/object/public/chat-media/%'
-      OR media_url LIKE '%/storage/v1/object/public/flow-media/%'
-      OR media_url LIKE '%/storage/v1/object/public/avatars/%';
+  -- And no row anywhere may have acquired a proxy pointer, because no
+  -- migration in this release is allowed to write one.
+  SELECT count(*) INTO v_count FROM messages WHERE media_url LIKE '/api/media/%';
   IF v_count > 0 THEN
-    RAISE EXCEPTION '050: % message(s) still hold a dead public-bucket URL', v_count;
+    RAISE EXCEPTION
+      'media: % row(s) hold a proxy pointer — a migration wrote one, which this release forbids', v_count;
   END IF;
 
   -- ==========================================================
@@ -163,6 +175,6 @@ BEGIN
     RAISE EXCEPTION '047: % bucket(s) are still public after the upgrade', v_count;
   END IF;
 
-  RAISE NOTICE 'upgrade path: 042-050 applied cleanly over production-shaped data';
+  RAISE NOTICE 'upgrade path: 042-049 applied cleanly over production-shaped data';
 END
 $$;

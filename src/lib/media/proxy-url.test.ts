@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   accountFolder,
@@ -93,13 +93,14 @@ describe('pathBelongsToAccount', () => {
 });
 
 // ============================================================
-// Legacy compatibility (migrations 047 + 050)
+// Legacy compatibility (migration 047)
 //
 // Before 047 the buckets were public and `messages.media_url` stored an
-// absolute `getPublicUrl()` string. Those rows still exist. These tests
-// pin the contract that keeps them readable — and, just as importantly,
-// the contract that stops the same code path being used to point the
-// media proxy at somebody else's server.
+// absolute `getPublicUrl()` string. Those rows still exist, and no
+// migration rewrites them — the SQL backfill was withdrawn because the
+// host check below cannot be done in Postgres. So this module is the
+// only thing keeping those attachments readable, and these tests pin
+// both halves of its contract: what it maps, and what it refuses.
 // ============================================================
 
 const LEGACY_HOST = 'demo.supabase.co';
@@ -166,6 +167,15 @@ describe('parseLegacyPublicUrl', () => {
 });
 
 describe('resolveStoredMediaUrl', () => {
+  // The host gate reads NEXT_PUBLIC_SUPABASE_URL, so these tests run
+  // with it configured — which is the shape every real deployment has.
+  beforeEach(() => {
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', `https://${LEGACY_HOST}`);
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('rewrites a legacy public URL onto the proxy', () => {
     expect(resolveStoredMediaUrl(LEGACY)).toBe(
       `/api/media/chat-media/account-${ACCOUNT}/1736-foto.jpg`
@@ -204,6 +214,36 @@ describe('resolveStoredMediaUrl', () => {
     expect(resolveStoredMediaUrl(null)).toBeNull();
     expect(resolveStoredMediaUrl(undefined)).toBeNull();
     expect(resolveStoredMediaUrl('')).toBeNull();
+  });
+
+  it('leaves a URL from another Supabase project completely unchanged', () => {
+    // The reason the SQL backfill was withdrawn from the release.
+    //
+    // This value has the exact public-object path shape and names a
+    // bucket we do serve — gates 1 and 2 both pass it. Only the host
+    // check tells it apart from one of ours. Rewriting it would have
+    // produced /api/media/chat-media/account-<id>/rahsia.jpg, a pointer
+    // at OUR bucket built from somebody else's URL, which the proxy
+    // would then happily sign for whoever could see the message.
+    //
+    // Postgres cannot make this distinction, which is why the mapping
+    // lives here and not in a migration.
+    const foreign =
+      `https://another-project.supabase.co/storage/v1/object/public/chat-media/account-${ACCOUNT}/rahsia.jpg`;
+
+    expect(resolveStoredMediaUrl(foreign)).toBe(foreign);
+    // Not merely "returned" — it must not have become a pointer.
+    expect(resolveStoredMediaUrl(foreign)).not.toContain('/api/media/');
+    expect(parseMediaProxyPath(resolveStoredMediaUrl(foreign)!)).toBeNull();
+  });
+
+  it('maps nothing at all when no storage host is configured', () => {
+    // Fail closed. Without NEXT_PUBLIC_SUPABASE_URL there is no way to
+    // tell our own storage from anyone else's, so the safe answer is to
+    // map nothing and let the attachment render as unavailable.
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', '');
+    expect(resolveStoredMediaUrl(LEGACY)).toBe(LEGACY);
+    expect(parseLegacyPublicUrl(LEGACY, null)).toBeNull();
   });
 
   it('does not smuggle a traversal through the rewrite', () => {

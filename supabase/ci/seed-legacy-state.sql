@@ -8,23 +8,25 @@
 -- --------------------
 -- The other CI job replays every migration against an EMPTY database.
 -- That proves the DDL is valid. It cannot prove the migrations are safe,
--- because the dangerous half of 042-050 is not DDL at all — it is four
+-- because the dangerous half of 042-049 is not DDL at all — it is three
 -- statements that read existing rows:
 --
 --   042  runs merge_duplicate_conversations(), which DELETEs
 --   044  backfills one account_members row per profile
 --   048  backfills broadcasts.whatsapp_config_id
---   050  rewrites messages.media_url
 --
--- Against nothing, all four are no-ops that pass. The bug they can carry
+-- Against nothing, all three are no-ops that pass. The bug they can carry
 -- only appears when there are rows to get wrong. So this file creates
 -- the rows — in particular the two shapes that production is known or
 -- suspected to hold and that a blank database never will:
 --
 --   * a profile with an account but a NULL account_role (locked out of
 --     everything by an unhardened 044);
---   * messages carrying absolute public-bucket URLs (dead links after
---     an unaccompanied 047).
+--   * messages carrying absolute public-bucket URLs, which 047 turns
+--     into dead links and which NO migration in this release repairs —
+--     `resolveStoredMediaUrl()` does it at render time instead. The
+--     rows are seeded so verify-upgrade.sql can prove the database
+--     leaves them exactly as they were.
 --
 -- Everything here is fixture data with fixed UUIDs so that
 -- verify-upgrade.sql can assert against it by name. It is never run
@@ -91,7 +93,10 @@ VALUES ('ffffffff-0000-0000-0000-000000000001',
         'dddddddd-0000-0000-0000-000000000001')
 ON CONFLICT (id) DO NOTHING;
 
--- Four attachment shapes. Only the first two may be rewritten by 050.
+-- Four attachment shapes. NONE of them may be modified by 042-049:
+-- there is no media backfill in this release. The first two are the
+-- legacy rows that depend on render-time compatibility; the last two
+-- are shapes that must never be touched by anything.
 INSERT INTO messages (id, conversation_id, sender_type, content_type, media_url, content_text)
 VALUES
   -- 1. legacy public chat-media URL, plain filename

@@ -1,5 +1,5 @@
 -- ============================================================
--- release-preflight-storage — run BEFORE migrations 047 and 050
+-- release-preflight-storage — run BEFORE migration 047
 --
 -- READ ONLY. Every statement in this file is a SELECT. It creates
 -- nothing, changes nothing, and can be run against production at any
@@ -13,9 +13,17 @@
 -- release fails on production while passing in CI, because a bucket
 -- created through the Supabase dashboard exists nowhere in this repo.
 --
--- 050 then rewrites the attachment URLs that 047 breaks. Section 4
--- tells you how many rows that is, and section 5 shows you exactly what
--- the rewrite will produce, before it runs.
+-- 047 also breaks every attachment URL stored before it. NO migration
+-- in this release repairs them: the backfill that would have done so was
+-- withdrawn, because SQL cannot tell our storage host from any other
+-- *.supabase.co and would have rewritten another project's URL into a
+-- pointer at our bucket. `resolveStoredMediaUrl()` does the mapping at
+-- render time with that host check instead.
+--
+-- Section 4 tells you how many rows now depend on that code path, and
+-- section 5 shows which of them the host check will and will not
+-- accept. Read section 5 carefully: anything it marks as refused is an
+-- attachment that becomes permanently unreadable after 047.
 --
 -- How to run: paste into the Supabase SQL editor, or
 --   psql "$DATABASE_URL" -f supabase/preflight/release-preflight-storage.sql
@@ -87,18 +95,17 @@ ORDER BY policyname;
 -- the bucket, the pointer goes dead, and the inbox renders
 -- "unavailable".
 --
--- Migration 050 rewrites them onto /api/media/..., and
--- resolveStoredMediaUrl() in the application does the same mapping at
--- render time as a safety net. If BOTH are in the release you are
--- shipping, this number is informational. If either is missing, this
--- number is how many attachments you are about to lose.
+-- `resolveStoredMediaUrl()` maps them onto /api/media/... at render
+-- time, so they stay readable — PROVIDED the deploy carrying that code
+-- is live and NEXT_PUBLIC_SUPABASE_URL matches the host in the stored
+-- URL. This number is how many attachments depend on that being true.
 SELECT
   CASE
     WHEN media_url LIKE '%/storage/v1/object/public/chat-media/%' THEN 'chat-media'
     WHEN media_url LIKE '%/storage/v1/object/public/flow-media/%' THEN 'flow-media'
     WHEN media_url LIKE '%/storage/v1/object/public/avatars/%'    THEN 'avatars'
   END                                    AS bucket,
-  count(*)                               AS "messages to rewrite",
+  count(*)                               AS "messages that go dead",
   min(created_at)                        AS oldest,
   max(created_at)                        AS newest
 FROM messages
@@ -109,37 +116,61 @@ GROUP BY 1
 ORDER BY 2 DESC;
 
 \echo ''
-\echo '=== 5. Dry run of the 050 rewrite (first 20 rows) =========='
--- Exactly the transformation 050 performs, as a SELECT. Read the
--- "after" column: it must start /api/media/<bucket>/ and keep the
--- percent-encoding of the original byte for byte. A decoded space or a
--- double-encoded %2520 here means the rewrite would point at an object
--- that does not exist.
+\echo '=== 5. Which legacy URLs the host check will accept ======='
+-- `parseLegacyPublicUrl()` refuses any URL whose host is not the one in
+-- NEXT_PUBLIC_SUPABASE_URL. That refusal is the whole reason the SQL
+-- backfill was withdrawn — but it also means a stored URL pointing at a
+-- DIFFERENT Supabase project is not recoverable by the compatibility
+-- layer either.
+--
+-- Substitute this project's own storage host for '<your-project>' below
+-- before running, then read the two buckets of the result:
+--
+--   'ours — will render'   the compatibility layer maps it; fine.
+--   'foreign host — WILL   the host check refuses it. After 047 this
+--    NOT render'           attachment cannot be opened by anyone. Decide
+--                          what to do with these BEFORE applying 047.
+--
+-- An empty 'foreign host' row is the clean case.
 SELECT
-  id,
-  media_url AS before,
-  '/api/media/' ||
-    substring(media_url FROM position('/storage/v1/object/public/' IN media_url)
-                             + length('/storage/v1/object/public/')) AS after
+  CASE
+    WHEN media_url LIKE 'https://<your-project>.supabase.co/%'
+      THEN 'ours — will render'
+    ELSE 'foreign host — WILL NOT render'
+  END                                    AS "host check",
+  count(*)                               AS messages,
+  min(created_at)                        AS oldest,
+  max(created_at)                        AS newest
 FROM messages
 WHERE media_url LIKE '%/storage/v1/object/public/chat-media/%'
    OR media_url LIKE '%/storage/v1/object/public/flow-media/%'
    OR media_url LIKE '%/storage/v1/object/public/avatars/%'
-ORDER BY created_at DESC
-LIMIT 20;
+GROUP BY 1
+ORDER BY 2 DESC;
 
-\echo ''
-\echo '=== 6. The other media_url shapes, which 050 leaves alone =='
+\echo '=== 5b. Distinct hosts actually present in stored URLs ====='
+-- The same question without needing to know the answer first. One row
+-- is the expected outcome. More than one means attachments were stored
+-- against more than one project, and section 5 above is not academic.
+SELECT
+  split_part(split_part(media_url, '://', 2), '/', 1) AS host,
+  count(*)                                            AS messages
+FROM messages
+WHERE media_url LIKE '%/storage/v1/object/public/%'
+GROUP BY 1
+ORDER BY 2 DESC;
+
+\echo '=== 6. The other media_url shapes, all left alone ========='
 -- Sanity check on scope. `/api/whatsapp/media/` is the inbound proxy and
 -- predates 047; "other absolute URL" is an operator-supplied link from
--- POST /api/v1/messages and was never in our buckets. Neither is touched
--- by 050, and neither is affected by 047.
+-- POST /api/v1/messages and was never in our buckets. Neither is
+-- affected by 047, and no migration in this release touches either.
 SELECT
   CASE
     WHEN media_url IS NULL                                      THEN 'no attachment'
     WHEN media_url LIKE '/api/media/%'                          THEN 'already a proxy pointer'
     WHEN media_url LIKE '/api/whatsapp/media/%'                 THEN 'inbound proxy (untouched)'
-    WHEN media_url LIKE '%/storage/v1/object/public/%'          THEN 'legacy public URL (to rewrite)'
+    WHEN media_url LIKE '%/storage/v1/object/public/%'          THEN 'legacy public URL (needs render-time mapping)'
     WHEN media_url LIKE 'http%'                                 THEN 'other absolute URL (untouched)'
     ELSE 'unrecognised — inspect'
   END                                    AS shape,
@@ -150,10 +181,11 @@ ORDER BY 2 DESC;
 
 \echo ''
 \echo '=== 7. Public URLs stored outside messages.media_url ======='
--- 050 covers messages.media_url only, because that is where the mirror
--- writes. If either count below is non-zero those columns hold links
--- that will also die with 047, and they need their own decision — the
--- template header in particular is sent to Meta, not just rendered.
+-- The render-time compatibility covers messages.media_url only, because
+-- that is what the inbox reads. If either count below is non-zero those
+-- columns hold links that will also die with 047 and are NOT rescued by
+-- anything — the template header in particular is sent to Meta, not
+-- just rendered, so it needs its own decision.
 SELECT
   (SELECT count(*) FROM message_templates
     WHERE header_media_url LIKE '%/storage/v1/object/public/%')  AS "message_templates.header_media_url",

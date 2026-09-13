@@ -107,13 +107,18 @@ jobs:
   #        that user is refused by all ~119 RLS policies
   #   045  swaps a primary key on a populated table
   #   048  backfills broadcasts.whatsapp_config_id
-  #   050  rewrites messages.media_url
   #
-  # Against a blank database all five are no-ops that pass. So this job
+  # Against a blank database all four are no-ops that pass. So this job
   # builds the shape production actually has — including the two rows a
   # clean replay can never produce, a profile with a NULL account_role
   # and messages holding pre-047 public bucket URLs — and only then
   # applies the release on top.
+  #
+  # It also asserts the negative: no migration in 042-049 may touch
+  # messages.media_url. A media backfill was written and withdrawn
+  # because SQL cannot validate the storage host; the mapping lives in
+  # resolveStoredMediaUrl() instead. verify-upgrade.sql fails if one
+  # ever reappears.
   # ============================================================
   upgrade:
     name: Apply to a database that is already at 041
@@ -155,7 +160,7 @@ jobs:
       # `migration up` applies only what the baseline has not seen, which
       # is exactly the upgrade production will perform. A reset here
       # would throw the seeded rows away and prove nothing.
-      - name: Apply 042-050 on top
+      - name: Apply 042-049 on top
         run: supabase migration up --local
 
       - name: Verify the resulting schema

@@ -12,7 +12,7 @@ commit that adds or applies a migration.**
 | --- | --- | --- | --- |
 | `001` – `039` | yes | yes | yes, by CLI |
 | `040`, `041` | **no** | yes | **yes, by hand** |
-| `042` – `050` | no | yes | no |
+| `042` – `049` | no | yes | no |
 
 Production schema is therefore at **041**. Production *code* is at
 `main`, which contains no migration past 039 — the schema is ahead of
@@ -47,7 +47,7 @@ supabase/migrations/041_presence_viewing_conversation.sql
 
 They reach `main` when this branch merges. That merge is what makes
 `main` able to rebuild production's schema from scratch again, and it
-must land **before** 042–050 are applied anywhere, so that the file
+must land **before** 042–049 are applied anywhere, so that the file
 order in source control matches the order of application.
 
 ## The unapplied set
@@ -66,29 +66,48 @@ CI replay cannot, because CI only ever builds from an empty database.
 | `047` | Makes the three storage buckets private | security-critical |
 | `048` | Broadcasts remember their number; RPC gains a parameter | data-changing |
 | `049` | Centres and regions become real tables | additive |
-| `050` | Rewrites pre-047 attachment URLs onto the media proxy | data-changing |
 
 ### Code coupling
 
-Three of these break the running application if applied out of step with
+Two of these break the running application if applied out of step with
 a deploy:
 
 - **047** — apply *after* the code deploy. Alone it breaks media
-  rendering.
+  rendering, and the render-time compatibility described below is what
+  the deploy brings.
 - **048** — the 8-argument RPC is dropped and replaced by a 9-argument
   one. The old build breaks the moment it lands; the new build breaks
   until it lands. There is no ordering without a window; keep it short.
-- **050** — pairs with `resolveStoredMediaUrl()` in
-  `src/lib/media/proxy-url.ts`. Either half works alone, which is the
-  point: the code makes the data merely displayable, the migration makes
-  it correct.
+
+### Legacy attachments are handled in code, not by a migration
+
+Rows written before 047 hold an absolute public-bucket URL that stops
+resolving once the buckets go private. `resolveStoredMediaUrl()` in
+`src/lib/media/proxy-url.ts` maps those onto the media proxy at render
+time, so the attachments stay readable without touching the stored data.
+
+A backfill migration that rewrote `messages.media_url` in place was
+written and then **withdrawn from this release**. Doing the mapping in
+SQL means doing it without the one check that makes it safe: the
+database cannot tell our storage host from any other
+`*.supabase.co`, so a row holding a URL from a different project would
+have been rewritten into a pointer at OUR bucket. The TypeScript path
+validates the host against `NEXT_PUBLIC_SUPABASE_URL` before it maps
+anything, and refuses everything else.
+
+The consequence is deliberate and should be stated plainly: after this
+release the stored value stays a dead absolute URL, and the application
+is what makes it work. Anything reading `messages.media_url` without
+going through `resolveStoredMediaUrl()` will see a link that 400s. If
+the data itself is ever to be corrected, the backfill must first be
+given a host check of its own.
 
 ## Verification
 
 - `.github/workflows/migrations.yml` replays every migration against an
   empty database, then asserts the schema and runs the pgTAP suites.
 - The same workflow's **upgrade path** job replays `001`–`041`, seeds
-  production-shaped rows, and only then applies `042`–`050`. That is the
+  production-shaped rows, and only then applies `042`–`049`. That is the
   job that exercises the backfills, because a blank database has nothing
   to backfill.
 

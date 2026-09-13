@@ -98,9 +98,15 @@ export function parseMediaProxyPath(
  * written before it hold `<host>/storage/v1/object/public/<bucket>/<path>`.
  * Those strings stop resolving the moment the flag flips. This is the
  * compatibility half of the fix: it turns such a URL back into the
- * (bucket, path) pair the proxy can sign. Migration 050 rewrites the
- * stored rows; this keeps anything the backfill missed — a row inserted
- * by an old build mid-deploy, a restored backup — readable.
+ * (bucket, path) pair the proxy can sign.
+ *
+ * This is the ONLY place that mapping happens. A migration that rewrote
+ * `messages.media_url` in place was written and withdrawn from the
+ * release, because gate 3 below cannot be expressed in SQL: to Postgres
+ * every `*.supabase.co` host looks alike, so a row holding a URL from a
+ * different project would have been rewritten into a pointer at OUR
+ * bucket. The stored data therefore keeps its dead absolute URL, and
+ * this function is what makes it render.
  *
  * Safety: the coordinates are only ever used to sign an object in OUR
  * storage. The URL itself is never fetched, redirected to, or echoed
@@ -109,9 +115,16 @@ export function parseMediaProxyPath(
  *
  *   1. the path must have the exact public-object shape;
  *   2. the bucket must be one of `PROXYABLE_BUCKETS`;
- *   3. when `NEXT_PUBLIC_SUPABASE_URL` is configured, the host must match
- *      it — so a URL pointing at somebody else's Supabase project is not
- *      silently treated as one of ours.
+ *   3. the host must match `NEXT_PUBLIC_SUPABASE_URL` — so a URL
+ *      pointing at somebody else's Supabase project is not silently
+ *      treated as one of ours. This gate is load-bearing, not defence in
+ *      depth: `another-project.supabase.co` has the exact path shape and
+ *      an allowed bucket name, so gates 1 and 2 both pass it.
+ *
+ * Gate 3 FAILS CLOSED. If no host is configured we cannot prove a URL is
+ * ours, so nothing is mapped — the value is left exactly as stored and
+ * the attachment renders as unavailable. An unreadable attachment is
+ * recoverable; signing another project's path against our bucket is not.
  *
  * Returns null for anything else, including a relative path, a pointer,
  * or an unrelated external URL. Null means "not ours to serve", never
@@ -132,7 +145,9 @@ export function parseLegacyPublicUrl(
   }
 
   if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
-  if (expectedHost && url.host !== expectedHost) return null;
+  // Fail closed: no configured host means no way to prove this is ours.
+  if (!expectedHost) return null;
+  if (url.host !== expectedHost) return null;
 
   const at = url.pathname.indexOf(LEGACY_PUBLIC_SEGMENT);
   if (at < 0) return null;
@@ -158,7 +173,11 @@ export function parseLegacyPublicUrl(
   return { bucket, objectPath };
 }
 
-/** Host of the configured Supabase project, or null if it is not set. */
+/**
+ * Host of the configured Supabase project, or null if it is not set or
+ * unparseable. Null makes `parseLegacyPublicUrl` refuse everything,
+ * which is the intended behaviour — see gate 3 there.
+ */
 function defaultStorageHost(): string | null {
   const configured = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!configured) return null;

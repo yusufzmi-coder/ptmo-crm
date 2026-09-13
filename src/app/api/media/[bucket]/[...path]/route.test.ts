@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
  * The authorization surface of the media proxy (migration 047).
@@ -31,7 +31,8 @@ import { mediaProxyPath, resolveStoredMediaUrl } from '@/lib/media/proxy-url';
 
 const ACCOUNT = '11111111-1111-1111-1111-111111111111';
 const OTHER = '22222222-2222-2222-2222-222222222222';
-const SIGNED = 'https://demo.supabase.co/storage/v1/object/sign/chat-media/x?token=abc';
+const STORAGE_HOST = 'demo.supabase.co';
+const SIGNED = `https://${STORAGE_HOST}/storage/v1/object/sign/chat-media/x?token=abc`;
 
 function contextFor(accountId: string) {
   return {
@@ -65,6 +66,9 @@ function request(pointer: string) {
 }
 
 beforeEach(() => {
+  // resolveStoredMediaUrl's host gate fails closed without this, which
+  // is deliberate — every real deployment sets it.
+  vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', `https://${STORAGE_HOST}`);
   mocks.requireRole.mockReset();
   mocks.createSignedUrl.mockReset();
   mocks.requireRole.mockResolvedValue(contextFor(ACCOUNT));
@@ -72,6 +76,10 @@ beforeEach(() => {
     data: { signedUrl: SIGNED },
     error: null,
   });
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
 });
 
 describe('GET /api/media/[bucket]/[...path]', () => {
@@ -92,7 +100,7 @@ describe('GET /api/media/[bucket]/[...path]', () => {
   it('serves an object behind a rewritten pre-047 URL', async () => {
     // The exact path a legacy row takes: an absolute public URL stored
     // before 047, mapped by resolveStoredMediaUrl, then requested.
-    const legacy = `https://demo.supabase.co/storage/v1/object/public/chat-media/account-${ACCOUNT}/surat%20ibu%20bapa.pdf`;
+    const legacy = `https://${STORAGE_HOST}/storage/v1/object/public/chat-media/account-${ACCOUNT}/surat%20ibu%20bapa.pdf`;
     const pointer = resolveStoredMediaUrl(legacy)!;
 
     const res = await GET(request(pointer), paramsFor(pointer));
