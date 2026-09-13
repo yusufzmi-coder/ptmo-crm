@@ -15,12 +15,20 @@
 -- Run this, read the output, and only then decide whether to proceed.
 -- Section 3 is the one that can stop the release.
 --
--- How to run: paste into the Supabase SQL editor, or
+-- How to run
+-- ----------
+-- Paste into the Supabase SQL Editor, or
 --   psql "$DATABASE_URL" -f supabase/preflight/release-preflight-accounts.sql
+--
+-- There are no psql meta-commands in this file, so it is valid in either.
+-- Note how the SQL Editor behaves with a multi-statement paste: it shows
+-- the result of the LAST statement only. To read a specific section,
+-- select just that section's SELECT and run the selection — the numbered
+-- comments below mark where each one begins and ends.
 -- ============================================================
 
-\echo ''
-\echo '=== 1. Is this database actually at 041? ==================='
+
+-- === 1. Is this database actually at 041? ===================
 -- If any of these disagree with expectations, STOP: the baseline is not
 -- what the release plan assumes and every risk assessment is void.
 SELECT
@@ -36,8 +44,8 @@ SELECT
            WHERE table_name = 'broadcasts'
              AND column_name = 'whatsapp_config_id')        AS "048 not yet applied (expect f)";
 
-\echo ''
-\echo '=== 2. Role distribution across all profiles ==============='
+
+-- === 2. Role distribution across all profiles ===============
 -- The shape of the account. A NULL row here is not an error yet — see
 -- section 3 for what it means.
 SELECT
@@ -52,8 +60,8 @@ ORDER BY
     WHEN 'agent' THEN 3 WHEN 'viewer' THEN 4 ELSE 5
   END;
 
-\echo ''
-\echo '=== 3. BLOCKER CHECK: profiles with an account but no role ='
+
+-- === 3. BLOCKER CHECK: profiles with an account but no role =
 -- These are the users 044 has to decide about.
 --
 -- The hardened backfill grants each of them the VIEWER role — the floor
@@ -86,16 +94,16 @@ WHERE p.account_id IS NOT NULL
   AND p.account_role IS NULL
 ORDER BY p.created_at;
 
-\echo ''
-\echo '=== 4. Profiles with a role but no account ================='
+
+-- === 4. Profiles with a role but no account =================
 -- The mirror case. These are ignored by the backfill and unaffected by
 -- 044, because there is no account to be a member of. Listed so the
 -- number is not a surprise later.
 SELECT count(*) AS "profiles with a role but no account"
 FROM profiles WHERE account_id IS NULL AND account_role IS NOT NULL;
 
-\echo ''
-\echo '=== 5. Owners per account =================================='
+
+-- === 5. Owners per account ==================================
 -- 044 drops UNIQUE(owner_user_id) so one person can own several zones.
 -- An account with NO owner is the case to watch: recovery depends on
 -- the owner, and nothing in the migration creates one.
@@ -111,8 +119,8 @@ SELECT
 FROM accounts a
 ORDER BY a.created_at;
 
-\echo ''
-\echo '=== 6. What the backfill will insert ======================='
+
+-- === 6. What the backfill will insert =======================
 -- A dry run of 044's INSERT, as a count. This is the number of rows
 -- account_members should hold immediately after the migration.
 SELECT
@@ -121,8 +129,8 @@ SELECT
 FROM profiles p
 WHERE p.account_id IS NOT NULL;
 
-\echo ''
-\echo '=== 7. Duplicate conversations under 042 new key ==========='
+
+-- === 7. Duplicate conversations under 042 new key ===========
 -- 042 runs merge_duplicate_conversations(), which DELETEs. On a
 -- single-number account this must find nothing. Any row here is a
 -- thread that WILL be merged away — inspect it before proceeding.
@@ -136,8 +144,8 @@ GROUP BY 1, 2, 3
 HAVING count(*) > 1
 ORDER BY 4 DESC;
 
-\echo ''
-\echo '=== 8. Broadcasts 048 can and cannot backfill =============='
+
+-- === 8. Broadcasts 048 can and cannot backfill ==============
 -- An account holding exactly one number gets its broadcasts filled in.
 -- An account already holding several is left NULL by design, and those
 -- campaigns can never be resumed.
@@ -155,8 +163,8 @@ SELECT
 FROM accounts a
 ORDER BY a.name;
 
-\echo ''
-\echo '=== 9. Duplicate function overloads 046 will refuse ========'
+
+-- === 9. Duplicate function overloads 046 will refuse ========
 -- 046 asserts there is exactly one recompute_broadcast_counts. Because
 -- 040 and 041 were applied by hand, a stray overload from an ad-hoc SQL
 -- session is possible, and it aborts the migration.
@@ -175,8 +183,8 @@ WHERE n.nspname = 'public'
 GROUP BY p.proname
 ORDER BY p.proname;
 
-\echo ''
-\echo '=== 10. Who can write profiles today ======================='
+
+-- === 10. Who can write profiles today =======================
 -- 046 revokes table-wide UPDATE from `authenticated` and grants back
 -- only full_name and avatar_url. Recorded here so the before-state is
 -- on file if anything is later blamed on the change.
@@ -186,5 +194,5 @@ SELECT
   has_column_privilege('authenticated', 'public.profiles', 'full_name',    'UPDATE') AS "can write full_name",
   has_column_privilege('authenticated', 'public.profiles', 'avatar_url',   'UPDATE') AS "can write avatar_url";
 
-\echo ''
-\echo '=== preflight (accounts) complete — nothing was modified ==='
+
+-- === preflight (accounts) complete — nothing was modified ===

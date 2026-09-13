@@ -25,12 +25,20 @@
 -- accept. Read section 5 carefully: anything it marks as refused is an
 -- attachment that becomes permanently unreadable after 047.
 --
--- How to run: paste into the Supabase SQL editor, or
+-- How to run
+-- ----------
+-- Paste into the Supabase SQL Editor, or
 --   psql "$DATABASE_URL" -f supabase/preflight/release-preflight-storage.sql
+--
+-- There are no psql meta-commands in this file, so it is valid in either.
+-- Note how the SQL Editor behaves with a multi-statement paste: it shows
+-- the result of the LAST statement only. To read a specific section,
+-- select just that section's SELECT and run the selection — the numbered
+-- comments below mark where each one begins and ends.
 -- ============================================================
 
-\echo ''
-\echo '=== 1. BLOCKER CHECK: every bucket and its visibility ======'
+
+-- === 1. BLOCKER CHECK: every bucket and its visibility ======
 -- 047 aborts unless this table shows zero public buckets AFTERWARDS. It
 -- flips exactly three of them. Any OTHER bucket with public = true is a
 -- bucket 047 does not know about, and it will stop the migration dead.
@@ -57,8 +65,8 @@ SELECT
 FROM storage.buckets b
 ORDER BY b.public DESC, b.id;
 
-\echo ''
-\echo '=== 2. Objects per bucket =================================='
+
+-- === 2. Objects per bucket ==================================
 -- Scale, so the size of the change is known rather than assumed.
 SELECT
   o.bucket_id                            AS bucket,
@@ -72,8 +80,8 @@ FROM storage.objects o
 GROUP BY o.bucket_id
 ORDER BY count(*) DESC;
 
-\echo ''
-\echo '=== 3. Read policies on storage.objects today =============='
+
+-- === 3. Read policies on storage.objects today ==============
 -- The three 047 replaces read `USING (bucket_id = ''<name>'')`, which is
 -- true for everyone including anon. Recorded so the before-state is on
 -- file, and so an unexpected fourth read policy is noticed now.
@@ -88,8 +96,8 @@ WHERE schemaname = 'storage'
   AND cmd IN ('SELECT', 'ALL')
 ORDER BY policyname;
 
-\echo ''
-\echo '=== 4. BLOCKER CHECK: attachments 047 would break =========='
+
+-- === 4. BLOCKER CHECK: attachments 047 would break ==========
 -- Every row counted here holds an absolute public-bucket URL. The
 -- instant 047 commits, all of them stop resolving: the bytes stay in
 -- the bucket, the pointer goes dead, and the inbox renders
@@ -115,8 +123,8 @@ WHERE media_url LIKE '%/storage/v1/object/public/chat-media/%'
 GROUP BY 1
 ORDER BY 2 DESC;
 
-\echo ''
-\echo '=== 5. Which legacy URLs the host check will accept ======='
+
+-- === 5. Which legacy URLs the host check will accept =======
 -- `parseLegacyPublicUrl()` refuses any URL whose host is not the one in
 -- NEXT_PUBLIC_SUPABASE_URL. That refusal is the whole reason the SQL
 -- backfill was withdrawn — but it also means a stored URL pointing at a
@@ -148,7 +156,7 @@ WHERE media_url LIKE '%/storage/v1/object/public/chat-media/%'
 GROUP BY 1
 ORDER BY 2 DESC;
 
-\echo '=== 5b. Distinct hosts actually present in stored URLs ====='
+-- === 5b. Distinct hosts actually present in stored URLs =====
 -- The same question without needing to know the answer first. One row
 -- is the expected outcome. More than one means attachments were stored
 -- against more than one project, and section 5 above is not academic.
@@ -160,7 +168,7 @@ WHERE media_url LIKE '%/storage/v1/object/public/%'
 GROUP BY 1
 ORDER BY 2 DESC;
 
-\echo '=== 6. The other media_url shapes, all left alone ========='
+-- === 6. The other media_url shapes, all left alone =========
 -- Sanity check on scope. `/api/whatsapp/media/` is the inbound proxy and
 -- predates 047; "other absolute URL" is an operator-supplied link from
 -- POST /api/v1/messages and was never in our buckets. Neither is
@@ -179,8 +187,8 @@ FROM messages
 GROUP BY 1
 ORDER BY 2 DESC;
 
-\echo ''
-\echo '=== 7. Public URLs stored outside messages.media_url ======='
+
+-- === 7. Public URLs stored outside messages.media_url =======
 -- The render-time compatibility covers messages.media_url only, because
 -- that is what the inbox reads. If either count below is non-zero those
 -- columns hold links that will also die with 047 and are NOT rescued by
@@ -192,8 +200,8 @@ SELECT
   (SELECT count(*) FROM messages
     WHERE content_text     LIKE '%/storage/v1/object/public/%')  AS "public URL pasted into message text";
 
-\echo ''
-\echo '=== 8. Objects whose path 047 policies cannot match ========'
+
+-- === 8. Objects whose path 047 policies cannot match ========
 -- The new read policies scope by the first path segment: either
 -- `account-<uuid>` or, for the legacy branch, the uploader's user id.
 -- An object whose first segment is neither is readable by nobody after
@@ -209,5 +217,5 @@ WHERE o.bucket_id IN ('avatars', 'flow-media', 'chat-media')
 GROUP BY 1, 2
 ORDER BY 3 DESC;
 
-\echo ''
-\echo '=== preflight (storage) complete — nothing was modified ===='
+
+-- === preflight (storage) complete — nothing was modified ====
