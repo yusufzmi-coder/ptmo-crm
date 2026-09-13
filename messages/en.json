@@ -61,6 +61,20 @@
     "menuSettings": "Settings",
     "menuSignOut": "Sign out"
   },
+  "ZoneSwitcher": {
+    "menuLabel": "Switch zone",
+    "currentZone": "Zone: {zone}",
+    "openZoneMenu": "Switch zone — currently {zone}",
+    "stillIn": "You are still in {zone}.",
+    "errorNotMember": "You do not have access to that zone.",
+    "errorFailed": "Could not switch zone. Please try again.",
+    "role": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "agent": "Agent",
+      "viewer": "Viewer"
+    }
+  },
   "ModeToggle": {
     "switchMode": "Switch to {mode} mode"
   },

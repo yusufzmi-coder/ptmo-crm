@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ModeToggle } from "@/components/layout/mode-toggle";
+import { ZoneSwitcher } from "@/components/layout/zone-switcher";
 
 const pageTitles: Record<string, string> = {
   "/dashboard": "dashboard",
@@ -72,6 +73,10 @@ export function Header({ onOpenSidebar }: HeaderProps) {
         <h1 className="truncate text-base font-semibold text-foreground sm:text-lg">
           {t(titleKey as string)}
         </h1>
+        {/* Which zone this page is showing. Sits beside the title
+            because that is what it qualifies: the same "Inbox" heading
+            means a different inbox in each zone. */}
+        <ZoneSwitcher />
       </div>
 
       <div className="flex items-center gap-1 sm:gap-2">

@@ -3,8 +3,11 @@
 Six parallel audits ran against this repo on 2026-09-12 and landed 18
 commits. What follows is what they found and did **not** fix. Every item
 was re-verified against `78a71ef` before being written down, not recalled
-from memory. Items are open unless their heading says otherwise, and
-even a fixed one is worth re-reading before you build on it.
+from memory, and the headings were re-checked against `ab4b042` on
+2026-09-13 — four of them had been fixed by the `f5064a8` integration
+merge and are now marked as such. Items are open unless their heading
+says otherwise, and even a fixed one is worth re-reading before you build
+on it.
 
 The audits themselves lived in scratch plan files that do not survive
 their sessions. This file exists so the next person does not re-audit
@@ -29,47 +32,40 @@ that message's conversation, and serves `Cache-Control: private`.
 `allowPrimary` survives only as the fallback for pre-040 threads with no
 number, and by then ownership is already proven.
 
-### Middleware does not gate every authenticated route
+### ~~Middleware does not gate every authenticated route~~ — FIXED in `f5064a8`
 
-`src/middleware.ts:73`
+`src/middleware.ts:107`
 
-`protectedPaths` is `['/dashboard', '/inbox', '/ops', '/contacts',
-'/pipelines', '/broadcasts', '/automations', '/settings']`. Missing:
-**`/flows`, `/agents`, `/notifications`**.
+`protectedPaths` now lists all eleven paths alphabetically, `/agents`,
+`/flows` and `/notifications` among them. The API gate is no longer a
+substring match on `includes('/webhook')`: unauthenticated
+`/api/whatsapp/*` requests are refused with a 401 unless the path is on an
+explicit public allowlist (`isPublicWhatsAppPath`).
 
-The API gate is also a substring match on `includes('/webhook')` rather
-than a real allowlist, and there is no Origin/Referer check on non-GET
-`/api` requests.
+Still open in this file: there is **no Origin/Referer check on non-GET
+`/api` requests**. That half of the finding was never addressed.
 
-### Password reset lands on a 404
+### ~~Password reset lands on a 404~~ — FIXED in `f5064a8`
 
-`/auth/callback` was added, which fixed the first half of the
-forgot-password flow. But `forgot-password` sends users to
-`/auth/callback?next=/reset-password`, and **`src/app/(auth)/reset-password`
-does not exist**.
+`src/app/(auth)/reset-password/page.tsx` exists now, so
+`/auth/callback?next=/reset-password` lands on a real page and the
+forgot-password flow completes end to end. Neither half has been walked
+through against a live Supabase project — it is verified as present, not
+as working.
 
-So a reset link now fails one step later than before. This reads as a
-regression to anyone testing it who has not read commit `62a8263`, where
-it is disclosed.
+### ~~Realtime is never rebuilt when the active zone changes~~ — FIXED in `f5064a8`
 
-### Realtime is never rebuilt when the active zone changes
+`src/hooks/use-realtime.ts:62`, `src/app/(dashboard)/inbox/page.tsx:51,386`
 
-`src/hooks/use-realtime.ts:82`, `src/app/(dashboard)/inbox/page.tsx:363`
+`useRealtime` now takes `accountId` and derives its topic through
+`realtimeTopic(channelName, accountId)` (`src/lib/realtime/channel.ts`,
+unit-tested), and that `topic` is the effect's dep — so a zone switch
+tears the channel down and builds a new one. Cached rows go with it:
+`InboxPageInner` is keyed on `accountId`, so the whole subtree remounts
+rather than being cleaned field by field.
 
-`useRealtime` subscribes to `messages` and `conversations` with **no
-filter**, under a **static** `channelName` of `"inbox-realtime"`, with
-deps `[channelName, enabled]`. Nothing in that list changes when the user
-switches zones, so the channel is never torn down.
-
-RLS still refuses to serve the other zone's rows, so this is **not** a
-data leak — it is UI correctness. But the conversation list, messages and
-unread counts are not cleared on a zone switch, so the previous zone's
-rows stay rendered until something else replaces them.
-
-`usePresence` already handles this shape correctly (it calls
-`setRows(new Map())` when `accountId` changes). The inbox path needs the
-same treatment: put `accountId` in the channel name, add it to the deps,
-and clear cached state on change.
+This was UI correctness, not a data leak — RLS was refusing the other
+zone's rows the whole time.
 
 ### ~~Broadcasts can still strand~~ — FIXED
 
@@ -166,16 +162,17 @@ optimistic badge clear silently reverts on the next resync.
 
 ## Mobile
 
-`dashboard-shell.tsx:44` uses `h-screen overflow-hidden` and
-`inbox/page.tsx:583` uses `h-[calc(100vh-3.5rem)]`. There is **no `dvh`
-anywhere in the repo**.
+**FIXED in `f5064a8`.** `dashboard-shell.tsx:50` uses `h-dvh` and
+`inbox/page.tsx:608` uses `h-[calc(100dvh-3.5rem)]`, so the layout tracks
+the small viewport and the composer stays reachable behind the iOS Safari
+toolbar.
 
-On iOS Safari, `100vh` includes the area behind the browser toolbar.
-Combined with `overflow-hidden`, the bottom of the layout — the composer
-and the send button — sits under the toolbar and cannot be scrolled to.
-Branch staff on phones cannot see the send button.
-
-Two files, and it restores basic function.
+Not fixed on phones, and not claimed to be: this has only been read, never
+opened on a real iPhone. The remaining `min-h-screen` uses are the auth
+pages, which scroll and are unaffected; `h-screen` survives on
+loading/error states in `dashboard-shell.tsx:32` and
+`automations/[id]/edit/page.tsx:55,69`, which have nothing anchored to the
+bottom edge.
 
 ---
 
