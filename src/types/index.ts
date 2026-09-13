@@ -731,3 +731,34 @@ export interface BranchedQuickReply extends QuickReply {
   /** Other centres this snippet names in its text. Empty is the norm. */
   foreign_branches?: string[];
 }
+
+// ---- Centres & regions (migration 049) ----------------------
+//
+// A centre used to be a `whatsapp_config` row. It is now its own
+// thing, so a parent can belong to a branch no matter which WhatsApp
+// number they wrote to. `region` is a business grouping ("Zon" in the
+// UI) -- NOT the account-level tenancy zone in docs/zones.md.
+
+export interface Region {
+  id: string;
+  account_id: string;
+  name: string;
+  description: string | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Centre {
+  id: string;
+  account_id: string;
+  region_id: string | null;
+  name: string;
+  code: string | null;
+  address: string | null;
+  phone: string | null;
+  operating_hours: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
