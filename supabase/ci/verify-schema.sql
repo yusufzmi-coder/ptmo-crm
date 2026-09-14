@@ -147,6 +147,22 @@ BEGIN
     RAISE EXCEPTION 'authenticated can UPDATE a profiles privilege column (migration 046 regressed)';
   END IF;
 
+  -- 027:50-51 narrows notifications the same way 046 narrows profiles,
+  -- and had no check here — so a blanket grant would have re-opened it
+  -- silently while the profiles check above caught its twin. Added after
+  -- exactly that happened while writing grant-platform-privileges.sql.
+  IF has_column_privilege('authenticated', 'public.notifications', 'user_id', 'UPDATE')
+     OR has_column_privilege('authenticated', 'public.notifications', 'account_id', 'UPDATE')
+  THEN
+    RAISE EXCEPTION 'authenticated can UPDATE a notifications column beyond read_at (migration 027 regressed)';
+  END IF;
+
+  -- And the positive half: read_at must still be writable, or the
+  -- mark-as-read path is broken and no assertion above would say so.
+  IF NOT has_column_privilege('authenticated', 'public.notifications', 'read_at', 'UPDATE') THEN
+    RAISE EXCEPTION 'authenticated cannot UPDATE notifications.read_at (migration 027 did not apply)';
+  END IF;
+
   RAISE NOTICE 'schema verification passed';
 END
 $$;
