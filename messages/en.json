@@ -1903,7 +1903,11 @@
       "setupReady": "Set up",
       "setupDone": "{name} is set up.",
       "setupAlreadyDone": "Already set up — nothing to do.",
-      "setupFailed": "Could not set this branch up."
+      "setupFailed": "Could not set this branch up.",
+      "qrButton": "QR",
+      "qrDesc": "Print this on the branch banner. Parents scan it instead of typing anything.",
+      "qrDownload": "Download SVG",
+      "qrFailed": "Could not build a QR for this link."
     },
     "quickReplies": {
       "title": "Quick replies",

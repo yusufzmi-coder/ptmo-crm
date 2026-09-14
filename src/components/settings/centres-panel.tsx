@@ -11,6 +11,8 @@ import {
   MapPin,
   Phone,
   Plus,
+  QrCode,
+  Download,
   Trash2,
 } from 'lucide-react';
 import { SettingsPanelSkeleton } from './settings-panel-skeleton';
@@ -51,6 +53,7 @@ import {
   isValidCode,
   suggestCode,
 } from './branch-link';
+import { encodeQr, qrSvg } from './qr';
 
 /** Sentinel for "no zone" -- Radix Select cannot hold an empty value. */
 const NO_ZONE = '__none__';
@@ -113,6 +116,8 @@ export function CentresPanel() {
   const [codeDraft, setCodeDraft] = useState<Record<string, string>>({});
   const [busyCentre, setBusyCentre] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  /** Branch whose QR is open. One dialog, not sixteen inline codes. */
+  const [qrFor, setQrFor] = useState<Centre | null>(null);
 
   const load = useCallback(async () => {
     if (!accountId) return;
@@ -514,6 +519,7 @@ export function CentresPanel() {
                           onSaveCode={() => saveCode(centre)}
                           onSetup={() => setupBranch(centre)}
                           onCopy={(link) => copyLink(centre, link)}
+                          onShowQr={() => setQrFor(centre)}
                           t={t}
                         />
                         </li>
@@ -526,6 +532,19 @@ export function CentresPanel() {
           )}
         </CardContent>
       </Card>
+
+      {/* ---- QR for one branch ---- */}
+      <Dialog open={Boolean(qrFor)} onOpenChange={(o) => !o && setQrFor(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{qrFor?.name}</DialogTitle>
+            <DialogDescription>{t('qrDesc')}</DialogDescription>
+          </DialogHeader>
+          {qrFor?.code && waNumber ? (
+            <BranchQr centre={qrFor} link={buildWaLink(waNumber, qrFor.code)} t={t} />
+          ) : null}
+        </DialogContent>
+      </Dialog>
 
       {/* ---- add centre ---- */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -675,6 +694,7 @@ function BranchWiring({
   onSaveCode,
   onSetup,
   onCopy,
+  onShowQr,
   t,
 }: {
   centre: Centre;
@@ -687,6 +707,7 @@ function BranchWiring({
   onSaveCode: () => void;
   onSetup: () => void;
   onCopy: (link: string) => void;
+  onShowQr: () => void;
   t: ReturnType<typeof useTranslations<'Settings.centres'>>;
 }) {
   const blocker = branchBlocker(centre.code, waNumber);
@@ -740,6 +761,10 @@ function BranchWiring({
           {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
           {copied ? t('copied') : t('copyLink')}
         </Button>
+        <Button size="sm" variant="outline" onClick={onShowQr}>
+          <QrCode className="size-3.5" />
+          {t('qrButton')}
+        </Button>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         {wired ? (
@@ -757,6 +782,55 @@ function BranchWiring({
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * One branch's QR, sized for the screen and downloadable for print.
+ *
+ * SVG rather than PNG on purpose: a branch banner is printed large, and a
+ * raster at screen resolution would be visibly soft at that size. SVG has
+ * no resolution to lose.
+ */
+function BranchQr({
+  centre,
+  link,
+  t,
+}: {
+  centre: Centre;
+  link: string;
+  t: ReturnType<typeof useTranslations<'Settings.centres'>>;
+}) {
+  const matrix = encodeQr(link);
+  if (!matrix) {
+    return <p className="text-sm text-muted-foreground">{t('qrFailed')}</p>;
+  }
+  const svg = qrSvg(matrix, 240);
+
+  function download() {
+    const blob = new Blob([svg], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${centre.code}-whatsapp.svg`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <div className="space-y-3">
+      <div
+        className="mx-auto w-fit rounded-lg border border-border bg-white p-2"
+        // The matrix is ours, built from the encoder's own output — no
+        // user-supplied markup reaches this.
+        dangerouslySetInnerHTML={{ __html: svg }}
+      />
+      <p className="break-all text-center font-mono text-xs text-muted-foreground">{link}</p>
+      <Button onClick={download} className="w-full">
+        <Download className="size-4" />
+        {t('qrDownload')}
+      </Button>
     </div>
   );
 }
