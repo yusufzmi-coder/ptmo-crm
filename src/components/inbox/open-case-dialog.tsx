@@ -29,20 +29,72 @@ import type {
   IssueSeverity,
 } from "@/types";
 
-/** Mirrors the CHECK the API validates against. Order is the order shown. */
-const CATEGORIES: IssueCategory[] = [
-  "progress",
-  "keselamatan",
-  "staf",
-  "servis",
-  "yuran",
-  "jadual",
-  "pendaftaran",
-  "fasiliti",
-  "lain",
-];
+/**
+ * Every category and severity, in display order.
+ *
+ * Written as a Record keyed by the union rather than an array of it,
+ * because `IssueCategory[]` happily accepts a list that is MISSING a
+ * member. Add a tenth category to the type and an array here keeps
+ * compiling while the option silently stops being offered; a Record
+ * fails the build until this file names it too.
+ *
+ * The API validates against its own copy in route.ts, which is a const
+ * local rather than an export — see the handoff. Until that is shared,
+ * this is the closest thing to a link between them: both are pinned to
+ * the same union, so neither can drift without the type moving first.
+ */
+const CATEGORY_ORDER: Record<IssueCategory, number> = {
+  progress: 0,
+  keselamatan: 1,
+  staf: 2,
+  servis: 3,
+  yuran: 4,
+  jadual: 5,
+  pendaftaran: 6,
+  fasiliti: 7,
+  lain: 8,
+};
+const CATEGORIES = (Object.keys(CATEGORY_ORDER) as IssueCategory[]).sort(
+  (a, b) => CATEGORY_ORDER[a] - CATEGORY_ORDER[b],
+);
 
-const SEVERITIES: IssueSeverity[] = ["biasa", "penting", "kritikal"];
+const SEVERITY_ORDER: Record<IssueSeverity, number> = {
+  biasa: 0,
+  penting: 1,
+  kritikal: 2,
+};
+const SEVERITIES = (Object.keys(SEVERITY_ORDER) as IssueSeverity[]).sort(
+  (a, b) => SEVERITY_ORDER[a] - SEVERITY_ORDER[b],
+);
+
+/**
+ * Route error code → Issues.errors.* key.
+ *
+ * The routes answer in snake_case; the catalogue is camelCase. The
+ * canonical mapping is asserted both ways in
+ * src/lib/issues/labels.test.ts, but it lives inside that test file, so
+ * production code cannot import it — see the handoff. This covers the
+ * codes POST /api/issues can actually return and falls back to
+ * saveFailed, which is the same collapse the canonical map makes for
+ * insert_failed and update_failed.
+ *
+ * An unknown code reaching saveFailed is the right default: the agent
+ * learns the case did not open, which is the part they can act on.
+ */
+const ERROR_KEYS: Record<string, string> = {
+  unauthorized: "unauthorized",
+  forbidden: "forbidden",
+  profile_not_linked: "profileNotLinked",
+  summary_required: "summaryRequired",
+  invalid_category: "invalidCategory",
+  invalid_severity: "invalidSeverity",
+  invalid_body: "invalidBody",
+  insert_failed: "saveFailed",
+};
+
+function errorKeyFor(code: unknown): string {
+  return (typeof code === "string" && ERROR_KEYS[code]) || "saveFailed";
+}
 
 /** Sentinel for "no centre" — Select cannot carry an empty string value. */
 const NO_CENTRE = "__none__";
@@ -91,6 +143,7 @@ export function OpenCaseDialog({
   const t = useTranslations("Issues.create");
   const tCategory = useTranslations("Issues.category");
   const tSeverity = useTranslations("Issues.severity");
+  const tError = useTranslations("Issues.errors");
 
   const [centres, setCentres] = useState<Centre[]>([]);
   const [summary, setSummary] = useState("");
@@ -140,7 +193,7 @@ export function OpenCaseDialog({
   const submit = useCallback(async () => {
     const trimmed = summary.trim();
     if (!trimmed) {
-      toast.error(t("summaryRequired"));
+      toast.error(tError("summaryRequired"));
       return;
     }
     setSaving(true);
@@ -159,13 +212,7 @@ export function OpenCaseDialog({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        // profile_not_linked is the one an agent can act on — it means
-        // their account membership was never completed. The rest are
-        // shapes the form should have prevented, so they get the
-        // generic message rather than a translated string each.
-        toast.error(
-          data?.error === "profile_not_linked" ? t("notLinked") : t("failed"),
-        );
+        toast.error(tError(errorKeyFor(data?.error)));
         return;
       }
       const id = data?.issue?.id as string | undefined;
@@ -177,7 +224,7 @@ export function OpenCaseDialog({
       reset();
       onOpenChange(false);
     } catch {
-      toast.error(t("failed"));
+      toast.error(tError("saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -191,6 +238,7 @@ export function OpenCaseDialog({
     onOpenChange,
     reset,
     t,
+    tError,
   ]);
 
   return (
