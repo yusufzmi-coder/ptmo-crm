@@ -1844,6 +1844,28 @@
       "deleteCentreTitle": "Delete this centre?",
       "deleteCentreDesc": "Parents linked to it are kept, but stop being linked to any centre.",
       "loading": "Loading centres"
+    },
+    "quickReplies": {
+      "title": "Quick replies",
+      "description": "Reusable snippets — plain text or a saved interactive message — that agents can insert from the inbox composer.",
+      "newQuickReply": "New quick reply",
+      "loading": "Loading quick replies",
+      "empty": "No quick replies yet. Create one to reuse it across conversations.",
+      "createTitle": "New quick reply",
+      "editTitle": "Edit quick reply",
+      "nameLabel": "Name",
+      "namePlaceholder": "e.g. Business hours",
+      "kindText": "Text",
+      "kindInteractive": "Interactive",
+      "contentPlaceholder": "The message text to insert",
+      "cancel": "Cancel",
+      "save": "Save",
+      "nameRequired": "Give the quick reply a name.",
+      "created": "Quick reply created.",
+      "updated": "Quick reply updated.",
+      "saveFailed": "Couldn't save the quick reply.",
+      "deleteConfirm": "Delete this quick reply?",
+      "deleteFailed": "Couldn't delete the quick reply."
     }
   },
   "Ops": {
