@@ -43,7 +43,20 @@ const SEVERITY_MEMBERS: Record<IssueSeverity, true> = {
   kritikal: true,
 };
 
-/** Every category, in the order the CHECK constraint lists them. */
+/**
+ * Every category, in the order the CHECK constraint lists them.
+ *
+ * THE WRITE ORDER OF THE RECORD ABOVE IS THE DISPLAY ORDER. `Object.keys`
+ * returns string keys in insertion order — guaranteed by the language for
+ * keys that are not integer-like, and none of these are — so reordering
+ * the Record silently reorders every picker that maps over this.
+ *
+ * That is a real coupling rather than a hypothetical one: the create
+ * dialog checked this order matched its own before importing, precisely
+ * because a picker that rearranges itself between releases looks broken
+ * to whoever uses it daily. Sort at the call site if a screen wants a
+ * different order; do not reorder here.
+ */
 export const ISSUE_CATEGORIES = Object.keys(
   CATEGORY_MEMBERS,
 ) as readonly IssueCategory[];

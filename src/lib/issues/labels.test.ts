@@ -175,3 +175,29 @@ describe("Malay is written, not copied", () => {
     expect(identical.length, `identical: ${identical.join(", ")}`).toBeLessThanOrEqual(12);
   });
 });
+
+describe("display order is part of the contract", () => {
+  it("keeps categories in the order the pickers render them", () => {
+    // The create dialog and the list filter both map over
+    // ISSUE_CATEGORIES directly, so this array's order IS the on-screen
+    // order. Pinned here because reordering the Record it derives from
+    // is a one-line change with no other symptom.
+    expect([...ISSUE_CATEGORIES]).toEqual([
+      "progress",
+      "keselamatan",
+      "staf",
+      "servis",
+      "yuran",
+      "jadual",
+      "pendaftaran",
+      "fasiliti",
+      "lain",
+    ]);
+  });
+
+  it("keeps severities ordered least to most severe", () => {
+    // Not alphabetical — a severity picker that reads
+    // biasa/kritikal/penting would be actively misleading.
+    expect([...ISSUE_SEVERITIES]).toEqual(["biasa", "penting", "kritikal"]);
+  });
+});
