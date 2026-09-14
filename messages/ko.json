@@ -859,7 +859,9 @@
           "name": "이름",
           "phone": "전화번호",
           "email": "이메일"
-        }
+        },
+        "headerPreviewAlt": "헤더 미리보기",
+        "valuePlaceholder": "값을 입력하세요..."
       },
       "scheduleSend": {
         "title": "검토 및 전송",
@@ -1259,7 +1261,10 @@
         "filenamePlaceholder": "invoice.pdf",
         "advanceAfterSending": "전송 후 다음 진행",
         "pickNextNode": "다음 노드를 선택하세요…",
-        "none": "— 없음 —"
+        "none": "— 없음 —",
+        "removeSection": "섹션 삭제",
+        "uploadFailed": "업로드하지 못했습니다.",
+        "fileUploaded": "파일이 업로드되었습니다."
       },
       "categories": {
         "messaging": "메시징",
@@ -1307,7 +1312,8 @@
           "label": "종료",
           "blurb": "플로우를 종료합니다"
         }
-      }
+      },
+      "editorView": "편집기 보기"
     },
     "validation": {
       "noIssues": "문제가 없습니다. 활성화할 준비가 되었습니다.",
@@ -1319,7 +1325,10 @@
       "fixIssues": "활성화하기 전에 아래 문제를 해결하세요.",
       "statusActivated": "플로우가 활성화되었습니다.",
       "statusArchived": "보관되었습니다.",
-      "statusDraft": "초안으로 저장되었습니다."
+      "statusDraft": "초안으로 저장되었습니다.",
+      "saveFailed": "저장하지 못했습니다",
+      "statusUpdateFailed": "상태를 변경하지 못했습니다",
+      "deleteFailed": "삭제하지 못했습니다"
     },
     "summary": {
       "options": "옵션 {count}개",

@@ -498,7 +498,7 @@ function SendListForm({
                   size="sm"
                   onClick={() => removeSection(sIdx)}
                   className="shrink-0 text-red-400 hover:bg-red-500/10 hover:text-red-300"
-                  aria-label="Remove section"
+                  aria-label={t("removeSection")}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
@@ -657,7 +657,7 @@ function ConditionForm({
               onValueChange={(v) => onUpdateConfig({ subject_key: v })}
             >
               <SelectTrigger className="bg-muted">
-                <SelectValue placeholder="Pick a tag…" />
+                <SelectValue placeholder={t("pickTag")} />
               </SelectTrigger>
               <SelectContent>
                 {tags.map((t) => (
@@ -805,7 +805,7 @@ function SetTagForm({
               onValueChange={(v) => onUpdateConfig({ tag_id: v })}
             >
               <SelectTrigger className="bg-muted">
-                <SelectValue placeholder="Pick a tag…" />
+                <SelectValue placeholder={t("pickTag")} />
               </SelectTrigger>
               <SelectContent>
                 {tags.map((t) => (
@@ -931,15 +931,15 @@ function SendMediaForm({
           media_url: pointerUrl,
           filename: file.name,
         });
-        toast.success("File uploaded.");
+        toast.success(t("fileUploaded"));
       } catch (err) {
-        const msg = err instanceof Error ? err.message : "Upload failed.";
+        const msg = err instanceof Error ? err.message : t("uploadFailed");
         toast.error(msg);
       } finally {
         setUploading(false);
       }
     },
-    [onUpdateConfig],
+    [onUpdateConfig, t],
   );
 
   const handleClear = () => {
