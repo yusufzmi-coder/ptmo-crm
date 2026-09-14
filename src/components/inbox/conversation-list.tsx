@@ -642,7 +642,7 @@ function ConversationItem({
         </div>
         {showBranch && conversation.whatsapp_config && (
           <div className="mt-0.5">
-            <span className="inline-flex max-w-full items-center rounded-full border border-primary-soft-2 bg-primary-soft px-1.5 py-0.5 text-[10px] font-medium text-primary">
+            <span className="inline-flex max-w-full items-center rounded-full border border-primary-soft-2 bg-primary-soft px-1.5 py-0.5 text-[10px] font-medium text-primary-on-soft">
               <span className="truncate">
                 {configDisplayName(conversation.whatsapp_config)}
               </span>
@@ -668,7 +668,7 @@ function ConversationItem({
                 className={cn(
                   "flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-semibold",
                   assignee.isMine
-                    ? "bg-primary-soft text-primary"
+                    ? "bg-primary-soft text-primary-on-soft"
                     : "bg-muted text-muted-foreground",
                 )}
               >

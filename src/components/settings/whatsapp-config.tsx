@@ -742,7 +742,7 @@ export function WhatsAppConfig() {
                         </span>
                       )}
                       {n.is_primary && (
-                        <span className="rounded-full border border-primary-soft-2 bg-primary-soft px-2 py-0.5 text-[11px] font-medium text-primary">
+                        <span className="rounded-full border border-primary-soft-2 bg-primary-soft px-2 py-0.5 text-[11px] font-medium text-primary-on-soft">
                           {t('primaryBadge')}
                         </span>
                       )}
