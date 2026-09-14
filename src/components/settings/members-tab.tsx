@@ -32,6 +32,7 @@ import {
   Trash2,
   UsersRound,
 } from 'lucide-react';
+import { SettingsPanelSkeleton } from './settings-panel-skeleton';
 
 import {
   Avatar,
@@ -273,11 +274,7 @@ export function MembersTab() {
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="size-6 animate-spin text-primary" />
-      </div>
-    );
+    return <SettingsPanelSkeleton rows={4} label={t('loading')} />;
   }
 
   return (

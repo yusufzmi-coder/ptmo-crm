@@ -18,6 +18,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Copy, KeyRound, Loader2, Plus, Trash2 } from 'lucide-react';
+import { SettingsPanelSkeleton } from './settings-panel-skeleton';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -127,11 +128,7 @@ export function ApiKeysSettings() {
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="text-primary size-6 animate-spin" />
-      </div>
-    );
+    return <SettingsPanelSkeleton rows={3} label={t('loading')} />;
   }
 
   return (
