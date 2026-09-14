@@ -290,3 +290,35 @@ teks pada `lg:w-60`. Ia muat satu baris, dan Korea jauh lebih pendek
 (79px). Tetapi ia ialah tajuk terpanjang yang muat — mana-mana locale
 ketiga dengan frasa lebih panjang akan membalut. Relevan terus kepada
 sebarang keputusan menambah `messages/ms.json`.
+
+### Belanjawan lebar teks — diukur, bukan dianggar
+
+Dua tempat sahaja dalam UI yang mengehadkan panjang label, dan kegagalannya
+**berbeza bentuk**, jadi ia perlu diperiksa berasingan:
+
+| Tempat | Bila melimpah | Kelihatan? |
+| --- | --- | --- |
+| Tajuk kumpulan sidebar | balut ke dua baris, 20px → 34px, menolak nav ke bawah | ya |
+| `h1` header (`header.tsx:75`) | `truncate` — terkerat senyap dengan ellipsis | **tidak** |
+
+Header lebih bahaya kerana tiada isyarat ia rosak selain tiga titik.
+
+Diukur dengan CSS terkompil dan fon Inter sebenar, Bahasa Melayu:
+
+- **Sidebar**, belanjawan 191px: `Kempen & automasi` 135px, lega 56px (29%).
+  Inggeris `Campaigns & automation` 174px, lega 17px (9%). Melayu lebih
+  selamat, bukan kurang.
+- **Header**: chrome tetap 176px di bawah breakpoint `sm` dan ia tidak
+  bergantung pada lebar viewport. Tajuk Melayu terpanjang
+  `Pemberitahuan` 111px. Pada 320px viewport itu meninggalkan lega 33px.
+  Tiada pengeratan pada mana-mana lebar, en mahupun ms.
+
+**Kiraan aksara bukan pengganti untuk lebar piksel.** 24 aksara `W` melimpah
+pada 281px sedangkan 25 aksara `Kempen, siaran & automasi` muat pada 189px.
+Lebar glif yang menentukan. Guna kiraan aksara sebagai isyarat untuk meminta
+pengukuran, bukan sebagai bukti.
+
+Had: Chrome headless mengapit lebar tetingkap pada 500px, jadi angka 320px
+dan 375px **diterbitkan** daripada pemalar chrome 176px, bukan diperhatikan.
+Terbitan itu kukuh kerana chrome tetap tidak berubah di bawah `sm`, tetapi
+ia bukan pemerhatian. Emulasi peranti melalui CDP diperlukan untuk menutupnya.
