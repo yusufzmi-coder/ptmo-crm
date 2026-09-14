@@ -695,3 +695,45 @@ audit sebegini mesti mengesahkan kelas itu benar-benar dijana.
 
 Akibatnya: setiap varian `hover:` dalam inventori ini **tidak diukur
 secara langsung**. Hover perlukan pusingannya sendiri.
+
+## `SECTION_META.label` — lapan rentetan kod mati yang kelihatan hidup
+
+**Fail:** `src/components/settings/settings-sections.ts`
+
+Lapan medan `label` dalam `SECTION_META` tidak pernah sampai ke skrin.
+`settings-rail.tsx` merender `t(\`sections.${s}\`)` daripada katalog, dan
+`RAIL_GROUPS[].label` hanya pernah dibaca sebagai boolean — nilainya
+tidak digunakan, hanya kewujudannya.
+
+Ditemui semasa audit i18n settings (`3c290e1`, `640cf78`). Pemilik betul
+menolak untuk menterjemahnya: menterjemah teks mati lebih buruk daripada
+membiarkannya, kerana ia menambah lapan kunci ke tiga katalog yang tiada
+siapa akan membaca.
+
+**Bahaya sebenar bukan kunci yang terbuang.** Ia kod mati yang kelihatan
+hidup. Seseorang menyunting `"Team members"` di situ, menjangka nav
+tetapan berubah, dan tidak berlaku apa-apa. Mereka kemudian mencari sebab
+di tempat yang salah.
+
+**Tindakan: PADAM, dalam commit berasingan.** Bukan sebahagian kerja warna
+atau i18n — pemadaman patut boleh dibaca sendiri supaya `git log` menjawab
+"kenapa ini hilang" tanpa membongkar commit campuran. Belum diagihkan.
+
+## Domain masih menyajikan Inggeris — `NEXT_PUBLIC_APP_LOCALE` belum ditetapkan
+
+`crm.ptmostaff.com/login` memulangkan 200 dan merender `"Sign in"` /
+`"Password"`, bukan Melayu. Semua kerja i18n sudah mendarat di main dan
+katalog `ms` lengkap dengan 1839 kunci.
+
+`NEXT_PUBLIC_*` dibakar pada masa **build**, jadi menetapkannya sahaja
+tidak mencukupi — projek Vercel perlu di-redeploy selepas itu.
+
+**Kerja Boss, bukan boleh dilakukan dari sini.** Vercel CLI tidak log
+masuk dalam persekitaran ini (`vercel whoami` → `Logged out`), dan log
+masuk itu interaktif.
+
+Lihat juga `src/i18n/request.ts` — `.env.local` tempatan memegang
+`"en "` dengan ruang di hujung sejak 10 Sep, dan `try/catch` lama
+menyajikan `en.json` secara senyap. Itu sudah dibaiki; nilai yang tidak
+sah kini memberi amaran dan jatuh ke `en` dengan nyata. Jadi kalau nilai
+Vercel ditetapkan salah, log build akan menyebutnya.
