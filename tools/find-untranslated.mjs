@@ -7,10 +7,14 @@
  *
  * WHY THIS EXISTS — a text search is not good enough here.
  *
- * An audit of src/components/settings found 26 untranslated strings and
- * exactly ONE of them was JSX text. The other 25 were toast arguments,
- * window.confirm messages, aria-labels, titles and placeholders. Grepping
- * for prose between angle brackets would have called that tree clean.
+ * A hand audit of src/components/settings (at a800140^) counted 26 real
+ * untranslated strings, and exactly ONE was JSX text. The other 25 were
+ * toast arguments, window.confirm messages, aria-labels, titles and
+ * placeholders. Grepping for prose between angle brackets would have
+ * called that tree clean.
+ *
+ * That 26 is a human count of strings worth fixing, not this tool's hit
+ * count — see DO NOT CALIBRATE ON THE TOTAL below.
  *
  * So this walks the TypeScript AST instead and looks at every string the
  * program can produce, wherever it sits.
@@ -30,10 +34,35 @@
  * there — a toast, an aria-label, a title. Only then does silence on your
  * own tree mean anything.
  *
- * The benchmark: src/components/settings. It should surface toast text
- * ("Failed to create invitation"), title="Edit" / title="Delete", and
- * placeholder values. If your filters have silenced those, they are too
- * aggressive — loosen them before auditing anything else.
+ * THE BENCHMARK IS A COMMIT, NOT A DIRECTORY.
+ *
+ * Use src/components/settings as it stood at a800140^ — the commit before
+ * the settings i18n pass landed. Do NOT calibrate against that directory
+ * at HEAD: it has since been cleaned (a800140, 36c418e), so a correct
+ * detector now finds almost nothing there and you would conclude your
+ * filters were broken. A benchmark that points at a moving branch has an
+ * expiry date nobody writes down.
+ *
+ *   git archive a800140^ src/components/settings | tar -x -C /tmp/bench
+ *   node tools/find-untranslated.mjs /tmp/bench/src/components/settings/*.tsx
+ *
+ * PASS/FAIL — these exact hits must appear. Verified against a800140^:
+ *
+ *   [toast]            "Failed to create invitation"
+ *   [toast]            "Could not reach the server. Try again?"
+ *   [dialog]           "This will delete the current WhatsApp config …"
+ *   [attr:title]       "Edit"   and   "Delete"
+ *   [attr:placeholder] "sk-... (OpenAI)"
+ *
+ * Four classes — toast, window.confirm, title, placeholder — and not one
+ * of them is JSX text. If your filters silenced any class, they are too
+ * aggressive; loosen them before auditing anything else.
+ *
+ * DO NOT CALIBRATE ON THE TOTAL. Two detectors that both find every real
+ * string will still report very different totals, because the count is
+ * dominated by how much harmless noise each one lets through. This one
+ * reports 134 hits at a800140^, of which roughly thirty are the strings
+ * that matter. A total is not a result; the named hits above are.
  *
  * ---------------------------------------------------------------------
  * WHAT IS FILTERED OUT, AND WHY EACH FILTER EXISTS
@@ -63,6 +92,16 @@
  *       A `labelKey` is a catalogue key, not a label.
  *   Values that cannot be prose: slugs, CONSTANTS, urls, emails, hex and
  *   oklch colours, pure punctuation/number strings — see isTechnical().
+ *
+ * WHAT IT CANNOT SEE
+ *
+ *   A string assigned to a variable and interpolated somewhere else. The
+ *   scan looks at literals where they are written, so `const msg = "network
+ *   error"` used three functions away is reported at the assignment if it
+ *   looks like prose — and missed entirely if the assignment is built up
+ *   conditionally. Six of those were found by hand, not by this tool. An
+ *   empty result means no literal at the call site, never that no English
+ *   reaches the user.
  *
  * WHAT IT DELIBERATELY STILL REPORTS
  *
@@ -231,8 +270,22 @@ for (const file of files) {
 console.log(`\nTotal: ${total} across ${files.length} file(s).`);
 if (total === 0) {
   console.log(
-    "Empty result. Before reporting this tree clean, run the detector\n" +
-      "against src/components/settings and confirm it still finds the toast\n" +
-      "and title strings there. See the header comment.",
+    [
+      "Empty result — read this before reporting the tree clean.",
+      "",
+      "  1. Empty means NO LITERAL AT THE CALL SITE. It does not mean no",
+      "     English reaches the user. A string assigned to a variable and",
+      "     interpolated later is invisible to this scan — six 'network",
+      "     error' messages hid that way and were found by hand.",
+      "",
+      "  2. Calibrate before you believe this. An over-filtered detector",
+      "     prints exactly what you are reading now.",
+      "",
+      "       git archive a800140^ src/components/settings | tar -x -C /tmp/bench",
+      "       node tools/find-untranslated.mjs /tmp/bench/src/components/settings/*.tsx",
+      "",
+      "     It must surface all four classes: a toast, a window.confirm, a",
+      "     title=, and a placeholder=. See the header for the exact strings.",
+    ].join("\n"),
   );
 }
