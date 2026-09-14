@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { errorKeyFor } from "@/lib/issues/labels";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
@@ -67,34 +68,6 @@ const SEVERITIES = (Object.keys(SEVERITY_ORDER) as IssueSeverity[]).sort(
   (a, b) => SEVERITY_ORDER[a] - SEVERITY_ORDER[b],
 );
 
-/**
- * Route error code → Issues.errors.* key.
- *
- * The routes answer in snake_case; the catalogue is camelCase. The
- * canonical mapping is asserted both ways in
- * src/lib/issues/labels.test.ts, but it lives inside that test file, so
- * production code cannot import it — see the handoff. This covers the
- * codes POST /api/issues can actually return and falls back to
- * saveFailed, which is the same collapse the canonical map makes for
- * insert_failed and update_failed.
- *
- * An unknown code reaching saveFailed is the right default: the agent
- * learns the case did not open, which is the part they can act on.
- */
-const ERROR_KEYS: Record<string, string> = {
-  unauthorized: "unauthorized",
-  forbidden: "forbidden",
-  profile_not_linked: "profileNotLinked",
-  summary_required: "summaryRequired",
-  invalid_category: "invalidCategory",
-  invalid_severity: "invalidSeverity",
-  invalid_body: "invalidBody",
-  insert_failed: "saveFailed",
-};
-
-function errorKeyFor(code: unknown): string {
-  return (typeof code === "string" && ERROR_KEYS[code]) || "saveFailed";
-}
 
 /** Sentinel for "no centre" — Select cannot carry an empty string value. */
 const NO_CENTRE = "__none__";

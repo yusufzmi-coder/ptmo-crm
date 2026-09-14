@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { ERROR_CODE_TO_KEY } from "./labels";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
@@ -34,19 +35,6 @@ const LOCALES = ["en", "ko", "ms"] as const;
  * need to know whether the write failed on insert or update, only that it
  * did not save.
  */
-const ERROR_CODE_TO_KEY: Record<string, string> = {
-  unauthorized: "unauthorized",
-  profile_not_linked: "profileNotLinked",
-  not_found: "notFound",
-  invalid_transition: "invalidTransition",
-  summary_required: "summaryRequired",
-  invalid_category: "invalidCategory",
-  invalid_severity: "invalidSeverity",
-  invalid_body: "invalidBody",
-  nothing_to_update: "nothingToUpdate",
-  insert_failed: "saveFailed",
-  update_failed: "saveFailed",
-};
 
 function catalogue(locale: string) {
   const raw = readFileSync(

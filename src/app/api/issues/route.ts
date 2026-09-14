@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { requireRole, toErrorResponse } from '@/lib/auth/account'
+import { isIssueCategory, isIssueSeverity } from '@/lib/issues/labels'
 import { supabaseAdmin } from '@/lib/issues/admin-client'
 import { INITIAL_ISSUE_STATUS } from '@/lib/issues/status'
-import type { IssueCategory, IssueSeverity } from '@/types'
 
 /**
  * GET  /api/issues — list the caller's issues.
@@ -18,19 +18,7 @@ import type { IssueCategory, IssueSeverity } from '@/types'
  * see messages/*.json.
  */
 
-const CATEGORIES: readonly IssueCategory[] = [
-  'progress',
-  'keselamatan',
-  'staf',
-  'servis',
-  'yuran',
-  'jadual',
-  'pendaftaran',
-  'fasiliti',
-  'lain',
-]
 
-const SEVERITIES: readonly IssueSeverity[] = ['biasa', 'penting', 'kritikal']
 
 async function requireUser(): Promise<
   | { ok: true; userId: string; supabase: Awaited<ReturnType<typeof createClient>> }
@@ -120,10 +108,10 @@ export async function POST(request: Request) {
   if (!summary) {
     return NextResponse.json({ error: 'summary_required' }, { status: 422 })
   }
-  if (!body.category || !CATEGORIES.includes(body.category as IssueCategory)) {
+  if (!body.category || !isIssueCategory(body.category)) {
     return NextResponse.json({ error: 'invalid_category' }, { status: 422 })
   }
-  if (!body.severity || !SEVERITIES.includes(body.severity as IssueSeverity)) {
+  if (!body.severity || !isIssueSeverity(body.severity)) {
     return NextResponse.json({ error: 'invalid_severity' }, { status: 422 })
   }
 
