@@ -316,8 +316,16 @@ const SCAN = `
     // sits on. A divider is not — see the note on --border below.
     // A fully transparent border is layout, not information — buttons
     // carry border-transparent so a focus ring has somewhere to land.
-    const bTransparent = /^rgba\(.*,\s*0\)$/.test(cs.borderTopColor) || cs.borderTopColor === 'transparent';
-    if ((parseFloat(cs.borderTopWidth) || 0) > 0 && !bTransparent) {
+    //
+    // Tested by compositing rather than by matching a string: the first
+    // version of this checked for rgba(...,0) and missed Tailwind v4's
+    // oklab(... / 0) entirely, so every button reported a 1.0 border.
+    // If the colour painted over the surface IS the surface, nobody can
+    // see it, whatever colour space it was written in.
+    const bPainted = H.composite(cs.borderTopColor, H.rgb(under));
+    const bInvisible =
+      bPainted[0] === under[0] && bPainted[1] === under[1] && bPainted[2] === under[2];
+    if ((parseFloat(cs.borderTopWidth) || 0) > 0 && !bInvisible) {
       const bd = H.ratio(H.composite(cs.borderTopColor, H.rgb(under)), under);
       if (bd < 3.0) {
         const bkey = 'B|' + cs.borderTopColor + '|' + cs.borderTopWidth;
