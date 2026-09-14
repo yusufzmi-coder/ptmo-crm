@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Loader2, TriangleAlert } from "lucide-react";
+import { TriangleAlert } from "lucide-react";
 
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import {
   AlertDescription,
   AlertTitle,
 } from "@/components/ui/alert";
+import { Spinner } from "@/components/layout/spinner";
 
 /**
  * Tells the user when their account context didn't resolve.
@@ -59,7 +60,7 @@ export function AccountAccessAlert() {
       </AlertDescription>
       <AlertAction>
         <Button size="sm" variant="outline" onClick={retry} disabled={retrying}>
-          {retrying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+          {retrying ? <Spinner className="size-3.5" /> : null}
           {t("retry")}
         </Button>
       </AlertAction>
