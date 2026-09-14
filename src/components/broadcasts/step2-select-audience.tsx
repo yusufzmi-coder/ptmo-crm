@@ -17,6 +17,7 @@ import {
   ArrowLeft,
   X,
 } from 'lucide-react';
+import { Skeleton } from '@/components/dashboard/skeleton';
 import { useTranslations } from 'next-intl';
 
 type AudienceType = 'all' | 'tags' | 'custom_field' | 'csv';
@@ -346,7 +347,15 @@ export function Step2SelectAudience({
         <div className="rounded-xl border border-border bg-card/50 p-4">
           <p className="mb-3 text-sm font-medium text-foreground">{t('selectAudience.selectTags')}</p>
           {loadingTags ? (
-            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            <div
+              className="flex flex-wrap gap-2"
+              aria-busy="true"
+              aria-label={t('selectAudience.loadingTags')}
+            >
+              {['w-20', 'w-28', 'w-16', 'w-24', 'w-20'].map((w, i) => (
+                <Skeleton key={i} className={`h-6 rounded-full ${w}`} />
+              ))}
+            </div>
           ) : tags.length === 0 ? (
             <p className="text-xs text-muted-foreground">
               {t('selectAudience.noTagsFound')}
@@ -382,7 +391,16 @@ export function Step2SelectAudience({
         <div className="space-y-3 rounded-xl border border-border bg-card/50 p-4">
           <p className="text-sm font-medium text-foreground">{t('selectAudience.method.customField')}</p>
           {loadingFields ? (
-            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            // Mirrors the three-column field/operator/value row below.
+            <div
+              className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_140px_minmax(0,1fr)]"
+              aria-busy="true"
+              aria-label={t('selectAudience.loadingFields')}
+            >
+              <Skeleton className="h-9 w-full" />
+              <Skeleton className="h-9 w-full" />
+              <Skeleton className="h-9 w-full" />
+            </div>
           ) : customFields.length === 0 ? (
             <p className="text-xs text-muted-foreground">
               {t('selectAudience.errorLoadFields')}

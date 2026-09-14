@@ -25,6 +25,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, AlertTriangle } from 'lucide-react';
+import { Skeleton } from '@/components/dashboard/skeleton';
 import { useTranslations } from 'next-intl';
 
 interface ContactFormProps {
@@ -326,9 +327,17 @@ export function ContactForm({
           <div className="space-y-2">
             <Label className="text-muted-foreground">{t('tagsLabel')}</Label>
             {loadingTags ? (
-              <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                <Loader2 className="size-3 animate-spin" />
-                {t('loadingTags')}
+              // Pill-shaped skeletons of varying width, so the row is
+              // already the height the chips will need and the fields
+              // below it don't shift down when they arrive.
+              <div
+                className="flex flex-wrap gap-1.5"
+                aria-busy="true"
+                aria-label={t('loadingTags')}
+              >
+                {['w-16', 'w-24', 'w-12', 'w-20'].map((w, i) => (
+                  <Skeleton key={i} className={`h-5 rounded-full ${w}`} />
+                ))}
               </div>
             ) : tags.length === 0 ? (
               <p className="text-xs text-muted-foreground">

@@ -483,7 +483,11 @@
       "toastCustomFieldsSaved": "커스텀 필드가 저장되었습니다",
       "toastCustomFieldsFailed": "커스텀 필드를 저장하지 못했습니다",
       "toastTemplateSent": "\"{name}\" 템플릿을 보냈습니다",
-      "toastTemplateFailed": "템플릿을 보내지 못했습니다: {reason}"
+      "toastTemplateFailed": "템플릿을 보내지 못했습니다: {reason}",
+      "loadingContact": "연락처 불러오는 중",
+      "loadingNotes": "메모 불러오는 중",
+      "loadingCustomFields": "맞춤 필드 불러오는 중",
+      "loadingDeals": "거래 불러오는 중"
     },
     "importModal": {
       "title": "연락처 가져오기",
@@ -763,7 +767,8 @@
         "subtitle": "브로드캐스트에 사용할 승인된 메시지 템플릿을 선택하세요.",
         "noTemplates": "사용 가능한 템플릿이 없습니다.",
         "createFirst": "먼저 설정에서 템플릿을 만드세요.",
-        "errorLoad": "템플릿을 불러오지 못했습니다"
+        "errorLoad": "템플릿을 불러오지 못했습니다",
+        "loading": "템플릿 불러오는 중"
       },
       "selectAudience": {
         "title": "대상 선택",
@@ -798,7 +803,9 @@
         "errorLoadTags": "태그를 불러오지 못했습니다",
         "errorLoadFields": "커스텀 필드를 불러오지 못했습니다",
         "errorCsvParse": "CSV 파일을 파싱할 수 없습니다.",
-        "errorCsvMissingPhone": "CSV에 'phone' 열이 있어야 합니다."
+        "errorCsvMissingPhone": "CSV에 'phone' 열이 있어야 합니다.",
+        "loadingTags": "태그 불러오는 중",
+        "loadingFields": "맞춤 필드 불러오는 중"
       },
       "personalize": {
         "title": "변수 개인화",
