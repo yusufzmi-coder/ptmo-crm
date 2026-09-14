@@ -1724,3 +1724,56 @@ menyelesai kepada objek sebenar dalam bucket peribadi.
 berapa baris `messages` memegang URL bucket awam pra-047. Kalau
 jawapannya sifar, laluan legasi tidak pernah dilalui dalam production dan
 risiko ini tidak wujud.
+
+## `main` dan domain telah berpisah — deploy tidak berlaku sendiri
+
+`/issues` wujud dalam `main`, dibina secara tempatan (`npx next build`
+menyenaraikan `/issues` dan `/issues/[id]`), dan memulangkan **404** pada
+`crm.ptmostaff.com`.
+
+Bukan masalah cache: diuji dengan parameter query rawak, lapan kali
+merentas enam minit. Dan ia bukan kegagalan laluan am — laluan sedia ada
+berkelakuan betul:
+
+```
+/login             200
+/forgot-password   200
+/ops/unanswered    307   dilencongkan oleh middleware
+/flows             307   dilencongkan oleh middleware
+/issues            404   tidak wujud dalam build yang disajikan
+```
+
+`/issues` **ada dalam `protectedPaths`** pada `main`, jadi kalau build
+yang disajikan membawanya, ia akan memulangkan 307 seperti dua yang lain
+— walaupun halaman itu tiada. 404 bermakna **middleware yang disajikan
+tidak mengenalinya**, jadi deployment itu lebih lama daripada commit itu.
+
+**Ini berpasangan dengan penemuan Actions.** Kedua-dua automasi projek ini
+bergantung padanya tidak menembak sendiri:
+
+```
+GitHub Actions   9 push ke main -> 0 larian; hanya workflow_dispatch
+Vercel           beberapa merge ke main -> deployment tidak berubah
+```
+
+Setiap deploy yang berjaya hari ini berlaku selepas Boss menekan redeploy
+dengan tangan — locale Melayu dan kunci service-role kedua-duanya
+mendarat sedemikian, dan kedua-duanya diterangkan sebagai "redeploy"
+dalam laporannya.
+
+**Tidak boleh disahkan dari sini:** sesi ini tidak boleh membaca Vercel
+(CLI tidak log masuk, dan log masuk itu interaktif). Jadi antara *deploy
+tidak dicetuskan* dan *deploy dicetuskan dan gagal* tidak boleh
+dibezakan tanpa membuka papan pemuka.
+
+Dua sebab yang berbaloi disemak di sana, mengikut susunan:
+1. **Auto-deploy dimatikan** pada projek yang menyajikan domain
+   (`crmfinal_ptmo`), atau ia disambungkan kepada cabang selain `main`.
+2. **Projek pendua.** Dua projek pernah disambung ke repo ini. Kalau
+   `ptmo-crm` yang membina pada merge dan `crmfinal_ptmo` yang memegang
+   domain, setiap merge membina projek yang salah.
+
+Sehingga ini diselesaikan, **setiap perkara yang mendarat dalam `main`
+tidak hidup sehingga seseorang menekan redeploy**. Itu bukan keadaan yang
+selamat untuk hari nombor WhatsApp disambung: laluan webhook masuk berada
+dalam kod yang di-deploy, bukan dalam `main`.
