@@ -74,7 +74,7 @@ const WELCOME_MENU: FlowTemplate = {
   slug: "welcome_menu",
   name: "Welcome menu",
   description:
-    "Greet customers who type a keyword and route them to the right agent based on whether they're new or existing.",
+    "Greet parents who message in and route them to the right agent based on whether their child already attends.",
   icon: "MessageSquare",
   trigger_type: "keyword",
   trigger_config: { keywords: ["support", "help", "hi"], match_type: "contains" },
@@ -89,17 +89,17 @@ const WELCOME_MENU: FlowTemplate = {
       node_key: "welcome",
       node_type: "send_buttons",
       config: {
-        text: "Hi! 👋 Welcome to support. Are you an existing customer or new here?",
+        text: "Hi! 👋 Thanks for messaging us. Does your child already attend one of our centres?",
         footer_text: "Tap a button below to continue.",
         buttons: [
           {
             reply_id: "existing",
-            title: "Existing customer",
+            title: "Already attending",
             next_node_key: "existing_handoff",
           },
           {
             reply_id: "new",
-            title: "New customer",
+            title: "New enquiry",
             next_node_key: "new_handoff",
           },
         ],
@@ -109,14 +109,14 @@ const WELCOME_MENU: FlowTemplate = {
       node_key: "existing_handoff",
       node_type: "handoff",
       config: {
-        note: "Existing customer needs assistance — please check account history before replying.",
+        note: "Existing parent — check the child's centre and class history before replying.",
       } as HandoffNodeConfig,
     },
     {
       node_key: "new_handoff",
       node_type: "handoff",
       config: {
-        note: "New customer — share pricing + onboarding link.",
+        note: "New enquiry — confirm which centre and programme, then send the fees for that centre.",
       } as HandoffNodeConfig,
     },
   ],
@@ -164,9 +164,9 @@ const FAQ_BOT: FlowTemplate = {
                 next_node_key: "answer_pricing",
               },
               {
-                reply_id: "refunds",
-                title: "Refund policy",
-                next_node_key: "answer_refunds",
+                reply_id: "schedule",
+                title: "Class schedule",
+                next_node_key: "answer_schedule",
               },
             ],
           },
@@ -187,7 +187,9 @@ const FAQ_BOT: FlowTemplate = {
       node_key: "answer_hours",
       node_type: "send_message",
       config: {
-        text: "We're open Mon–Fri, 9am–6pm local time. Weekend support is limited to urgent issues.",
+        // Placeholder on purpose: opening hours differ per centre, and a
+        // seed that states them would be wrong for most of them.
+        text: "Opening hours vary by centre. Tell us which centre you're asking about and we'll confirm.",
         next_node_key: "end",
       } as SendMessageNodeConfig,
     },
@@ -195,15 +197,18 @@ const FAQ_BOT: FlowTemplate = {
       node_key: "answer_pricing",
       node_type: "send_message",
       config: {
-        text: "Our pricing starts at $9/mo. Visit https://example.com/pricing for the full breakdown.",
+        // Never quote a figure from a seed. Fees depend on centre and
+        // programme; a wrong number sent to a parent is worse than no
+        // number, so this hands the question to someone who knows.
+        text: "Fees depend on the centre and the programme. Let us know which centre and your child's year, and we'll send you the details.",
         next_node_key: "end",
       } as SendMessageNodeConfig,
     },
     {
-      node_key: "answer_refunds",
+      node_key: "answer_schedule",
       node_type: "send_message",
       config: {
-        text: "Refunds are honored within 30 days of purchase. Reply with your order number and we'll process it.",
+        text: "Class days and times depend on the centre and the programme. Tell us which centre you're asking about and we'll share the timetable.",
         next_node_key: "end",
       } as SendMessageNodeConfig,
     },
@@ -211,7 +216,7 @@ const FAQ_BOT: FlowTemplate = {
       node_key: "human_handoff",
       node_type: "handoff",
       config: {
-        note: "Customer asked to talk to a human from the FAQ bot.",
+        note: "Parent asked to speak to someone from the FAQ bot.",
       } as HandoffNodeConfig,
     },
     {
@@ -229,7 +234,7 @@ const LEAD_CAPTURE: FlowTemplate = {
   slug: "lead_capture",
   name: "Lead capture",
   description:
-    "Greet first-time inbounds, capture name + email + company, then hand off to sales with the answers in the note.",
+    "Greet a first-time enquiry, capture the parent's name, contact and preferred centre, then hand off with the answers in the note.",
   icon: "UserPlus",
   trigger_type: "first_inbound_message",
   trigger_config: {},
@@ -261,7 +266,7 @@ const LEAD_CAPTURE: FlowTemplate = {
       node_key: "ask_email",
       node_type: "collect_input",
       config: {
-        prompt_text: "Thanks {{vars.name}}! What's your work email?",
+        prompt_text: "Thanks {{vars.name}}! What email can we reach you on?",
         var_key: "email",
         next_node_key: "ask_company",
       } as CollectInputNodeConfig,
@@ -270,8 +275,8 @@ const LEAD_CAPTURE: FlowTemplate = {
       node_key: "ask_company",
       node_type: "collect_input",
       config: {
-        prompt_text: "Almost done — what's your company name?",
-        var_key: "company",
+        prompt_text: "Almost done — which centre is closest to you?",
+        var_key: "centre",
         next_node_key: "handoff",
       } as CollectInputNodeConfig,
     },
@@ -279,7 +284,7 @@ const LEAD_CAPTURE: FlowTemplate = {
       node_key: "handoff",
       node_type: "handoff",
       config: {
-        note: "New lead — name={{vars.name}}, email={{vars.email}}, company={{vars.company}}.",
+        note: "New enquiry — name={{vars.name}}, email={{vars.email}}, centre={{vars.centre}}.",
       } as HandoffNodeConfig,
     },
   ],
