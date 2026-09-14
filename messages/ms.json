@@ -2019,5 +2019,13 @@
   "ColorMode": {
     "light": "Terang",
     "dark": "Gelap"
+  },
+  "ThemeTagline": {
+    "ptmo": "Biru Minda Optima — pilihan lalai untuk pemasangan ini.",
+    "violet": "Yakin, sedikit ceria.",
+    "emerald": "Nada pertumbuhan — terasa seperti aplikasi mesej tanpa meniru hijau WhatsApp.",
+    "cobalt": "Biru B2B-SaaS yang bersih — tenang dan kemas.",
+    "amber": "Hangat dan mesra — sesuai untuk pasukan PKS.",
+    "rose": "Berani dan moden — D2C, ekonomi kreator, gaya hidup."
   }
 }
