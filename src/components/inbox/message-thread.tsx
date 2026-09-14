@@ -28,6 +28,7 @@ import {
   Clock,
   ArrowLeft,
   RefreshCw,
+  FolderPlus,
   PanelRightOpen,
   PanelRightClose,
   Eye,
@@ -54,6 +55,7 @@ import {
 import { deleteAccountMedia } from "@/lib/storage/upload-media";
 import { TemplatePicker } from "./template-picker";
 import { AiThreadBanner } from "./ai-thread-banner";
+import { OpenCaseDialog } from "./open-case-dialog";
 import { buildReplyPreview } from "./reply-quote";
 import { renderTemplateBody } from "@/lib/whatsapp/template-body";
 import { toast } from "sonner";
@@ -189,12 +191,14 @@ export function MessageThread({
   const t = useTranslations("Inbox.messageThread");
   const tTimer = useTranslations("Inbox.sessionTimer");
   const tQuote = useTranslations("Inbox.replyQuote");
+  const tCase = useTranslations("Issues.create");
 
   const { user } = useAuth();
   const { getPresence, getRow, getCoViewers, now } = usePresence();
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
+  const [caseDialogOpen, setCaseDialogOpen] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [reactions, setReactions] = useState<MessageReaction[]>([]);
   // Purely visual spin state for the manual-refresh button. The actual
@@ -1062,6 +1066,20 @@ export function MessageThread({
             </button>
           )}
 
+          {/* Open a case. Sits in the same cluster as Status and Assign
+              because that is where staff already change what is true
+              about a conversation — a complaint is one more such change,
+              not a separate errand. */}
+          <button
+            type="button"
+            onClick={() => setCaseDialogOpen(true)}
+            aria-label={tCase("button")}
+            title={tCase("button")}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <FolderPlus className="h-3.5 w-3.5" />
+          </button>
+
           {/* Status dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger className={cn(
@@ -1301,6 +1319,13 @@ export function MessageThread({
         onClearReply={() => setReplyTo(null)}
         branchName={branchName}
         coViewerNames={coViewerNames}
+      />
+
+      <OpenCaseDialog
+        open={caseDialogOpen}
+        onOpenChange={setCaseDialogOpen}
+        conversationId={conversation.id}
+        contact={contact}
       />
 
       <TemplatePicker
