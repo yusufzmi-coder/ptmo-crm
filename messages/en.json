@@ -1949,5 +1949,8 @@
   "Interactive": {
     "emptyButtons": "Buttons, no message text",
     "emptyList": "List, no message text"
+  },
+  "DashboardShell": {
+    "loading": "Loading..."
   }
 }

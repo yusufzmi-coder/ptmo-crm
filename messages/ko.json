@@ -1949,5 +1949,8 @@
   "Interactive": {
     "emptyButtons": "버튼, 메시지 내용 없음",
     "emptyList": "목록, 메시지 내용 없음"
+  },
+  "DashboardShell": {
+    "loading": "불러오는 중..."
   }
 }
