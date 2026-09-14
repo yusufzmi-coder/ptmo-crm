@@ -250,7 +250,12 @@
       "replyingAsBranch": "{branch}(으)로 답장",
       "typeMessageAsBranch": "{branch}(으)로 메시지 입력... (줄바꿈은 Shift+Enter)",
       "alsoViewing": "{names}님도 이 대화를 보고 있습니다 — 답장 전에 확인하세요.",
-      "loadingQuickReplies": "빠른 답장을 불러오는 중"
+      "loadingQuickReplies": "빠른 답장을 불러오는 중",
+      "dropToAttach": "놓아서 첨부",
+      "dropUnavailable": "지금은 첨부할 수 없습니다",
+      "unsupportedFile": "WhatsApp에서 보낼 수 없는 파일 형식입니다.",
+      "onlyFirstFile": "메시지당 첨부는 하나입니다 — {filename}을(를) 사용합니다.",
+      "attachmentBusy": "현재 첨부를 보내거나 삭제한 뒤 다시 시도하세요."
     },
     "bubble": {
       "photo": "사진",
