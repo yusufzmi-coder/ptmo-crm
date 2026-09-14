@@ -103,10 +103,10 @@ POKOK FAIL, bukan tema, supaya tiada dua terminal menulis fail sama.
 |---|---|---|---|---|
 | 1 Coordinator | ptmo-crm-fasa1-release-gate | `~/Projects/ptmo-crm` | `docs/**`, integrasi | - (pengadil) |
 | 2 Builder | create-worktree-gitignore | `.worktrees/f1-t2-mu0nanxd` | `src/components/inbox/**`, `src/lib/inbox/**` | `Inbox.*` |
-| 3 Builder | create-worktree-audit-workflow | `~/Projects/ptmo-crm-issues-ui` | `src/components/contacts/**`, `src/components/broadcasts/**` | `Contacts.*`, `Broadcasts.*` |
+| 3 Builder | create-worktree-audit-workflow | `~/Projects/ptmo-crm-issues-ui` | `src/components/settings/**` (contacts/broadcasts siap) | `Settings.*` |
 | 4 Builder | notifications-page-i18n | worktree sendiri | `src/app/(dashboard)/notifications/**` | `Notifications.*` (baharu) |
 | ? | uat-crm-phase-1-qa | - | belum disahkan | - |
-| - | **TIADA PEMILIK** | - | `src/components/layout/**` (nav), `src/components/settings/**` | `Sidebar.*`/`Header.*`, `Settings.*` |
+| - | **TIADA PEMILIK** | - | `src/components/layout/**` (nav) — menunggu jawapan `uat-crm-phase-1-qa` | `Sidebar.*`, `Header.*` |
 
 **Pengesahan visual masih tiada pemilik.** Empat batch UI sudah masuk dan
 lulus 1160 ujian; tiada seorang pun pernah melihatnya berjalan.
@@ -153,6 +153,7 @@ kongsi: guna, jangan ubah.
 | 2026-09-14 | UI batch 2 diintegrasi: penapis pemilikan Anyone/Mine/Unassigned/Others + chip pemilik; 1148 ujian lulus | `9c113b8` | Coordinator |
 | 2026-09-14 | UI batch 3: skeleton senarai inbox + sasaran sentuh mobile lebih besar | `838412c` | Coordinator |
 | 2026-09-14 | UI batch 4: drag-drop dan paste lampiran dalam composer; konflik i18n diselesaikan sebagai kesatuan; 1160 ujian lulus | `843795d` | Coordinator |
+| 2026-09-14 | UI batch 5: 9 spinner contacts/broadcasts jadi skeleton, 12 dikekalkan dengan sebab (animate-spin 21 -> 12) | `6bef51f` | Coordinator |
 
 ---
 
