@@ -1531,3 +1531,44 @@ dua zonnya sendiri.
 Tujuh sekatan, tiada satu pun pepijat dalam migration. Semuanya dalam
 perancah yang sepatutnya menguji migration. Andaian bahawa tujuh ialah
 yang terakhir mempunyai rekod yang sama seperti lima dan enam.
+
+## Ujian "senarai kosong" yang saya cadangkan tidak menguji apa-apa
+
+Saya mencadangkan: buka halaman Flows atau Automations sambil log masuk;
+kalau klien admin ialah anon-tanpa-sesi, senarai kembali kosong.
+
+Kedua-dua senarai **memang** kosong. Ia tidak bermakna apa-apa, kerana
+**tiada satu pun daripada dua halaman itu menggunakan klien admin untuk
+membaca**:
+
+```
+/automations   membaca /rest/v1/automations terus — klien PELAYAR,
+               dengan sesi, melalui RLS. Laluan API hanya disentuh
+               untuk mutasi (toggle, duplicate, delete).
+GET /api/flows menggunakan guard.supabase — klien KUKI.
+               supabaseAdmin() muncul pada baris 99, di dalam POST.
+/api/flows/templates  memulangkan pemalar kod, bukan bacaan DB.
+```
+
+Jadi kedua-dua senarai kosong ialah bacaan berskop-RLS dengan sesi sah,
+pada akaun yang memang tiada baris. **Hasil yang betul, dan ia tidak
+membezakan apa-apa.**
+
+Ujian itu dicadangkan berdasarkan andaian tentang seni bina laluan yang
+tidak disemak. Ia kelas kesilapan yang sama yang menghantar sesi ke
+`avatar.tsx` yang tidak perlukan perubahan, dan yang menamakan
+`text-muted-foreground` sebagai kelas yang gagal dalam `tabs.tsx`:
+**mencadangkan diagnosis tanpa membuka fail.**
+
+**Ujian yang betul ialah lima saat dan tidak menyentuh pangkalan data:**
+buka tetapan Environment Variables Vercel dan bandingkan
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` dengan `SUPABASE_SERVICE_ROLE_KEY`.
+Kalau ia berbeza di sana, seluruh isu ini ialah kecacatan pembangunan
+tempatan.
+
+Larian tempatan tidak boleh menjawab soalan tentang deployment, tidak
+kira berapa banyak baris ditulis untuk mencubanya.
+
+**Tambahan:** kedua-dua kunci bukan JWT — tiada struktur tiga-bahagian
+berpisah-titik. Jadi ini bukan *"JWT yang salah di slot yang salah"*; ia
+**satu** kunci publishable gaya baharu disalin ke **kedua-dua** slot.

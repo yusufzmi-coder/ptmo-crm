@@ -3,16 +3,17 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import {
+  AlertTriangle,
+  CheckCircle2,
+  Copy,
+  ExternalLink,
   Eye,
   EyeOff,
-  Copy,
-  CheckCircle2,
-  XCircle,
   Loader2,
-  ExternalLink,
-  Zap,
-  AlertTriangle,
+  OctagonAlert,
   RotateCcw,
+  XCircle,
+  Zap,
 } from 'lucide-react';
 import { Skeleton } from '@/components/dashboard/skeleton';
 import { normalizeQuality, type QualityRating } from './branch-link';
@@ -1241,7 +1242,7 @@ function QualityBanner({
     },
     RED: {
       box: 'border-destructive/70 bg-destructive/15 text-destructive',
-      icon: AlertTriangle,
+      icon: OctagonAlert,
       label: t('qualityRed'),
       hint: t('qualityRedHint'),
     },
