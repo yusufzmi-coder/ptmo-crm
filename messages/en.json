@@ -54,6 +54,8 @@
     "pipelines": "Pipelines",
     "broadcasts": "Broadcasts",
     "automations": "Automations",
+    "flows": "Flows",
+    "aiAgents": "AI Agents",
     "ops": "Belum Dibalas",
     "settings": "Settings",
     "openMenu": "Open menu",
