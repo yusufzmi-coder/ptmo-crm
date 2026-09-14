@@ -55,7 +55,7 @@ export function SettingsRail({
         'lg:sticky lg:top-0 lg:flex-col lg:overflow-visible lg:border-b-0 lg:pb-0',
       )}
     >
-      {RAIL_GROUPS.map(({ label, group }) => {
+      {RAIL_GROUPS.map(({ showHeading, group }) => {
         const items = SETTINGS_SECTIONS.filter(
           (s) => SECTION_META[s].group === group,
         );
@@ -64,7 +64,7 @@ export function SettingsRail({
             key={group}
             className="flex shrink-0 gap-1 lg:flex-col lg:gap-0.5"
           >
-            {label ? (
+            {showHeading ? (
               <div className="hidden px-3 pt-3.5 pb-1.5 text-[11px] font-semibold tracking-[0.09em] text-muted-foreground uppercase lg:block">
                 {t(`groups.${group}`)}
               </div>

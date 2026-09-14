@@ -42,32 +42,43 @@ export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
 export const DEFAULT_SECTION: SettingsSection = 'overview';
 
 /** Rail grouping. `adminOnly` items are hidden for non-admins. */
+/**
+ * Rail metadata. Deliberately carries no label: the displayed name comes
+ * from the catalogue (`Settings.sections.<id>`), which is what
+ * settings-rail renders. A `label` here would look like the source of
+ * truth while changing nothing on screen.
+ */
 export interface SectionMeta {
   id: SettingsSection;
-  label: string;
   icon: LucideIcon;
   group: 'top' | 'account' | 'workspace';
 }
 
 export const SECTION_META: Record<SettingsSection, SectionMeta> = {
-  overview: { id: 'overview', label: 'Overview', icon: LayoutGrid, group: 'top' },
-  profile: { id: 'profile', label: 'Your profile', icon: User, group: 'account' },
-  security: { id: 'security', label: 'Login & security', icon: Shield, group: 'account' },
-  appearance: { id: 'appearance', label: 'Appearance', icon: Palette, group: 'account' },
-  whatsapp: { id: 'whatsapp', label: 'WhatsApp', icon: PlugZap, group: 'workspace' },
-  centres: { id: 'centres', label: 'Centres & zones', icon: Building2, group: 'workspace' },
-  templates: { id: 'templates', label: 'Templates', icon: FileText, group: 'workspace' },
-  'quick-replies': { id: 'quick-replies', label: 'Quick replies', icon: Zap, group: 'workspace' },
-  fields: { id: 'fields', label: 'Fields & tags', icon: Tags, group: 'workspace' },
-  deals: { id: 'deals', label: 'Deals & currency', icon: Coins, group: 'workspace' },
-  members: { id: 'members', label: 'Team members', icon: UsersRound, group: 'workspace' },
-  api: { id: 'api', label: 'API keys', icon: KeyRound, group: 'workspace' },
+  overview: { id: 'overview', icon: LayoutGrid, group: 'top' },
+  profile: { id: 'profile', icon: User, group: 'account' },
+  security: { id: 'security', icon: Shield, group: 'account' },
+  appearance: { id: 'appearance', icon: Palette, group: 'account' },
+  whatsapp: { id: 'whatsapp', icon: PlugZap, group: 'workspace' },
+  centres: { id: 'centres', icon: Building2, group: 'workspace' },
+  templates: { id: 'templates', icon: FileText, group: 'workspace' },
+  'quick-replies': { id: 'quick-replies', icon: Zap, group: 'workspace' },
+  fields: { id: 'fields', icon: Tags, group: 'workspace' },
+  deals: { id: 'deals', icon: Coins, group: 'workspace' },
+  members: { id: 'members', icon: UsersRound, group: 'workspace' },
+  api: { id: 'api', icon: KeyRound, group: 'workspace' },
 };
 
-export const RAIL_GROUPS: { label: string | null; group: SectionMeta['group'] }[] = [
-  { label: null, group: 'top' },
-  { label: 'Account', group: 'account' },
-  { label: 'Workspace', group: 'workspace' },
+/**
+ * Rail groups, in render order. `showHeading` is what this always actually
+ * was: the previous `label: string | null` was read only as a truthiness
+ * check, and its text ("Account", "Workspace") never reached the screen —
+ * the heading comes from `Settings.groups.<group>`.
+ */
+export const RAIL_GROUPS: { showHeading: boolean; group: SectionMeta['group'] }[] = [
+  { showHeading: false, group: 'top' },
+  { showHeading: true, group: 'account' },
+  { showHeading: true, group: 'workspace' },
 ];
 
 function isSection(value: string | null): value is SettingsSection {
