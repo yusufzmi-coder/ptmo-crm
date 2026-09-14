@@ -276,6 +276,7 @@ const SCAN = `
   const H = ${IN_PAGE};
   const out = [];
   const seen = new Set();
+  let scanned = 0;
 
   for (const el of document.querySelectorAll('*')) {
     // Only elements with their own visible text; a wrapper inherits the
@@ -298,6 +299,7 @@ const SCAN = `
       : under;
     const fg = H.composite(cs.color, H.rgb(bg));
 
+    scanned++;
     const need = H.thresholdFor(cs);
     const got = H.ratio(fg, bg);
     if (got >= need) continue;
@@ -315,7 +317,7 @@ const SCAN = `
       got,
     });
   }
-  return out.sort((a, b) => a.got - b.got);
+  return { scanned, rows: out.sort((a, b) => a.got - b.got) };
 })()
 `;
 
@@ -414,8 +416,8 @@ if (page) {
       `document.documentElement.dataset.mode='${mode}';document.documentElement.dataset.theme='${THEME}';document.body.offsetHeight`,
     );
     await sleep(400);
-    const rows = await cdp.evaluate(SCAN);
-    measured += rows.length;
+    const { scanned, rows } = await cdp.evaluate(SCAN);
+    measured += scanned;
     failures += table(rows, mode);
   }
 } else {
@@ -448,7 +450,11 @@ if (page) {
 }
 
 // The count prints on every run, not on request. See THE TRAP above.
-console.log(`\n  generated classes resolved: ${measured - generatedMisses}/${measured}`);
+console.log(
+  page
+    ? `\n  text-bearing elements measured: ${measured}`
+    : `\n  generated classes resolved: ${measured - generatedMisses}/${measured}`,
+);
 if (generatedMisses > 0) {
   console.log(
     `  ⚠ ${generatedMisses} pair(s) had no generated utility. Those ratios are the page's\n` +
