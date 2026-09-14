@@ -1274,3 +1274,62 @@ Yang aku **tidak** dapat buktikan, dan sebab ini diserahkan ke atas:
 
 Kedua-duanya boleh dijawab dengan satu pertanyaan read-only terhadap
 produksi (`supabase/preflight/` ialah tempatnya). Ia belum dijalankan.
+
+## Baris `messages` dalam seed kini tidak ditegaskan oleh sesiapa
+
+`seed-legacy-state.sql` menulis empat baris `messages` yang memegang URL
+bucket awam pra-047. Satu-satunya pembacanya ialah blok 042 dalam
+`verify-upgrade.sql`, dan blok itu dibuang bersama dua lagi apabila
+042/044/048 diparkir daripada release.
+
+Baris itu **kekal**, dan penegasan yang betul untuk ia bukan penegasan
+042. Ia ini: selepas 047, URL tersimpan mesti **masih tidak berubah**.
+
+Itu bukan butiran. Backfill yang akan menulis semula `messages.media_url`
+telah **ditarik balik** daripada release kerana SQL tidak boleh
+mengesahkan hos storan — pemetaan hidup dalam `resolveStoredMediaUrl()`
+pada masa render. Jadi penegasan yang melindungi keputusan itu ialah
+"tiada migration menyentuh lajur ini", dan `verify-upgrade.sql` sudah
+menegaskan bentuk itu untuk set release.
+
+**Tindakan:** pastikan penegasan negatif itu meliputi baris seed secara
+eksplisit, atau baris itu ialah fixture yang tiada apa membaca. Yang
+pertama lebih baik — ia menjadikan baris itu membayar sewa.
+
+## Job upgrade tidak pernah sampai ke ujian yang gagal
+
+Dua sekatan berlaku **sebelum** langkah yang dipercayai gagal:
+
+1. `supabase db query --local --file` menghantar seluruh fail sebagai
+   **satu prepared statement**, dan Postgres menolak prepared statement
+   yang memegang berbilang arahan. Seed yang terdiri daripada lapan
+   `INSERT` ditolak sebelum satu baris ditulis.
+
+   Fail `.sql` lain dalam job itu terselamat kerana setiap satunya ialah
+   satu blok `DO $$`. Dibetulkan dengan menukar arahan kepada `psql -f`,
+   bukan dengan membungkus semula fixture untuk memuaskan alat yang
+   salah.
+
+2. Selepas dipaksa melalui `psql`, kegagalan seterusnya ialah
+   `idx_accounts_one_per_owner`. Trigger `handle_new_user` sudah
+   memperuntukkan akaun dan profil bagi setiap baris `auth.users`, dan
+   `ON CONFLICT (id)` tidak menangkap perlanggaran pada `owner_user_id`.
+
+   `zone_isolation_test.sql:45` bekerja **dengan** trigger itu; seed
+   melawannya. Itu perbezaan reka bentuk antara dua fail yang kelihatan
+   melakukan perkara yang sama.
+
+**Maknanya untuk apa-apa yang dilaporkan sebelum ini:** kegagalan
+`null_role_backfill` ialah kegagalan job **bersih**. Job **upgrade**
+tidak pernah menjalankan seed langsung, jadi tiada apa yang ia dakwa
+sahkan tentang data berbentuk-production pernah disahkan.
+
+## `supabase db reset` tempatan memusnahkan data setiap worktree
+
+Container `supabase_db_wacrm` dikongsi oleh setiap worktree pada mesin
+ini. `supabase db reset` dalam mana-mana satu daripadanya menjatuhkan
+pangkalan data untuk kesemuanya.
+
+Tiada apa dalam repo mengatakannya, dan tiada apa menghalangnya.
+Sesiapa yang memegang data ujian tempatan hendaklah menganggapnya fana
+selagi lebih daripada satu sesi berjalan.

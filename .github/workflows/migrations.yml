@@ -192,7 +192,18 @@ jobs:
         run: supabase db reset --local --no-seed
 
       - name: Seed production-shaped rows
-        run: supabase db query --local --file supabase/ci/seed-legacy-state.sql
+        # psql, not `supabase db query --file`. That command sends the
+        # whole file as ONE prepared statement, and Postgres refuses a
+        # prepared statement holding multiple commands — so a seed made
+        # of eight INSERTs is rejected before a single row is written.
+        #
+        # The other .sql files here survive that because they are each a
+        # single DO $$ block. Wrapping the seed to match would hide a
+        # data fixture inside a procedure to satisfy the wrong tool; the
+        # fixture is fine and the command was wrong.
+        run: |
+          psql "$(supabase status --output json | python3 -c 'import json,sys; print(json.load(sys.stdin)["DB_URL"])')" \
+            --set ON_ERROR_STOP=1 -f supabase/ci/seed-legacy-state.sql
 
       - name: Restore the release
         run: mv /tmp/release/*.sql supabase/migrations/
