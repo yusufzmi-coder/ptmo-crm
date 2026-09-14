@@ -1682,7 +1682,22 @@
       "qualityRed": "Kualiti: Merah — berisiko dihadkan",
       "qualityRedHint": "Meta boleh menghentikan nombor ini daripada menghantar pada bila-bila masa. Jeda broadcast dan semak mesej terkini sekarang.",
       "qualityUnknown": "Kualiti: tidak dilaporkan",
-      "qualityUnknownHint": "Meta tidak memulangkan sebarang rating untuk nombor ini."
+      "qualityUnknownHint": "Meta tidak memulangkan sebarang rating untuk nombor ini.",
+      "toastLoadFailed": "Gagal memuat konfigurasi WhatsApp",
+      "toastPhoneRequired": "Phone Number ID diperlukan",
+      "toastTokenRequired": "Token Akses diperlukan untuk persediaan awal",
+      "toastReenterToken": "Sila masukkan semula Token Akses untuk menyimpan perubahan",
+      "toastSavedNotRegistered": "Disimpan, tetapi Meta gagal mendaftarkan nombor itu: {error}",
+      "toastSavedNoPin": "Kelayakan disimpan dan disahkan. Pendaftaran mesej masuk dilangkau (tiada PIN) — lihat status Pendaftaran di bawah.",
+      "toastSaveFailed": "Gagal menyimpan konfigurasi",
+      "toastTestFailed": "Ujian sambungan gagal. Semak rangkaian dan cuba lagi.",
+      "toastFullyWired": "Nombor bersambung sepenuhnya — Meta sedang menghantar peristiwa.",
+      "toastNotFullyRegistered": "Nombor belum berdaftar sepenuhnya. Lihat semakan di bawah untuk mengetahui langkah mana yang gagal.",
+      "toastVerifyUnreachable": "Gagal menghubungi endpoint pengesahan.",
+      "resetConfirm": "Ini akan memadam konfigurasi WhatsApp semasa supaya anda boleh memasukkannya semula. Teruskan?",
+      "toastResetDone": "Konfigurasi dikosongkan. Anda boleh memasukkan semula kelayakan anda sekarang.",
+      "toastResetFailed": "Gagal menetapkan semula konfigurasi",
+      "toastWebhookCopied": "URL Webhook disalin ke papan klip"
     },
     "sections": {
       "overview": "Gambaran keseluruhan",
