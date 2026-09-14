@@ -1037,3 +1037,46 @@ jadi ia menghasilkan "Sep 14" dalam setiap bahasa. Sama untuk mana-mana
 `format()` date-fns lain dalam repo. Itu pusingan tersendiri — ia
 memerlukan keputusan tentang import locale date-fns, bukan tampalan
 katalog.
+
+## Tiga kunci dalam `en.json` memegang teks Melayu
+
+```
+Sidebar.ops          "Belum Dibalas"
+Header.ops           "Belum Dibalas"
+Ops.unanswered.title "Belum Dibalas"
+```
+
+`en` ialah **locale sumber**. `src/i18n/request.ts` menetapkan
+`SOURCE_LOCALE = 'en'` dan jatuh kepadanya apabila
+`NEXT_PUBLIC_APP_LOCALE` tidak sah atau tiada — yang merupakan keadaan
+domain hidup **sekarang**. Jadi ketiga-tiga label itu sedang merender
+Melayu kepada setiap pelawat.
+
+Ia tidak ditangkap oleh ujian pariti locale, kerana pariti mengira
+**kunci** dan ketiga-tiganya ada dalam ketiga-tiga katalog. Ia juga tidak
+ditangkap oleh mana-mana audit rentetan, kerana rentetan itu **berada**
+dalam katalog — cuma dalam fail yang salah.
+
+Ditemui semasa menyemak dakwaan bahawa 63 kunci `ms` identik dengan `en`.
+Kebanyakan daripada 69 yang sebenarnya identik adalah sah — `"Dashboard"`,
+`"Inbox"`, `"Admin"`, `"Video"`, `"Status"` ialah perkataan yang sama
+dalam kedua-dua bahasa. Ketiga-tiga ini identik atas sebab bertentangan:
+bukan `ms` yang belum diterjemah, tetapi `en` yang sudah.
+
+**Pemeriksaan yang akan menangkapnya:** bukan "adakah `ms[k] === en[k]`",
+tetapi "adakah `en[k]` mengandungi perkataan yang bukan Inggeris". Yang
+pertama menghasilkan 69 hit yang kebanyakannya bunyi bising; yang kedua
+menghasilkan tepat 3.
+
+`Sidebar.title` = `"CRM PTMO OPERATION DEPT"` juga identik dan **bukan**
+kecacatan — itu nama organisasi, dan nama tidak diterjemah.
+
+## 119 kunci `ko` identik dengan `en`
+
+Seluruh namespace `Ops.unanswered` — kesemua 25 kunci — masih Inggeris
+dalam `ko.json`.
+
+Korea **ditangguhkan** sebagai keputusan produk, jadi ini konsisten dengan
+keputusan itu dan bukan kecacatan baharu. Direkod supaya ia tidak ditemui
+semula sebagai kejutan, dan supaya sesiapa yang membangkitkan sokongan
+Korea semula tahu skalanya sebelum menganggarkan.
