@@ -1,5 +1,10 @@
 # Runbook release 042–049
 
+> **TIDAK AKTIF sejak 14 Sep 2026.** Release diskop semula kepada tiga
+> migration keselamatan — lihat `docs/release-security-045-047.md`, yang
+> merupakan pelan semasa. Dokumen ini kekal sebagai rujukan untuk bila
+> multi-number benar-benar di-scale. Jangan ikut urutan di bawah.
+
 Dokumen operasi untuk menutup Fasa 1. Sumber kebenaran keadaan skema ialah
 `supabase/migrations/README.md` (ledger). Runbook ini tidak mengulang
 kandungannya — ia menyusun **urutan**, **titik henti** dan **bukti** yang

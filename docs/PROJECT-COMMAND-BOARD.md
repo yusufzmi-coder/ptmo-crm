@@ -136,6 +136,7 @@ kongsi: guna, jangan ubah.
 | 2026-09-14 | Pilot kekal satu nombor Ops baharu; seni bina multi-number tidak dibuang | Kurangkan risiko cutover sekarang sambil kekalkan ruang scale kemudian | Active |
 | 2026-09-14 | Worktree sesi serentak kekal di luar repo (`~/Projects/ptmo-crm-*`); `.worktrees/` dalam repo diabaikan Git | Elak folder kerja tersilap commit | Active |
 | 2026-09-14 | Bahasa Korea tidak akan digunakan. `ko.json` dikekalkan buat sementara supaya ujian pariti locale tidak pecah; pembuangan dijadual sebagai P2 berasingan | Semakan penutur asli bukan blocker untuk kerja UI | Active |
+| 2026-09-14 | Release diskop semula daripada 042-049 kepada **045, 046, 047 sahaja**. 042/043/048 menyelesaikan masalah 16-nombor yang keputusan satu-nombor sudah buang; 044 risiko tertinggi tanpa nilai pilot; 049 tiada penulis | 046+047 tutup pendedahan yang hidup pada production dan tiada kaitan dengan model nombor | Active |
 
 ## Update log
 
