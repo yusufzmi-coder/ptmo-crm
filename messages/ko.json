@@ -1844,6 +1844,28 @@
       "deleteCentreTitle": "Delete this centre?",
       "deleteCentreDesc": "Parents linked to it are kept, but stop being linked to any centre.",
       "loading": "센터 불러오는 중"
+    },
+    "quickReplies": {
+      "title": "빠른 답장",
+      "description": "일반 텍스트 또는 저장된 인터랙티브 메시지 — 상담원이 받은편지함 작성란에서 바로 삽입할 수 있는 재사용 스니펫입니다.",
+      "newQuickReply": "새 빠른 답장",
+      "loading": "빠른 답장 불러오는 중",
+      "empty": "아직 빠른 답장이 없습니다. 하나 만들어 여러 대화에서 재사용하세요.",
+      "createTitle": "새 빠른 답장",
+      "editTitle": "빠른 답장 편집",
+      "nameLabel": "이름",
+      "namePlaceholder": "예: 영업시간",
+      "kindText": "텍스트",
+      "kindInteractive": "인터랙티브",
+      "contentPlaceholder": "삽입할 메시지 텍스트",
+      "cancel": "취소",
+      "save": "저장",
+      "nameRequired": "빠른 답장의 이름을 입력하세요.",
+      "created": "빠른 답장이 생성되었습니다.",
+      "updated": "빠른 답장이 수정되었습니다.",
+      "saveFailed": "빠른 답장을 저장하지 못했습니다.",
+      "deleteConfirm": "이 빠른 답장을 삭제할까요?",
+      "deleteFailed": "빠른 답장을 삭제하지 못했습니다."
     }
   },
   "Ops": {
