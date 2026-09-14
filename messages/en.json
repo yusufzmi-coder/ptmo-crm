@@ -168,7 +168,16 @@
       "noConversations": "No conversations found",
       "noMessagesYet": "No messages yet",
       "unknown": "Unknown",
-      "otherViewers": "{count, plural, one {1 teammate has this chat open} other {# teammates have this chat open}}"
+      "otherViewers": "{count, plural, one {1 teammate has this chat open} other {# teammates have this chat open}}",
+      "assignment": "Assignment",
+      "assignAnyone": "Anyone",
+      "assignMine": "Mine",
+      "assignUnassigned": "Unassigned",
+      "assignOthers": "Others",
+      "assignedTo": "Assigned to {name}",
+      "assignedToYou": "Assigned to you",
+      "assignedToUnknown": "Assigned to a teammate",
+      "loadingConversations": "Loading conversations"
     },
     "messageThread": {
       "backToConversations": "Back to conversations",

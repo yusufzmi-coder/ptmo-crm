@@ -8,11 +8,19 @@ import {
   normalizeConversations,
   statusLabelKey,
 } from "@/lib/inbox/conversations";
+import {
+  ASSIGNMENT_FILTERS,
+  assigneeBadge,
+  assignmentLabelKey,
+  matchesAssignment,
+  type AssignmentFilter,
+} from "@/lib/inbox/assignment";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { Skeleton } from "@/components/dashboard/skeleton";
+import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { configDisplayName } from "@/lib/whatsapp/resolve-config";
-import type { Conversation, ConversationStatus, Tag } from "@/types";
+import type { Conversation, ConversationStatus, Profile, Tag } from "@/types";
 import { Search, ChevronDown, X, Eye, MessageSquareDashed } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useTranslations } from "next-intl";
@@ -72,6 +80,10 @@ export function ConversationList({
   // hook for the whole list — usePresence holds a realtime channel, so
   // calling it per row would open one per conversation.
   const { getCoViewers } = usePresence();
+  // Null until auth resolves — matchesAssignment/assigneeBadge both
+  // treat that window as "identity unknown" rather than guessing.
+  const { user } = useAuth();
+  const currentUserId = user?.id ?? null;
   
   const FILTER_OPTIONS: { label: string; value: InboxFilter }[] = useMemo(() => [
     { label: t("filterAll"), value: "all" },
@@ -84,10 +96,14 @@ export function ConversationList({
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<InboxFilter>("all");
   const [loading, setLoading] = useState(true);
+  // Ownership filter. Composes with the status filter above rather than
+  // replacing it — "my open threads" is the question staff actually ask.
+  const [assignment, setAssignment] = useState<AssignmentFilter>("all");
   // Contact-based filters (issue #272). Tags use OR logic (a conversation
   // matches if its contact carries any selected tag), consistent with
   // Broadcast audience filtering. Company is an exact match on the field.
   const [tags, setTags] = useState<Tag[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
 
@@ -144,6 +160,31 @@ export function ConversationList({
     // up on any events sent while the WS was disconnected or throttled.
   }, [resyncToken]);
 
+  // Account members, so an assigned row can name its owner. Loaded once
+  // and keyed by user_id below; the same fetch message-thread.tsx does
+  // for its assign dropdown. A row whose owner is missing here still
+  // renders a chip — see assigneeBadge.
+  useEffect(() => {
+    const supabase = createClient();
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .order("full_name");
+      if (cancelled) return;
+      if (error) {
+        // Non-fatal: the list still works, chips just fall back to "?".
+        console.error("Failed to fetch profiles:", error.message);
+        return;
+      }
+      setProfiles((data as Profile[]) ?? []);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Tag definitions for the filter picker — loaded once so labels/colours
   // stay stable regardless of which conversations happen to be loaded.
   useEffect(() => {
@@ -176,6 +217,12 @@ export function ConversationList({
     return m;
   }, [tags]);
 
+  const nameFor = useCallback(
+    (userId: string) =>
+      profiles.find((p) => p.user_id === userId)?.full_name ?? null,
+    [profiles],
+  );
+
   const filtered = useMemo(() => {
     let result = conversations;
 
@@ -183,6 +230,12 @@ export function ConversationList({
       result = result.filter((c) => c.unread_count > 0);
     } else if (filter !== "all") {
       result = result.filter((c) => c.status === filter);
+    }
+
+    if (assignment !== "all") {
+      result = result.filter((c) =>
+        matchesAssignment(c, assignment, currentUserId),
+      );
     }
 
     // Contact-based filters (tags via OR logic, exact company match).
@@ -206,7 +259,15 @@ export function ConversationList({
     }
 
     return result;
-  }, [conversations, filter, search, selectedTagIds, selectedCompany]);
+  }, [
+    conversations,
+    filter,
+    assignment,
+    currentUserId,
+    search,
+    selectedTagIds,
+    selectedCompany,
+  ]);
 
   const toggleTag = useCallback((id: string) => {
     setSelectedTagIds((prev) =>
@@ -276,6 +337,44 @@ export function ConversationList({
                   )}
                 >
                   {opt.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Ownership. In a shared inbox this is the first question
+              staff ask of the queue, so it sits next to status rather
+              than behind the tag/company pickers. */}
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className={cn(
+                "inline-flex items-center justify-center h-8 gap-1 lg:h-7 px-2 text-xs rounded-md hover:bg-muted",
+                assignment !== "all"
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {assignment === "all"
+                ? t("assignment")
+                : t(assignmentLabelKey(assignment))}
+              <ChevronDown className="h-3 w-3 shrink-0" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              className="border-border bg-popover"
+            >
+              {ASSIGNMENT_FILTERS.map((value) => (
+                <DropdownMenuItem
+                  key={value}
+                  onClick={() => setAssignment(value)}
+                  className={cn(
+                    "text-sm",
+                    assignment === value
+                      ? "text-primary"
+                      : "text-popover-foreground",
+                  )}
+                >
+                  {t(assignmentLabelKey(value))}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
@@ -423,7 +522,7 @@ export function ConversationList({
           <div
             className="flex flex-col"
             aria-busy="true"
-            aria-label={t("searchPlaceholder")}
+            aria-label={t("loadingConversations")}
           >
             {Array.from({ length: 6 }, (_, i) => (
               <div key={i} className="flex items-start gap-3 px-3 py-3">
@@ -452,6 +551,7 @@ export function ConversationList({
                 isActive={conv.id === activeConversationId}
                 showBranch={showBranch}
                 otherViewers={getCoViewers(conv.id).length}
+                assignee={assigneeBadge(conv, currentUserId, nameFor)}
                 onSelect={handleSelect}
                 t={t}
               />
@@ -463,6 +563,18 @@ export function ConversationList({
   );
 }
 
+/** Screen-reader / hover wording for an owner chip. */
+function assigneeLabel(
+  badge: NonNullable<ReturnType<typeof assigneeBadge>>,
+  t: ReturnType<typeof useTranslations>,
+): string {
+  if (badge.isMine) return t("assignedToYou");
+  if (badge.name) return t("assignedTo", { name: badge.name });
+  // Owned, but we never loaded who by — say that rather than inventing
+  // a name or implying the thread is free.
+  return t("assignedToUnknown");
+}
+
 interface ConversationItemProps {
   conversation: Conversation;
   isActive: boolean;
@@ -472,6 +584,8 @@ interface ConversationItemProps {
   showBranch?: boolean;
   /** How many OTHER members currently have this thread open. */
   otherViewers?: number;
+  /** Owner chip, or null when nobody owns this thread. */
+  assignee?: ReturnType<typeof assigneeBadge>;
 }
 
 function ConversationItem({
@@ -481,6 +595,7 @@ function ConversationItem({
   t,
   showBranch = false,
   otherViewers = 0,
+  assignee = null,
 }: ConversationItemProps) {
   const contact = conversation.contact;
   const displayName = contact?.name || contact?.phone || t("unknown");
@@ -539,6 +654,27 @@ function ConversationItem({
             {conversation.last_message_text || t("noMessagesYet")}
           </p>
           <div className="flex shrink-0 items-center gap-1.5">
+            {/* Who owns this thread. An unowned thread shows nothing —
+                absence is the quietest way to say "nobody", and the
+                Unassigned filter exists for anyone hunting those. Mine
+                is tinted, a teammate's stays neutral, so "not mine,
+                leave it alone" reads at a glance without needing to
+                recognise the initial. */}
+            {assignee && (
+              <span
+                role="img"
+                title={assigneeLabel(assignee, t)}
+                aria-label={assigneeLabel(assignee, t)}
+                className={cn(
+                  "flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-semibold",
+                  assignee.isMine
+                    ? "bg-primary-soft text-primary"
+                    : "bg-muted text-muted-foreground",
+                )}
+              >
+                {assignee.initial}
+              </span>
+            )}
             {/* Someone else is already in this thread. An icon, not a
                 colour, so it survives the row's active/hover states and
                 reads for anyone who can't tell them apart. */}
