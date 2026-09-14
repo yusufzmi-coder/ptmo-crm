@@ -928,3 +928,50 @@ sebelum dan selepas:
 
 `radio-group.tsx` membawa 4 utiliti `dark:` dan **tiada pengguna** dalam
 `src/`. Ia tidak boleh diuji kerana ia tidak dirender di mana-mana.
+
+---
+
+## Empat perkara daripada pusingan i18n `/agents`
+
+**1. `agents/page.tsx` BUKAN kosong.** Ia dilaporkan sebagai mewakilkan
+sepenuhnya kepada komponen. Ia tidak: pengesan menemui lima rentetan JSX
+di dalamnya — tajuk "AI Agents", ayat huraian, dan ketiga-tiga label tab.
+Rentetan komponen memang wujud SEBAGAI TAMBAHAN (26 lagi merentas
+ai-playground dan ai-usage), tetapi halaman itu sendiri membawa teksnya
+sendiri. Kesemua 31 kini diterjemah.
+
+**2. Contoh pertama dalam `tools/find-untranslated.mjs` tidak berfungsi.**
+Docstringnya menunjukkan:
+
+```
+node tools/find-untranslated.mjs "src/components/ops/**/*.tsx"
+```
+
+Alat itu membaca `process.argv.slice(2)` dan tidak mengembangkan glob
+sendiri — ia bergantung sepenuhnya pada shell. Petikan menghalang shell
+daripada mengembangkannya, jadi alat menerima corak itu sebagai nama fail
+harfiah dan mati dengan `ENOENT: no such file or directory, open
+'src/components/ops/**/*.tsx'`.
+
+Contoh KEDUA (tanpa petikan) berfungsi. Laluan dengan kurungan seperti
+`src/app/(dashboard)/...` mesti di-escape atau dipetik SEPARA — petikan
+penuh memecahkannya dengan cara yang sama.
+
+Perlindungan sifar-fail alat itu bagus dan patut disebut: bila shell
+mengembangkan kepada tiada fail, ia mencetak arahan kalibrasi dan bukan
+"Total: 0". Ia tidak akan menghasilkan laporan bersih palsu untuk kes itu.
+
+**3. Tab tidak aktif mengukur 4.41:1 dalam mod terang.** Diukur pada
+`/agents`, satu-satunya halaman bertab yang boleh dirender tanpa data.
+Sedia ada dan tidak berubah oleh kerja i18n — 4.41 sebelum dan selepas.
+Ia dalam `components/ui/tabs.tsx` (`text-muted-foreground` pada
+TabsTrigger), yang dikongsi dengan `contact-detail-view`. Tidak disentuh:
+membetulkannya menyentuh permukaan yang tidak boleh dirender di sini
+tanpa data kenalan.
+
+**4. Tarikh carta tidak dilokalkan.** `ai-usage.tsx` memformat label paksi
+dengan `format(parseISO(d.date), 'MMM d')` daripada date-fns tanpa locale,
+jadi ia menghasilkan "Sep 14" dalam setiap bahasa. Sama untuk mana-mana
+`format()` date-fns lain dalam repo. Itu pusingan tersendiri — ia
+memerlukan keputusan tentang import locale date-fns, bukan tampalan
+katalog.

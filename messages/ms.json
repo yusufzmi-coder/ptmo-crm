@@ -1380,6 +1380,46 @@
       "archived": "Diarkibkan"
     }
   },
+  "Agents": {
+    "page": {
+      "title": "Ejen AI",
+      "description": "Ejen AI bawa-kunci-sendiri anda — sediakannya, kemudian uji dalam Playground sebelum ia membalas pelanggan dalam Inbox.",
+      "tabPlayground": "Playground",
+      "tabSetup": "Persediaan",
+      "tabUsage": "Penggunaan"
+    },
+    "playground": {
+      "title": "Playground",
+      "subtitle": "— uji balasan seolah-olah anda pelanggan",
+      "reset": "Set semula",
+      "emptyTitle": "Hantar mesej untuk melihat bagaimana ejen anda akan membalas.",
+      "emptyHint": "Ia menggunakan pangkalan pengetahuan anda dan berkelakuan sama seperti bot balasan automatik — termasuk serahan.",
+      "goToSetup": "Belum disediakan? Pergi ke Persediaan",
+      "handoff": "Akan diserahkan kepada manusia di sini",
+      "thinking": "Sedang berfikir…",
+      "placeholder": "Taip mesej pelanggan…",
+      "notConfigured": "Belum ada ejen dikonfigurasikan — selesaikan Persediaan dahulu.",
+      "noReply": "Gagal mendapat balasan.",
+      "unreachable": "Gagal menghubungi ejen."
+    },
+    "usage": {
+      "title": "Penggunaan token",
+      "description": "Token yang dibelanjakan pada kunci pembekal anda oleh draf dan bot balasan automatik. Kiraan sahaja — tiada kandungan mesej disimpan di sini.",
+      "loadFailed": "Gagal memuat penggunaan",
+      "windowLabel": "{days} hari lepas",
+      "emptyTitle": "Belum ada penggunaan AI dalam {days} hari lepas.",
+      "emptyHint": "Ini terisi apabila pembantu membuat draf dan membalas automatik.",
+      "statTotalTokens": "Jumlah token",
+      "statCalls": "Panggilan LLM",
+      "statAutoReply": "Balasan automatik",
+      "statDrafts": "Draf",
+      "perDay": "Token sehari",
+      "tokensSeries": "Token",
+      "byModel": "Mengikut model",
+      "modelUsage": "{tokens} tok · {count, plural, =1 {1 panggilan} other {# panggilan}}",
+      "truncated": "Memaparkan sebahagian tetingkap — penggunaan cukup tinggi sehingga hanya rekod terkini diringkaskan di sini."
+    }
+  },
   "Settings": {
     "pageTitle": "Tetapan",
     "pageDesc": "Semuanya di satu tempat — akaun anda dan ruang kerja anda. Pilih satu bahagian untuk menguruskannya.",
