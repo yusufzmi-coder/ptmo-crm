@@ -65,3 +65,7 @@ _scratch/
 # the repo; neither belongs in version control.
 supabase/.branches/
 supabase/.temp/
+
+# Local scratch trees that are not part of this project
+project-command-board/
+tools/command-board/
