@@ -1,4 +1,9 @@
-# Release keselamatan — 045, 046, 047
+# Release Fasa 1 — 045, 046, 047, 049
+
+> **Pembetulan 14 Sep 2026.** Versi pertama dokumen ini mengeluarkan 049
+> dan ia SALAH. Lihat "049 dimasukkan semula" di bawah. Fail dinamakan
+> semula daripada `release-security-045-047.md` kerana set ini bukan lagi
+> keselamatan semata-mata.
 
 Release Fasa 1 diskop semula. Dokumen ini menggantikan
 `docs/release-042-049.md` sebagai pelan aktif; runbook lapan-migration itu
@@ -110,10 +115,51 @@ menerima dua jawapan untuk satu soalan.
 | **043** | Mengunci quick reply pada nombor. Satu nombor bermakna semua quick reply pada config yang sama. Tiada kesan. |
 | **044** | Menulis semula `is_account_member()` di belakang ~119 polisi RLS. Pilot ialah 1 Centre, 2 staf, tiada zon. Risiko tertinggi kedua, nilai pilot sifar. |
 | **048** | Dijejak dalam kod, bukan diandaikan: `resolveConfig` jatuh ke `onlyConfig()` (`src/lib/whatsapp/resolve-config.ts:136,154-169`), yang pulangkan `ok` bila akaun ada **tepat satu** config. Resume broadcast berfungsi tanpa 048. |
-| **049** | Additive dan selamat, tetapi `contacts.centre_id` tiada penulis — `grep -rn "centre_id" src/` pulangkan 0 padanan. Ia akan masuk tanpa membuat apa-apa. |
-
-Kelimanya tidak reput. Ia dijalankan bila scale ke banyak nombor dan
+Keempat-empatnya tidak reput. Ia dijalankan bila scale ke banyak nombor dan
 banyak zon benar-benar berlaku.
+
+---
+
+## 049 dimasukkan semula — pembetulan
+
+Versi pertama dokumen ini mengeluarkan 049 atas alasan ia "additive dan
+selamat, tetapi tiada penulis, jadi ia akan masuk tanpa membuat apa-apa".
+
+Alasan itu menilai perkara yang salah. Benar bahawa `contacts.centre_id`
+tiada penulis — `grep -rn "centre_id" src/` masih pulangkan 0 padanan, dan
+Parent masih tidak boleh ditetapkan kepada Centre. Tetapi 049 tidak hanya
+menambah lajur itu. Ia **mencipta dua jadual**, dan UI yang sudah dihantar
+membacanya:
+
+```
+src/app/(dashboard)/settings/page.tsx:79   <CentresPanel /> dipasang
+src/components/settings/centres-panel.tsx:88   .from('regions')
+src/components/settings/centres-panel.tsx:94   .from('centres')
+                                        :141   .from('regions')
+                                        :163   .from('centres').insert(...)
+                                        :188   .from(table).delete(...)
+
+CREATE TABLE IF NOT EXISTS regions   049_centres_and_regions.sql:72
+CREATE TABLE IF NOT EXISTS centres   049_centres_and_regions.sql:104
+```
+
+Tiada migration lain mencipta salah satu daripadanya — disahkan dengan grep
+merentas kesemua 49 fail.
+
+Jadi men-deploy kod tanpa 049 bermakna tab Settings -> "Centres & zones"
+menanyakan jadual yang tidak wujud. `load()` membungkusnya dalam try/catch
+dan memaparkan toast `loadFailed` (baris 103), jadi ia gagal dengan anggun —
+tetapi tab itu mati, kosong, dengan ralat, setiap kali dibuka.
+
+**049 kekal dalam release.** Ia masih bukan ciri siap: Centre boleh dicipta,
+disenarai dan dipadam, tetapi Parent tidak boleh ditetapkan kepada satu.
+Perbezaannya ialah antara *tidak lengkap* dan *rosak*, dan tanpa 049 ia
+yang kedua.
+
+**Pengajaran untuk skop semula seterusnya:** "tiada penulis untuk lajur"
+bukan sama dengan "tiada kod bergantung padanya". Semak setiap jadual yang
+migration cipta terhadap `.from(` dalam `src/`, bukan hanya lajur yang
+menjadi tajuk migration itu.
 
 ---
 
@@ -122,6 +168,8 @@ banyak zon benar-benar berlaku.
 Disahkan dengan memeriksa rujukan silang, bukan diandaikan:
 
 - 045 tidak menyebut `account_members`, fungsi 044, atau artifak 042 langsung.
+- 049 additive dan berdiri sendiri: ia mencipta `regions`, `centres` dan
+  `contacts.centre_id`, dan tidak merujuk apa-apa daripada 042, 044 atau 048.
 - 046 dan 047 menyebut 044 **hanya dalam komen** (`046:92`, `047:55`) —
   prosa yang menjelaskan kenapa mereka TIDAK menggunakan
   `is_account_member_any()`. Tiada rujukan dalam kod.
@@ -134,8 +182,10 @@ Jadi 045, 046 dan 047 tidak memerlukan 042, 044 atau 049.
 ## Susunan dan kopling kod
 
 ```
-merge ke main  ->  045  ->  046  ->  deploy kod  ->  047
+merge ke main  ->  045  ->  046  ->  049  ->  deploy kod  ->  047
 ```
+
+049 sebelum deploy, kerana kod yang di-deploy membaca jadualnya.
 
 **045 — susunan bebas.** Ia menggugurkan tandatangan lama
 `touch_presence(TEXT)` dan `touch_presence(TEXT, UUID)`, dan mencipta
@@ -219,8 +269,10 @@ Jangan apply apa-apa sehingga itu selesai dan kedua-dua job hijau.
 
 - Tiada semakan Origin/Referer pada permintaan `/api` bukan-GET. Separuh
   penemuan itu tidak pernah ditangani — lihat `docs/open-findings.md`.
-- Centres kekal tidak boleh digunakan: `contacts.centre_id` tiada penulis,
-  jadi Parent tidak boleh ditetapkan kepada cawangan.
+- Centres kekal **tidak lengkap**, walaupun 049 masuk: `contacts.centre_id`
+  tiada penulis, jadi Parent tidak boleh ditetapkan kepada cawangan. Tab
+  Settings berfungsi setakat CRUD — cipta, senarai, padam Centre, dan padam
+  Zone mengekalkan Centrenya. UAT boleh mengesahkan setakat itu sahaja.
 - Akses HQ multi-zon tidak wujud tanpa 044. Satu login kekal milik satu
   akaun.
 - Lampiran yang ditolak semakan host dalam Seksyen 5 preflight menjadi

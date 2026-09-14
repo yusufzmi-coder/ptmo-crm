@@ -158,7 +158,7 @@ kongsi: guna, jangan ubah.
 | 2026-09-14 | Pilot kekal satu nombor Ops baharu; seni bina multi-number tidak dibuang | Kurangkan risiko cutover sekarang sambil kekalkan ruang scale kemudian | Active |
 | 2026-09-14 | Worktree sesi serentak kekal di luar repo (`~/Projects/ptmo-crm-*`); `.worktrees/` dalam repo diabaikan Git | Elak folder kerja tersilap commit | Active |
 | 2026-09-14 | Bahasa Korea tidak akan digunakan. `ko.json` dikekalkan buat sementara supaya ujian pariti locale tidak pecah; pembuangan dijadual sebagai P2 berasingan | Semakan penutur asli bukan blocker untuk kerja UI | Active |
-| 2026-09-14 | Release diskop semula daripada 042-049 kepada **045, 046, 047 sahaja**. 042/043/048 menyelesaikan masalah 16-nombor yang keputusan satu-nombor sudah buang; 044 risiko tertinggi tanpa nilai pilot; 049 tiada penulis | 046+047 tutup pendedahan yang hidup pada production dan tiada kaitan dengan model nombor | Active |
+| 2026-09-14 | Release diskop semula daripada 042-049 kepada **045, 046, 047, 049**. 042/043/048 menyelesaikan masalah 16-nombor yang keputusan satu-nombor sudah buang; 044 risiko tertinggi tanpa nilai pilot | 046+047 tutup pendedahan yang hidup pada production. 049 dimasukkan semula selepas QA tunjuk `centres-panel.tsx` query jadual yang hanya 049 cipta — mengeluarkannya bermakna tab Settings rosak, bukan sekadar tidak lengkap | Active |
 
 ## Update log
 
@@ -176,6 +176,9 @@ kongsi: guna, jangan ubah.
 | 2026-09-14 | UI batch 6: nav 10 baris rata jadi 4 kluster, setiap tajuk melabel `<ul>` sendiri via aria-labelledby | `b21bbeb` | Coordinator |
 | 2026-09-14 | `.worktrees/` berhenti diabaikan dan folder dibuang; ketiga-tiga worktree bersarang pindah ke konvensyen adik-beradik. Lint tempatan 15 error -> 0 | `7ec777e` | Coordinator |
 | 2026-09-14 | UI batch 7: 10 panel settings jadi skeleton (39 -> 29), **plus pepijat menghadap pengguna**: panel AI papar "Failed to load AI configuration" setiap kali dibuka semasa memuat biasa | `78f06ff` | Coordinator |
+| 2026-09-14 | UI batch 8-11: quick replies i18n (20 rentetan), tajuk `/flows` + `/agents`, notifications i18n (9 rentetan), kontras tajuk sidebar ke WCAG AA | `288051f`, `954f45e`, `2b0ab3c`, `5839836` | Coordinator |
+| 2026-09-14 | Gate tempatan dibersihkan: `project-command-board/` + `tools/` dikecualikan dari tsc dan eslint. Lint 0 error, tsc 0 ralat terus dari checkout kerja — tiada lagi perlu arkib bersih | `aeb7f2e` | Coordinator |
+| 2026-09-14 | **049 dimasukkan semula** ke release selepas QA jumpa kod bergantung padanya; dokumen release dinamakan semula | `docs/release-phase1-migrations.md` | Coordinator |
 
 ---
 

@@ -1,7 +1,7 @@
 # Runbook release 042–049
 
 > **TIDAK AKTIF sejak 14 Sep 2026.** Release diskop semula kepada tiga
-> migration keselamatan — lihat `docs/release-security-045-047.md`, yang
+> migration keselamatan — lihat `docs/release-phase1-migrations.md`, yang
 > merupakan pelan semasa. Dokumen ini kekal sebagai rujukan untuk bila
 > multi-number benar-benar di-scale. Jangan ikut urutan di bawah.
 
