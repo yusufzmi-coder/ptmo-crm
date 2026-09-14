@@ -239,7 +239,12 @@
       "quickReplyForeignBranch": "Names {branches}",
       "replyingAsBranch": "Replying as {branch}",
       "typeMessageAsBranch": "Type a message as {branch}... (Shift+Enter for new line)",
-      "alsoViewing": "{names} {count, plural, one {is} other {are}} also in this chat — check before you reply."
+      "alsoViewing": "{names} {count, plural, one {is} other {are}} also in this chat — check before you reply.",
+      "dropToAttach": "Drop to attach",
+      "dropUnavailable": "Can't attach right now",
+      "unsupportedFile": "That file type can't be sent on WhatsApp.",
+      "onlyFirstFile": "One attachment per message — using {filename}.",
+      "attachmentBusy": "Finish or remove the current attachment first."
     },
     "bubble": {
       "photo": "Photo",

@@ -48,6 +48,7 @@ import {
   deleteAccountMedia,
   MEDIA_MAX_BYTES_BY_KIND,
 } from "@/lib/storage/upload-media";
+import { PICKER_ACCEPT, firstAttachable } from "@/lib/inbox/attachments";
 import { ReplyQuote } from "./reply-quote";
 import { useTranslations } from "next-intl";
 import {
@@ -90,17 +91,6 @@ interface ReplyDraft {
   authorLabel: string;
   preview: string;
 }
-
-// Mirrors the chat-media bucket's allowed_mime_types (migration 023) for
-// the file picker so unsupported files are rejected before upload rather
-// than failing with a confusing Storage error. Audio has no picker — it's
-// captured via the recorder.
-const PICKER_ACCEPT: Record<"image" | "video" | "document", string> = {
-  image: "image/png,image/jpeg,image/webp",
-  video: "video/mp4,video/3gpp",
-  document:
-    "application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain",
-};
 
 interface MediaDraft {
   kind: ComposerMediaKind;
@@ -190,6 +180,12 @@ export function MessageComposer({
   // attachment; `busy` covers the upload/transcode window.
   const [draft, setDraft] = useState<MediaDraft | null>(null);
   const [busy, setBusy] = useState(false);
+  // Whether a file is currently hovering the composer. `dragDepthRef`
+  // counts enter/leave pairs: dragging across a child element fires
+  // `dragleave` on the parent before `dragenter` on the child, so a
+  // boolean alone would flicker the overlay off mid-hover.
+  const [dragActive, setDragActive] = useState(false);
+  const dragDepthRef = useRef(0);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
@@ -464,6 +460,97 @@ export function MessageComposer({
     [stageUpload],
   );
 
+  // ---- Drag-and-drop / paste attachment (issue evidence) ------------
+  //
+  // Both paths converge here. The attach menu stays the keyboard- and
+  // screen-reader-accessible route to the same thing; dropping and
+  // pasting are shortcuts layered on top, never the only way in.
+
+  /** True while the composer can take a new attachment at all. */
+  const canAccept = !inputsDisabled && !busy && !draft && !recording;
+
+  const stageDropped = useCallback(
+    (files: readonly File[]) => {
+      const picked = firstAttachable(files);
+      if (!picked) {
+        toast.error(t("unsupportedFile"));
+        return;
+      }
+      if (files.length > 1) {
+        // One attachment per message is a WhatsApp constraint, not ours
+        // — say so rather than silently dropping the rest.
+        toast.info(t("onlyFirstFile", { filename: picked.file.name }));
+      }
+      void stageUpload(picked.kind, picked.file);
+    },
+    [stageUpload, t],
+  );
+
+  // Only react to drags carrying actual files. Dragging selected text
+  // within the textarea also fires these events, and hijacking that
+  // would break ordinary editing.
+  const dragCarriesFiles = (e: React.DragEvent) =>
+    e.dataTransfer?.types?.includes("Files") ?? false;
+
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    if (!dragCarriesFiles(e)) return;
+    e.preventDefault();
+    dragDepthRef.current += 1;
+    setDragActive(true);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    if (!dragCarriesFiles(e)) return;
+    // Without this the browser navigates away to the dropped file.
+    e.preventDefault();
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    if (!dragCarriesFiles(e)) return;
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+    if (dragDepthRef.current === 0) setDragActive(false);
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      if (!dragCarriesFiles(e)) return;
+      e.preventDefault();
+      dragDepthRef.current = 0;
+      setDragActive(false);
+      if (!canAccept) {
+        // Explain the refusal instead of swallowing the drop: a silent
+        // no-op reads as a broken feature.
+        toast.error(
+          readOnly
+            ? t("readOnlyTitle")
+            : sessionExpired
+              ? t("sessionExpiredHint")
+              : t("attachmentBusy"),
+        );
+        return;
+      }
+      stageDropped(Array.from(e.dataTransfer.files));
+    },
+    [canAccept, readOnly, sessionExpired, stageDropped, t],
+  );
+
+  // Pasting a screenshot is how evidence actually reaches an agent.
+  // Only intercept when the clipboard carries files — a plain text
+  // paste must still land in the textarea untouched.
+  const handlePaste = useCallback(
+    (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+      const files = Array.from(e.clipboardData?.files ?? []);
+      if (files.length === 0) return;
+      e.preventDefault();
+      if (!canAccept) {
+        toast.error(busy || draft ? t("attachmentBusy") : t("readOnlyTitle"));
+        return;
+      }
+      stageDropped(files);
+    },
+    [busy, canAccept, draft, stageDropped, t],
+  );
+
   // ---- Voice recording (client-side Ogg/Opus, no server transcode) ---
 
   // The encoded Ogg/Opus file from opus-recorder → upload as an audio
@@ -583,12 +670,17 @@ export function MessageComposer({
 
   return (
     <div
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
       className={cn(
         // `shrink-0` because the textarea auto-grows: without it the
         // composer is the flex child that gets squeezed when the thread
         // is long. The bottom pad clears the iPhone home indicator —
         // `max()` so it stays the normal 0.75rem everywhere else.
-        "shrink-0 border-t bg-card p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]",
+        // `relative` anchors the drag overlay below.
+        "relative shrink-0 border-t bg-card p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]",
         // A co-viewer recolours the whole composer edge. The banner up
         // in the thread is the polite announcement; this is the thing
         // still on screen at the moment of typing, and an agent who has
@@ -596,6 +688,25 @@ export function MessageComposer({
         coViewers.length > 0 ? "border-amber-500/50" : "border-border",
       )}
     >
+      {/* Drop overlay. `pointer-events-none` so it cannot swallow the
+          drop event from the container that is listening for it. The
+          state it reports is text + icon, never colour alone. */}
+      {dragActive && (
+        <div
+          role="status"
+          className={cn(
+            "pointer-events-none absolute inset-1 z-20 flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed backdrop-blur-sm",
+            canAccept
+              ? "border-primary bg-primary-soft/90 text-primary"
+              : "border-border bg-muted/90 text-muted-foreground",
+          )}
+        >
+          <Paperclip className="h-5 w-5" aria-hidden />
+          <span className="px-3 text-center text-xs font-semibold">
+            {canAccept ? t("dropToAttach") : t("dropUnavailable")}
+          </span>
+        </div>
+      )}
       {/* Who this reply goes out as, and who else is already here. Both
           live above the textarea rather than in the header: this is the
           last surface the agent looks at before pressing Enter. */}
@@ -820,6 +931,7 @@ export function MessageComposer({
             value={text}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
             placeholder={
               readOnly
                 ? t("readOnlyPlaceholder")
