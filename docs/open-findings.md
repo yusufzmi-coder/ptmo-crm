@@ -1777,3 +1777,59 @@ Sehingga ini diselesaikan, **setiap perkara yang mendarat dalam `main`
 tidak hidup sehingga seseorang menekan redeploy**. Itu bukan keadaan yang
 selamat untuk hari nombor WhatsApp disambung: laluan webhook masuk berada
 dalam kod yang di-deploy, bukan dalam `main`.
+
+## Punca sebenar: kuota build Vercel habis — dan cara kerja saya yang menghabiskannya
+
+Domain berhenti mengemas kini pada **cd1f2b4, 14:37**. Setiap push
+selepas itu gagal dengan sebab yang sama, dan GitHub memegang jawapannya
+sepanjang masa:
+
+```
+Vercel – crmfinal_ptmo   failure   Deployment rate limited — retry in 24 hours.
+Vercel – ptmo-crm        failure   Deployment rate limited — retry in 24 hours.
+```
+
+Bukan auto-deploy dimatikan. Bukan cabang salah. **Kuota harian habis.**
+
+### Dua sebab, dan yang pertama milik saya
+
+**1. Cara kerja saya membakar satu build setiap perubahan, dua kali.**
+
+56 PR digabung hari ini. Setiap satu ialah *push cabang* → *PR* →
+*merge ke main* — jadi **dua** peristiwa boleh-deploy setiap perubahan.
+Itu kira-kira 112 build daripada satu projek sahaja.
+
+Saya memilih corak itu kerana ia memberi setiap perubahan badan PR yang
+boleh dibaca dan titik pemulangan. Itu masih betul untuk perubahan yang
+besar. Ia salah untuk **lima puluh enam** daripadanya dalam satu hari,
+dan tiada apa dalam gelung saya pernah menyemak kos deploy — saya
+mengukur lint, tsc, ujian dan build, dan tidak pernah kuota.
+
+**2. Dua projek bersambung ke satu repo menggandakan setiap build.**
+
+`crmfinal_ptmo` **dan** `ptmo-crm` kedua-duanya membina pada setiap push.
+Ini direkod sebagai kemasan berminggu-minggu lalu — *"putuskan yang tidak
+diguna"* — dan dibiarkan kerana ia kelihatan kosmetik.
+
+Ia tidak kosmetik. Ia **menggandakan kadar pembakaran**, jadi had yang
+sepatutnya bertahan sehari habis dalam setengah hari.
+
+### Yang membetulkannya
+
+1. **Putuskan projek Vercel pendua.** Satu repo, satu projek. Ini
+   memotong penggunaan separuh dan ia percuma.
+2. **Tunggu tetapan semula 24 jam**, atau naik taraf kalau hari esok
+   memerlukan deploy.
+3. **Berhenti menggabungkan setiap perubahan secara berasingan.**
+   Kumpulkan kerja yang berkaitan menjadi satu PR. Badan PR yang baik
+   masih boleh menerangkan enam commit.
+
+### Apa yang tidak berlaku, dan tidak akan
+
+Tiada apa hilang. Setiap commit ada dalam `main`, gate hijau, dan CI
+Migrations hijau. Yang tertunggak hanyalah **deploy**, dan ia akan
+berlaku pada push pertama selepas kuota kembali.
+
+Sehingga itu, **`main` dan domain berbeza**, dan laluan webhook masuk
+berjalan daripada build yang di-deploy. Itu mesti diselesaikan sebelum
+nombor WhatsApp disambung.
