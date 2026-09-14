@@ -365,3 +365,55 @@ lebar tetingkap pada ~500px, jadi meminta 390 menangkap 390px daripada
 susun atur 500px dan memotong bakinya. Pada 500px sebenar, kad `max-w-md`
 (448px) muat dengan lega. Jangan laporkan pengeratan daripada screenshot di
 bawah 500px tanpa emulasi peranti melalui CDP.
+
+---
+
+## Pusingan visual pertama — 10 halaman, log masuk, locale `ms`
+
+Dijalankan 14 Sep pada `cf551d6` dengan `NEXT_PUBLIC_APP_LOCALE=ms`, akaun
+ujian berasingan, Chrome dipandu melalui CDP. Sepuluh halaman dashboard
+ditangkap selepas hidrasi.
+
+**Sifar limpahan mendatar pada kesemua sepuluh** (`scrollWidth` diukur
+terhadap `innerWidth`, bukan dipandang). Pengelompokan nav, kontras tajuk
+kumpulan, dropdown pemilikan inbox dan katalog Melayu semuanya render
+seperti direka. Ini pengesahan pertama bahawa mana-mana daripadanya
+berfungsi di skrin.
+
+Tiga perkara ditemui.
+
+### Mata wang lalai USD dalam CRM Malaysia
+
+`accounts.default_currency` lalai `'USD'` (`021:24`, sudah live) dan
+`DEFAULT_CURRENCY = "USD"` (`src/lib/currency.ts:14`). Jadi Dashboard
+memaparkan **`$0`** untuk "Nilai Deal Terbuka" dan Tetapan menunjukkan
+"USD — US Dollar".
+
+MYR wujud sepenuhnya sebagai pilihan (`currency.ts:58`, simbol `RM`,
+locale `ms-MY`) dan boleh ditukar per akaun melalui Tetapan. Jadi ini
+bukan kerosakan — ia lalai yang salah untuk organisasi ini, dan setiap
+akaun baharu bermula salah. Keputusan produk, bukan pepijat.
+
+### Nama mod tema tidak diterjemah
+
+`MODES = ["light", "dark"]` (`src/lib/themes.ts:46`) ialah pengecam mentah
+yang dirender terus. Dalam antara muka Melayu, panel Rupa memaparkan
+"Light", dan `Settings.appearance.useMode` (`"Guna mod {mode}"`)
+menyisipkan pengecam mentah itu — jadi pembaca skrin mendengar
+"Guna mod light".
+
+Nama tema aksen (`"PTMO"`, `themes.ts:78`) ialah kata nama khas dan
+sepatutnya kekal.
+
+### "Pilih satu perbualan" muncul dua kali
+
+Bila tiada perbualan dipilih, kunci `Inbox.messageThread.selectConversation`
+dirender oleh DUA komponen sekaligus:
+
+```
+src/components/inbox/message-thread.tsx:897   (tengah, dengan petunjuk)
+src/components/inbox/contact-sidebar.tsx:125  (panel kanan)
+```
+
+Sedia ada, bukan daripada batch ini — ia berkelakuan sama dalam Inggeris.
+Ia kelihatan seperti pengulangan, bukan reka bentuk tiga-panel.
