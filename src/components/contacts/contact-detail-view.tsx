@@ -32,7 +32,6 @@ import {
   Building2,
   Copy,
   Check,
-  Loader2,
   Plus,
   Trash2,
   Save,
@@ -42,6 +41,7 @@ import {
 } from 'lucide-react';
 import { Skeleton } from '@/components/dashboard/skeleton';
 import { useTranslations } from 'next-intl';
+import { Spinner } from '@/components/ui/spinner';
 
 interface ContactDetailViewProps {
   open: boolean;
@@ -470,7 +470,7 @@ export function ContactDetailView({
                   className="bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   {sendingTemplate ? (
-                    <Loader2 className="size-4 animate-spin" />
+                    <Spinner size="sm" />
                   ) : (
                     <LayoutTemplate className="size-4" />
                   )}
@@ -558,7 +558,7 @@ export function ContactDetailView({
                     size="sm"
                   >
                     {savingDetails ? (
-                      <Loader2 className="size-3.5 animate-spin" />
+                      <Spinner size="sm" />
                     ) : (
                       <Save className="size-3.5" />
                     )}
@@ -622,7 +622,7 @@ export function ContactDetailView({
                     size="sm"
                   >
                     {savingNote ? (
-                      <Loader2 className="size-3.5 animate-spin" />
+                      <Spinner size="sm" />
                     ) : (
                       <Plus className="size-3.5" />
                     )}
@@ -722,7 +722,7 @@ export function ContactDetailView({
                       size="sm"
                     >
                       {savingCustom ? (
-                        <Loader2 className="size-3.5 animate-spin" />
+                        <Spinner size="sm" />
                       ) : (
                         <Save className="size-3.5" />
                       )}

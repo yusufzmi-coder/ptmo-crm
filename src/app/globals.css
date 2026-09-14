@@ -81,8 +81,15 @@
  * hovered primary buttons and tinted-primary surfaces (sidebar
  * active pill, validation badges).
  *
- * Token shapes come straight from the design handoff at
- * project/Color Themes.html — change one, change the other.
+ * Token shapes came from a design handoff at project/Color Themes.html.
+ * That file NO LONGER EXISTS — not on disk, not in any worktree, and not
+ * anywhere in git history. Searched 14 Sep 2026 after this comment sent
+ * someone looking for it.
+ *
+ * So there is no second place to change, and no reference to check a
+ * value against. Every accent value outside ptmo has since been chosen
+ * by measurement alone — see the --primary-on-soft block below. If the
+ * handoff ever comes back, reconcile against it; until then, measure.
  * ============================================================ */
 
 /* ---- MODE: neutral surfaces ---- */
@@ -237,7 +244,7 @@ html[data-theme="emerald"][data-mode="light"] {
 
 html[data-theme="cobalt"] {
   --primary: oklch(0.585 0.2 254);
-  --primary-foreground: oklch(0.985 0 0);
+  --primary-foreground: oklch(0.13 0.02 254);
   --primary-hover: oklch(0.66 0.18 254);
   --primary-soft: oklch(0.585 0.2 254 / 0.12);
   --primary-soft-2: oklch(0.585 0.2 254 / 0.22);
@@ -246,7 +253,7 @@ html[data-theme="cobalt"] {
   --chart-1: oklch(0.585 0.2 254);
   --chart-2: oklch(0.7 0.15 220);
   --sidebar-primary: oklch(0.585 0.2 254);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-primary-foreground: oklch(0.13 0.02 254);
   --sidebar-ring: oklch(0.585 0.2 254);
 }
 
@@ -275,7 +282,7 @@ html[data-theme="amber"][data-mode="light"] {
 
 html[data-theme="rose"] {
   --primary: oklch(0.645 0.22 16);
-  --primary-foreground: oklch(0.985 0 0);
+  --primary-foreground: oklch(0.16 0.02 16);
   --primary-hover: oklch(0.71 0.2 16);
   --primary-soft: oklch(0.645 0.22 16 / 0.12);
   --primary-soft-2: oklch(0.645 0.22 16 / 0.22);
@@ -284,7 +291,7 @@ html[data-theme="rose"] {
   --chart-1: oklch(0.645 0.22 16);
   --chart-2: oklch(0.7 0.18 340);
   --sidebar-primary: oklch(0.645 0.22 16);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-primary-foreground: oklch(0.16 0.02 16);
   --sidebar-ring: oklch(0.645 0.22 16);
 }
 

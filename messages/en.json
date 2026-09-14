@@ -279,7 +279,8 @@
       "downloadFailed": "Couldn't download the attachment",
       "viewImage": "View image",
       "expandVideo": "Expand video",
-      "imageAlt": "Shared image"
+      "imageAlt": "Shared image",
+      "loadingMedia": "Loading image"
     },
     "mediaViewer": {
       "counter": "{index} of {total}",
@@ -292,7 +293,8 @@
       "downloadFailed": "Couldn't download the attachment",
       "failed": "This attachment is no longer available",
       "imageAlt": "Shared image",
-      "you": "You"
+      "you": "You",
+      "loadingMedia": "Loading image"
     },
     "actions": {
       "reply": "Reply",
@@ -1901,7 +1903,11 @@
       "setupReady": "Set up",
       "setupDone": "{name} is set up.",
       "setupAlreadyDone": "Already set up — nothing to do.",
-      "setupFailed": "Could not set this branch up."
+      "setupFailed": "Could not set this branch up.",
+      "qrButton": "QR",
+      "qrDesc": "Print this on the branch banner. Parents scan it instead of typing anything.",
+      "qrDownload": "Download SVG",
+      "qrFailed": "Could not build a QR for this link."
     },
     "quickReplies": {
       "title": "Quick replies",

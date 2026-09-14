@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { Spinner } from "@/components/ui/spinner";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -289,10 +290,11 @@ export function UnansweredBoard() {
               disabled={refreshing}
               className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-card px-2.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-60"
             >
-              <RefreshCw
-                className={cn("h-3.5 w-3.5", refreshing && "animate-spin")}
-                aria-hidden
-              />
+              {refreshing ? (
+                <Spinner size="sm" />
+              ) : (
+                <RefreshCw className="h-3.5 w-3.5" aria-hidden />
+              )}
               {t("refresh")}
             </button>
           </div>

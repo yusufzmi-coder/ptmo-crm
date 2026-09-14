@@ -279,7 +279,8 @@
       "downloadFailed": "Gagal memuat turun lampiran",
       "viewImage": "Lihat imej",
       "expandVideo": "Besarkan video",
-      "imageAlt": "Imej dikongsi"
+      "imageAlt": "Imej dikongsi",
+      "loadingMedia": "Memuatkan imej"
     },
     "mediaViewer": {
       "counter": "{index} daripada {total}",
@@ -292,7 +293,8 @@
       "downloadFailed": "Gagal memuat turun lampiran",
       "failed": "Lampiran ini tidak lagi tersedia",
       "imageAlt": "Imej dikongsi",
-      "you": "Anda"
+      "you": "Anda",
+      "loadingMedia": "Memuatkan imej"
     },
     "actions": {
       "reply": "Balas",
@@ -1901,7 +1903,11 @@
       "setupReady": "Sudah disediakan",
       "setupDone": "{name} sudah disediakan.",
       "setupAlreadyDone": "Sudah disediakan — tiada apa perlu dibuat.",
-      "setupFailed": "Gagal menyediakan cawangan ini."
+      "setupFailed": "Gagal menyediakan cawangan ini.",
+      "qrButton": "QR",
+      "qrDesc": "Cetak ini pada banner cawangan. Parent mengimbasnya dan tidak perlu menaip apa-apa.",
+      "qrDownload": "Muat turun SVG",
+      "qrFailed": "Gagal membina QR untuk link ini."
     },
     "quickReplies": {
       "title": "Balasan pantas",

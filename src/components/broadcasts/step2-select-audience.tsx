@@ -12,13 +12,13 @@ import {
   Filter,
   Upload,
   FileText,
-  Loader2,
   ArrowRight,
   ArrowLeft,
   X,
 } from 'lucide-react';
 import { Skeleton } from '@/components/dashboard/skeleton';
 import { useTranslations } from 'next-intl';
+import { Spinner } from '@/components/ui/spinner';
 
 type AudienceType = 'all' | 'tags' | 'custom_field' | 'csv';
 type CustomFieldOperator = 'is' | 'is_not' | 'contains';
@@ -530,7 +530,7 @@ export function Step2SelectAudience({
         <p className="mb-2 text-sm font-medium text-foreground">Audience Summary</p>
         {loadingCount ? (
           <div className="flex items-center gap-2">
-            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            <Spinner size="sm" className="text-primary" />
             <span className="text-xs text-muted-foreground">Calculating…</span>
           </div>
         ) : estimatedCount !== null ? (

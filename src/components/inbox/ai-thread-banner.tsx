@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Sparkles, Hand, Undo2, Loader2 } from "lucide-react";
+import { Sparkles, Hand, Undo2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/hooks/use-auth";
+import { Spinner } from "@/components/ui/spinner";
 
 // ------------------------------------------------------------
 // Account AI status is the same for every conversation, so cache it per
@@ -215,7 +216,7 @@ function BannerButton({
       className="inline-flex flex-shrink-0 items-center gap-1 rounded-md border border-border bg-card px-2.5 py-1 font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-60"
     >
       {busy ? (
-        <Loader2 className="h-3 w-3 animate-spin" />
+        <Spinner className="size-3" />
       ) : (
         <Icon className="h-3 w-3" />
       )}

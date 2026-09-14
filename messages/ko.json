@@ -279,7 +279,8 @@
       "downloadFailed": "첨부파일을 다운로드할 수 없습니다",
       "viewImage": "이미지 보기",
       "expandVideo": "동영상 확대",
-      "imageAlt": "공유된 이미지"
+      "imageAlt": "공유된 이미지",
+      "loadingMedia": "이미지를 불러오는 중"
     },
     "mediaViewer": {
       "counter": "{total}개 중 {index}번째",
@@ -292,7 +293,8 @@
       "downloadFailed": "첨부파일을 다운로드할 수 없습니다",
       "failed": "이 첨부파일은 더 이상 사용할 수 없습니다",
       "imageAlt": "공유된 이미지",
-      "you": "나"
+      "you": "나",
+      "loadingMedia": "이미지를 불러오는 중"
     },
     "actions": {
       "reply": "답장",
@@ -1901,7 +1903,11 @@
       "setupReady": "설정됨",
       "setupDone": "{name} 설정이 완료되었습니다.",
       "setupAlreadyDone": "이미 설정되어 있습니다 — 할 일이 없습니다.",
-      "setupFailed": "이 지점을 설정하지 못했습니다."
+      "setupFailed": "이 지점을 설정하지 못했습니다.",
+      "qrButton": "QR",
+      "qrDesc": "지점 배너에 인쇄하세요. 학부모는 입력 없이 스캔만 하면 됩니다.",
+      "qrDownload": "SVG 다운로드",
+      "qrFailed": "이 링크의 QR을 만들지 못했습니다."
     },
     "quickReplies": {
       "title": "빠른 답장",

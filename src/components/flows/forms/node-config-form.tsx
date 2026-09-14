@@ -26,7 +26,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Loader2,
   Paperclip,
   Plus,
   Trash2,
@@ -35,6 +34,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { Spinner } from "@/components/ui/spinner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1009,7 +1009,7 @@ function SendMediaForm({
           >
             {uploading ? (
               <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <Spinner size="sm" />
                 {t("uploading")}
               </>
             ) : (
