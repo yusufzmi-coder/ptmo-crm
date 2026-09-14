@@ -1398,3 +1398,58 @@ Disahkan dengan tiga mutasi, bukan dengan pemerhatian bahawa ia hijau:
 Dan pembungkusan `IF v_has_044` diuji dalam KEDUA-DUA arah: job upgrade
 melangkaunya, job bersih masih pergi merah bila `account_members`
 dinamakan semula.
+
+## Idempotency butang *Sediakan untuk WhatsApp* tidak tahan perlumbaan
+
+Butang itu mempunyai tiga lapisan perlindungan, dan kesemuanya berada di
+**klien**:
+
+1. `findBranchAutomation(automations, code)` — kalau jumpa, keluar
+   dengan toast `setupAlreadyDone`
+2. `disabled={busy}` semasa permintaan dalam penerbangan
+3. sebaik `wired`, butang **digantikan** oleh chip *"Sudah disediakan"*
+
+Lapisan (1) membaca **state klien**, bukan pangkalan data. Dua tab
+pelayar, atau dua staf cawangan yang sama, menekan serentak akan **lulus
+kedua-dua semakan** dan mencipta dua automasi pada kata kunci yang sama.
+Lapisan (2) dan (3) melindungi satu tab sahaja.
+
+Disahkan: **tiada kekangan unik** pada `automations` untuk
+`(account_id, kata kunci)`. Indeks yang wujud —
+`idx_automations_account_active_trigger`, `idx_automations_user_id` —
+kesemuanya bukan-unik.
+
+Akibatnya bukan baris pendua yang tidak kemas. **Dua automasi
+`keyword_match` pada kata kunci yang sama bermakna satu mesej ibu bapa
+mencetuskan dua `add_tag`**, dan mana-mana langkah lain yang ditambah
+kemudian berjalan dua kali.
+
+**Pembetulan sebenar ialah kekangan pangkalan data**, bukan semakan klien
+yang lebih baik. Itu bermakna migration `050`, dan migration baharu
+diparkir sehingga keputusan dibuat tentang `042`–`048` yang tidak pernah
+diapply.
+
+Sehingga itu, risiko boleh diterima kerana penekan ialah admin dan
+bilangan cawangan ialah 16 — tetapi ia mesti dinyatakan, bukan
+dianggap selesai kerana tiga lapisan kedengaran banyak.
+
+## `QualityBanner`: komennya mendakwa lebih daripada yang kod lakukan
+
+```
+GREEN    CheckCircle2     senyap
+YELLOW   AlertTriangle    loud
+RED      AlertTriangle    loud
+UNKNOWN  XCircle
+```
+
+Komen fail itu berkata *"each state has its own icon, which is what makes
+it work in greyscale and for a colourblind reader"*.
+
+Kuning dan Merah **berkongsi** `AlertTriangle`. Maklumat tidak hilang —
+label perkataannya berbeza dan kedua-duanya mendapat layanan `loud` —
+tetapi dalam greyscale mereka dibezakan oleh **label sahaja**, dan niat
+yang dinyatakan hanya separuh dipenuhi.
+
+Ini bukan kemasan. `quality_rating` ialah satu-satunya isyarat awal
+bahawa nombor WhatsApp akan disekat, dan Kuning lawan Merah ialah
+perbezaan antara *"perhatikan"* dan *"berhenti menghantar"*.
