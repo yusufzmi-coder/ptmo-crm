@@ -583,3 +583,57 @@ Dua projek Vercel tersambung pada repo ini:
 
 `ptmo-crm` tidak pernah berjaya deploy ke production. Ia menambah satu
 check yang gagal pada setiap PR dan patut dicabut.
+
+### P1 — `text-primary` atas `bg-primary-soft` gagal AA dalam KEDUA-DUA mod
+
+Pasangan token, bukan pepijat komponen. Ia menandakan keadaan **aktif
+terpilih** merentas produk — baris nav aktif, rel tetapan aktif, chip
+terpilih, quick reply terpilih, dan lain-lain.
+
+Dikira terus daripada token tema PTMO, bebas daripada pengukuran pelayar,
+dan angkanya padan tepat:
+
+| Mod | Latar | Nisbah | Ambang |
+| --- | --- | --- | --- |
+| Terang | `--primary-soft` `#e8f3fb` | **4.27** | 4.5 — gagal |
+| Gelap | 14% `#0a77bb` atas latar gelap | **3.47** | 4.5 — gagal |
+
+Teks 14px berat medium, jadi ambang teks kecil terpakai.
+
+Sembilan fail membawa `bg-primary-soft`; enam menggunakan pasangan penuh
+`bg-primary-soft text-primary` secara literal. Membaiki satu komponen
+membetulkan satu tapak dan menjadikannya tidak konsisten dengan jirannya.
+
+**Pembetulannya tidak boleh satu nilai.** Kiraan luminans menunjukkan
+kedua-dua mod menarik ke arah BERTENTANGAN:
+
+```
+luminans primary = 0.16846
+TERANG  perlu <= 0.15716   ->  primary kena lebih GELAP
+GELAP   perlu >= 0.23352   ->  primary kena lebih CERAH
+```
+
+Dan menggelapkan `--primary-soft` dalam mod gelap tidak boleh
+menyelesaikannya: ia memerlukan luminans **-0.0015**, iaitu mustahil.
+
+Jadi satu `--primary` tidak boleh memenuhi kedua-duanya. Ia memerlukan
+sama ada `--primary` per-mod, atau token berasingan untuk teks-atas-soft
+(contoh `--primary-on-soft`) yang bergerak bebas daripada warna butang.
+
+Rujukan yang perlu dijaga semasa membaikinya: `primary` atas putih ialah
+**4.81**, dan putih atas `primary` juga **4.81** — itu butang utama
+(«Log masuk»). Ia lulus dengan margin nipis, jadi apa-apa perubahan pada
+`--primary` mesti diukur semula terhadap butang itu juga.
+
+Merentas empat blok tema (`globals.css` pada 161, 199, 212, 226) — jadi
+pembetulan menyentuh setiap tema, bukan PTMO sahaja.
+
+**Cara ia hampir tersalah lapor, dan itu berbaloi direkod.** Laporan
+pertama mengukur pautan nav pertama pada `/dashboard`, yang kebetulan
+AKTIF, dan membandingkan warna teksnya terhadap latar `aside` dan bukan
+latarnya sendiri. Itu menghasilkan 3.91/4.81 dan satu dakwaan "hierarki
+terbalik" antara tajuk kumpulan dan baris nav. Dakwaan itu tidak boleh
+benar: sumber menunjukkan kedua-duanya menggunakan token yang **sama
+persis**, jadi nisbahnya mesti identik — dan memang identik, 5.52 terang
+dan 5.79 gelap, kedua-duanya lulus. Pengukur itu menangkap kesilapannya
+sendiri dan menariknya balik sebelum sesiapa menampal apa-apa.

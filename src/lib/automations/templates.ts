@@ -44,7 +44,7 @@ export const AUTOMATION_TEMPLATES: Record<TemplateSlug, AutomationTemplateDefini
       {
         step_type: 'send_message',
         step_config: {
-          text: "Hi! 👋 Thanks for reaching out. We'll get back to you shortly.",
+          text: "Hi! 👋 Thanks for getting in touch. Our team will reply shortly.",
         },
       },
       {
@@ -80,19 +80,22 @@ export const AUTOMATION_TEMPLATES: Record<TemplateSlug, AutomationTemplateDefini
   },
   lead_qualifier: {
     slug: 'lead_qualifier',
-    name: 'Lead Qualifier',
-    description: 'Ask qualification questions to filter inbound leads.',
+    name: 'Enquiry Router',
+    description: 'Ask which centre and programme an enquiry is about, then hand it to an agent.',
     trigger_type: 'keyword_match',
     trigger_config: {
-      keywords: ['pricing', 'quote', 'buy'],
+      keywords: ['fees', 'price', 'enrol', 'enroll', 'register'],
       match_type: 'contains',
     },
     steps: [
       {
         step_type: 'send_message',
         step_config: {
+          // Deliberately asks rather than answers. Fees vary by centre and
+          // programme, and this seed cannot know either — a template that
+          // quoted a figure would put a wrong price in a parent's hands.
           text:
-            "Great — happy to help with pricing! Quick question: roughly how many seats are you looking for?",
+            "Thanks for asking! Which centre are you near, and which year is your child in? We'll get you the right details.",
         },
       },
       {
@@ -120,7 +123,7 @@ export const AUTOMATION_TEMPLATES: Record<TemplateSlug, AutomationTemplateDefini
         step_type: 'send_message',
         step_config: {
           text:
-            "Just circling back — did you have any other questions for us? Happy to help!",
+            "Just following up — is there anything else we can help you with?",
         },
       },
     ],
