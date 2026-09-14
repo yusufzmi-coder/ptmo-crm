@@ -65,7 +65,6 @@ export function AppearancePanel() {
               key={tObj.id}
               id={tObj.id}
               name={tObj.name}
-              tagline={tObj.tagline}
               swatch={tObj.swatch}
               isActive={tObj.id === theme}
               onPick={() => setTheme(tObj.id)}
@@ -130,19 +129,24 @@ function ModeCard({
 function ThemeCard({
   id,
   name,
-  tagline,
   swatch,
   isActive,
   onPick,
 }: {
   id: ThemeId;
   name: string;
-  tagline: string;
   swatch: string;
   isActive: boolean;
   onPick: () => void;
 }) {
   const t = useTranslations("Settings.appearance");
+  // The tagline is prose written to be read, so it is mapped from the
+  // theme id here rather than carried on the entry in src/lib/themes.ts —
+  // same reason the colour mode is mapped at render. The accent NAME
+  // stays as themes.ts spells it: it sits beside the actual swatch, so
+  // the colour is the information and the name is just the palette's
+  // label.
+  const tTagline = useTranslations("ThemeTagline");
   return (
     <button
       type="button"
@@ -175,7 +179,7 @@ function ThemeCard({
       <div>
         <div className="text-sm font-semibold text-foreground">{name}</div>
         <div className="mt-1 text-xs leading-relaxed text-muted-foreground">
-          {tagline}
+          {tTagline(id)}
         </div>
       </div>
       <div

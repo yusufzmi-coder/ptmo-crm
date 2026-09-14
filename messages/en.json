@@ -2019,5 +2019,13 @@
   "ColorMode": {
     "light": "Light",
     "dark": "Dark"
+  },
+  "ThemeTagline": {
+    "ptmo": "The Minda Optima blue — the default for this deployment.",
+    "violet": "Confident, slightly playful.",
+    "emerald": "Growth-coded, nods at messaging without copying WhatsApp green.",
+    "cobalt": "Clean B2B-SaaS blue — calm and product-y.",
+    "amber": "Warm and friendly — feels good for SMB teams.",
+    "rose": "Bold and modern — D2C, creator-economy, lifestyle."
   }
 }
