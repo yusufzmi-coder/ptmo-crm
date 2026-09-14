@@ -5,8 +5,8 @@
 **Pemilik:** Yusuf Azmi  
 **Produk:** CRM PTMO Operation Dept  
 **Status keseluruhan:** Fasa 1 - release gate  
-**Dikemas kini:** 13 Sep 2026  
-**Branch kerja bersepadu:** `feat/multi-number` @ `bd4366b`
+**Dikemas kini:** 14 Sep 2026
+**Branch kerja bersepadu:** `feat/multi-number` @ `fb7fac0` lokal / `bd4366b` origin
 
 ---
 
@@ -41,10 +41,13 @@
 - Guard akses, realtime inbox, private media hardening, broadcast safety dan ops SLA asas.
 - Settings `Centres & zones` serta migration 049.
 - Preflight akaun dan storage yang read-only untuk release.
+- `feat/centres` telah dipush dan diintegrasi ke `feat/multi-number` melalui `0842f58`; ia bukan lagi kerja lokal yang berasingan.
+- Hardening release ada pada `57e4437`; migration 050 kemudian ditarik balik dengan sengaja pada `5f91f70`, dan preflight SQL Editor dibaiki pada `bd4366b`.
 
 ### Sudah live
 
-- Migration 041 sahaja disahkan live: co-viewer/presence dengan `viewing_conversation_id`.
+- Ledger repo menyatakan migration 001–041 sahaja live; 040 dan 041 dibuat secara manual.
+- Nota luar yang diterima pada 14 Sep mendakwa 049 sudah live, tetapi ini bercanggah dengan ledger dan preflight. Jangan anggap 049 live sehingga probe read-only mengesahkannya.
 
 ### Belum live - jangan anggap siap
 
@@ -105,12 +108,14 @@
 | 2026-09-12 | Jangan migrate 16 nombor sekaligus | Pilot nombor baru dahulu kurangkan risiko operasi dan Meta | Active |
 | 2026-09-13 | Fasa 1 ditutup hanya selepas preflight + release + UAT | Kod yang push bukan bukti production ready | Active |
 | 2026-09-13 | Issue Case diasingkan daripada tag | Aduan tidak boleh hilang sebab staf terlupa tag | Planned |
+| 2026-09-14 | Pilot kekal satu nombor Ops baharu; seni bina multi-number tidak dibuang | Kurangkan risiko cutover sekarang sambil kekalkan ruang scale kemudian | Active |
 
 ## Update log
 
 | Tarikh | Apa berubah | Bukti / pautan | Dikemas kini oleh |
 |---|---|---|---|
 | 2026-09-13 | Board dicipta; status batch `feat/multi-number` direkod | `bd4366b` | Codex |
+| 2026-09-14 | Cross-check brief baharu dengan repo: betulkan status Centres, hardening, 050 dan konflik status 049 | `0842f58`, `57e4437`, `5f91f70`, `bd4366b`, ledger migration | Codex |
 
 ---
 
