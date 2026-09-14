@@ -1078,7 +1078,14 @@
         "closeConversationHint": "Menetapkan status perbualan kepada \"closed\". Tiada konfigurasi diperlukan."
       },
       "previewNoBody": "Belum ada teks mesej",
-      "previewNoTemplate": "Pilih template"
+      "previewNoTemplate": "Pilih template",
+      "previewNoUrl": "Belum ada URL",
+      "previewCondition": "Apabila {subject}",
+      "previewConditionUnset": "Syarat belum ditetapkan",
+      "previewWaitMinutes": "{amount, plural, =1 {# minit} other {# minit}}",
+      "previewWaitHours": "{amount, plural, =1 {# jam} other {# jam}}",
+      "previewWaitDays": "{amount, plural, =1 {# hari} other {# hari}}",
+      "previewWaitUnset": "Tempoh belum ditetapkan"
     }
   },
   "Flows": {
