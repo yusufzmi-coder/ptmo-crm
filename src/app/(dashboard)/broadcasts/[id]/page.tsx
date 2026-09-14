@@ -83,10 +83,11 @@ interface FunnelStep {
  * always render a full bar at the top and proportional tails.
  */
 function FunnelChart({ steps }: { steps: FunnelStep[] }) {
+  const t = useTranslations('Broadcasts.detail');
   const max = Math.max(...steps.map((s) => s.value), 1);
   return (
     <div className="rounded-xl border border-border bg-card p-4">
-      <h3 className="mb-4 text-sm font-medium text-foreground">Funnel</h3>
+      <h3 className="mb-4 text-sm font-medium text-foreground">{t('funnel')}</h3>
       <div className="space-y-2">
         {steps.map((step) => {
           const pctOfMax = Math.max(5, Math.round((step.value / max) * 100));
@@ -315,7 +316,7 @@ export default function BroadcastDetailPage() {
   if (error || !broadcast) {
     return (
       <div className="flex h-64 flex-col items-center justify-center gap-2">
-        <p className="text-sm text-red-400">{error ?? t('notFound')}</p>
+        <p className="text-sm text-destructive">{error ?? t('notFound')}</p>
         <Button variant="outline" onClick={() => router.push('/broadcasts')}>
           {t('backToBroadcasts')}
         </Button>
@@ -376,8 +377,8 @@ export default function BroadcastDetailPage() {
             because orphaning in-flight Meta messages would leave the
             funnel inconsistent. */}
         {confirmDelete ? (
-          <div className="flex items-center gap-2 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-sm">
-            <span className="text-red-300">{t('deletePrompt')}</span>
+          <div className="flex items-center gap-2 rounded-md border border-destructive/70 bg-destructive/10 px-3 py-1.5 text-sm">
+            <span className="text-destructive">{t('deletePrompt')}</span>
             <Button
               variant="outline"
               size="sm"
@@ -407,7 +408,7 @@ export default function BroadcastDetailPage() {
                 ? t('cannotDeleteSending')
                 : t('deleteHover')
             }
-            className="border-red-500/30 bg-transparent text-red-400 hover:bg-red-500/10 disabled:opacity-40"
+            className="border-destructive/70 bg-transparent text-destructive hover:bg-destructive/10 disabled:opacity-40"
           >
             <Trash2 className="h-3.5 w-3.5" />
             {t('delete')}
@@ -506,7 +507,7 @@ export default function BroadcastDetailPage() {
           value={broadcast.failed_count}
           total={broadcast.total_recipients}
           icon={<AlertCircle className="h-4 w-4" />}
-          color="bg-red-500/10 text-red-400"
+          color="bg-destructive/10 text-destructive"
         />
       </div>
 
@@ -630,7 +631,7 @@ export default function BroadcastDetailPage() {
                           ? new Date(recipient.read_at).toLocaleString()
                           : '-'}
                       </TableCell>
-                      <TableCell className="max-w-xs truncate text-xs text-red-400">
+                      <TableCell className="max-w-xs truncate text-xs text-destructive">
                         {recipient.error_message ?? '-'}
                       </TableCell>
                     </TableRow>

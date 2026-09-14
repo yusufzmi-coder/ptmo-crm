@@ -26,6 +26,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import {
   AlertTriangle,
   CheckCircle,
@@ -91,6 +92,7 @@ const FAIL_COPY: Record<PeekFail['reason'], { title: string; body: string }> = {
 };
 
 export default function JoinPage() {
+  const t = useTranslations('JoinPage');
   const params = useParams<{ token: string }>();
   const token = params?.token;
 
@@ -186,21 +188,21 @@ export default function JoinPage() {
               'You are already in another account. Sign in with a different email to join this one.',
           );
         } else {
-          toast.error(payload.error || 'Failed to accept invitation');
+          toast.error(payload.error || t('acceptFailed'));
         }
         setAccepting(false);
         return;
       }
-      toast.success('Welcome to the team');
+      toast.success(t('welcome'));
       // Full reload (not router.push) so AuthProvider re-fetches
       // the profile with the new account_id and account_role.
       window.location.href = '/dashboard';
     } catch (err) {
       console.error('[join] redeem error:', err);
-      toast.error('Could not reach the server');
+      toast.error(t('networkError'));
       setAccepting(false);
     }
-  }, [token]);
+  }, [token, t]);
 
   const handleSignOutAndRetry = useCallback(async () => {
     setSigningOut(true);
@@ -212,10 +214,10 @@ export default function JoinPage() {
       window.location.reload();
     } catch (err) {
       console.error('[join] sign-out error:', err);
-      toast.error('Could not sign out. Try refreshing the page.');
+      toast.error(t('signOutError'));
       setSigningOut(false);
     }
-  }, []);
+  }, [t]);
 
   // ----- Loading state (peek pending OR auth not yet resolved) -----
   if (peek === null || authedUserId === undefined) {
@@ -223,7 +225,7 @@ export default function JoinPage() {
       <Card className="w-full max-w-md border-border bg-card">
         <CardContent className="flex flex-col items-center gap-3 py-12">
           <Loader2 className="size-6 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Verifying invitation…</p>
+          <p className="text-sm text-muted-foreground">{t('verifying')}</p>
         </CardContent>
       </Card>
     );
