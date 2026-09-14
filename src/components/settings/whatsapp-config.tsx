@@ -532,14 +532,14 @@ export function WhatsAppConfig() {
       <div className="space-y-6">
         {/* Corrupted-token reset banner */}
         {showResetBanner && (
-          <Alert className="bg-amber-950/40 border-amber-600/40">
+          <Alert className="bg-warning/10 border-warning/70">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="size-5 text-amber-400 mt-0.5 shrink-0" />
+              <AlertTriangle className="size-5 text-warning mt-0.5 shrink-0" />
               <div className="flex-1">
-                <AlertTitle className="text-amber-200 mb-1">
+                <AlertTitle className="text-warning mb-1">
                   {t('tokenCorrupted')}
                 </AlertTitle>
-                <AlertDescription className="text-amber-100/80 text-sm">
+                <AlertDescription className="text-foreground/80 text-sm">
                   {statusMessage}
                 </AlertDescription>
                 <Button
@@ -629,20 +629,26 @@ export function WhatsAppConfig() {
           <Alert
             className={
               isRegistered
-                ? 'bg-emerald-950/30 border-emerald-700/50'
-                : 'bg-amber-950/30 border-amber-700/50'
+                ? 'bg-success/10 border-success/70'
+                : 'bg-warning/10 border-warning/70'
             }
           >
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <div className="flex items-center gap-2">
                 {isRegistered ? (
-                  <CheckCircle2 className="size-4 text-emerald-400" />
+                  <CheckCircle2 className="size-4 text-success" />
                 ) : (
-                  <AlertTriangle className="size-4 text-amber-400" />
+                  <AlertTriangle className="size-4 text-warning" />
                 )}
                 <AlertTitle
                   className={
-                    'mb-0 ' + (isRegistered ? 'text-emerald-200' : 'text-amber-200')
+                    // Title in the normal text colour, not the status hue.
+                    // text-success on bg-success/10 measures 4.45:1 at
+                    // 14px/500 — below AA, and this is the line Boss reads
+                    // to know whether registration worked. The icon and the
+                    // border carry the status; the sentence carries the
+                    // fact, and it has to be readable.
+                    'mb-0 text-foreground'
                   }
                 >
                   {isRegistered
@@ -679,7 +685,7 @@ export function WhatsAppConfig() {
               ) : lastRegistrationError ? (
                 <>
                   {t('lastAttemptFailed')}
-                  <span className="text-red-300">
+                  <span className="text-destructive">
                     &quot;{lastRegistrationError}&quot;
                   </span>
                   . {t('retryHint')}
@@ -693,7 +699,7 @@ export function WhatsAppConfig() {
               <div className="mt-3 rounded border border-border bg-card/60 px-3 py-2 space-y-1.5 text-[11px]">
                 <p className="font-medium text-foreground">
                   {t('diagnosticLastRun')}
-                  <span className={registrationProbe.live ? 'text-emerald-400' : 'text-amber-400'}>
+                  <span className={registrationProbe.live ? 'text-success' : 'text-warning'}>
                     {registrationProbe.live ? t('live') : t('notLive')}
                   </span>
                 </p>
@@ -1085,7 +1091,7 @@ export function WhatsAppConfig() {
               variant="outline"
               onClick={handleReset}
               disabled={resetting}
-              className="border-red-900 text-red-400 hover:text-red-300 hover:bg-red-950/40"
+              className="border-destructive/70 text-destructive hover:text-destructive hover:bg-destructive/10"
             >
               {resetting ? (
                 <>
@@ -1222,19 +1228,19 @@ function QualityBanner({
 }) {
   const style: Record<QualityRating, { box: string; icon: typeof CheckCircle2; label: string; hint: string }> = {
     GREEN: {
-      box: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+      box: 'border-success/70 bg-success/10 text-success',
       icon: CheckCircle2,
       label: t('qualityGreen'),
       hint: t('qualityGreenHint'),
     },
     YELLOW: {
-      box: 'border-amber-500 bg-amber-500/20 text-amber-900 dark:text-amber-100',
+      box: 'border-warning/70 bg-warning/15 text-warning',
       icon: AlertTriangle,
       label: t('qualityYellow'),
       hint: t('qualityYellowHint'),
     },
     RED: {
-      box: 'border-red-500 bg-red-500/20 text-red-900 dark:text-red-100',
+      box: 'border-destructive/70 bg-destructive/15 text-destructive',
       icon: AlertTriangle,
       label: t('qualityRed'),
       hint: t('qualityRedHint'),

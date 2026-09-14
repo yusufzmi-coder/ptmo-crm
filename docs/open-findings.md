@@ -696,29 +696,6 @@ audit sebegini mesti mengesahkan kelas itu benar-benar dijana.
 Akibatnya: setiap varian `hover:` dalam inventori ini **tidak diukur
 secara langsung**. Hover perlukan pusingannya sendiri.
 
-## `SECTION_META.label` — lapan rentetan kod mati yang kelihatan hidup
-
-**Fail:** `src/components/settings/settings-sections.ts`
-
-Lapan medan `label` dalam `SECTION_META` tidak pernah sampai ke skrin.
-`settings-rail.tsx` merender `t(\`sections.${s}\`)` daripada katalog, dan
-`RAIL_GROUPS[].label` hanya pernah dibaca sebagai boolean — nilainya
-tidak digunakan, hanya kewujudannya.
-
-Ditemui semasa audit i18n settings (`3c290e1`, `640cf78`). Pemilik betul
-menolak untuk menterjemahnya: menterjemah teks mati lebih buruk daripada
-membiarkannya, kerana ia menambah lapan kunci ke tiga katalog yang tiada
-siapa akan membaca.
-
-**Bahaya sebenar bukan kunci yang terbuang.** Ia kod mati yang kelihatan
-hidup. Seseorang menyunting `"Team members"` di situ, menjangka nav
-tetapan berubah, dan tidak berlaku apa-apa. Mereka kemudian mencari sebab
-di tempat yang salah.
-
-**Tindakan: PADAM, dalam commit berasingan.** Bukan sebahagian kerja warna
-atau i18n — pemadaman patut boleh dibaca sendiri supaya `git log` menjawab
-"kenapa ini hilang" tanpa membongkar commit campuran. Belum diagihkan.
-
 ## Domain masih menyajikan Inggeris — `NEXT_PUBLIC_APP_LOCALE` belum ditetapkan
 
 `crm.ptmostaff.com/login` memulangkan 200 dan merender `"Sign in"` /
@@ -802,3 +779,49 @@ Mengulang `"Delete"` merentas namespace selamat. Mengulang label status
 ialah bahaya hanyut. Menyatukan atas dasar perkataan yang sama ialah
 kesilapan yang sama seperti tidak menyatukan langsung, cuma arah
 bertentangan.
+---
+
+## Kod mati yang kelihatan hidup — `SECTION_META.label`
+
+`src/components/settings/settings-sections.ts` mentakrifkan `label` untuk
+kesemua dua belas bahagian tetapan:
+
+```
+profile: { id: 'profile', label: 'Your profile', … }
+members: { id: 'members', label: 'Team members', … }
+api:     { id: 'api',     label: 'API keys',     … }
+```
+
+**Tiada satu pun sampai ke skrin.** `settings-rail.tsx` merender
+`t(\`sections.${s}\`)` untuk label butang dan `t(\`groups.${group}\`)` untuk
+tajuk kumpulan. `RAIL_GROUPS[].label` dibaca hanya sebagai boolean
+(`label ? … : null`) untuk memutuskan sama ada tajuk kumpulan dilukis —
+nilainya tidak pernah dipaparkan.
+
+Ditemui semasa audit rentetan hardcode i18n (3c290e1). Ia **tidak**
+diterjemah: menterjemah teks mati menambah lapan kunci yang mesti dijaga
+selama-lamanya untuk teks yang tiada siapa nampak.
+
+**Kenapa ia lebih daripada kemasan.** Seseorang yang menukar
+`label: 'Team members'` kepada sesuatu yang lain akan menjangka UI
+berubah. Ia tidak. Kod mati yang kelihatan seperti sumber kebenaran
+ialah perangkap, dan ia duduk betul-betul di sebelah tempat label sebenar
+ditakrifkan (`messages/*.json` di bawah `Settings.sections`).
+
+**Cadangan:** buang medan `label` daripada `SectionMeta` dan daripada
+kedua-dua struktur, sebagai commit tersendiri supaya pemadaman boleh
+dibaca sendiri. Semak `RAIL_GROUPS` juga — kalau `label` hanya penanda
+boolean, ia patut jadi `showHeading: boolean` dan bukan rentetan yang
+menjemput orang menyuntingnya.
+
+---
+
+## Badge BETA — 1.33:1 dalam mod terang
+
+Diukur semasa mengesahkan kerja token Kelas D, di luar dua fail yang
+diubah. Badge `BETA` di sebelah Flow dalam sidebar mengukur **1.33:1**
+terhadap latarnya dalam mod terang.
+
+Ia dalam `src/components/layout/**`, bukan pokok settings, jadi ia tidak
+disentuh. Diletakkan di sini supaya ia masuk ke dalam inventori Kelas A/B/C
+dan bukan ditemui semula dari awal.
