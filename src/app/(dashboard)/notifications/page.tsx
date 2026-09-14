@@ -6,7 +6,8 @@ import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import type { Notification } from "@/types";
-import { Bell, CheckCheck, Loader2, UserPlus } from "lucide-react";
+import { Bell, CheckCheck, UserPlus } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -158,7 +159,7 @@ export default function NotificationsPage() {
   if (notifications === null) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        <Spinner size="md" className="text-primary" label={t("loading")} />
       </div>
     );
   }
@@ -179,7 +180,7 @@ export default function NotificationsPage() {
           onClick={markAllRead}
         >
           {markingAll ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Spinner size="sm" />
           ) : (
             <CheckCheck className="h-4 w-4" />
           )}

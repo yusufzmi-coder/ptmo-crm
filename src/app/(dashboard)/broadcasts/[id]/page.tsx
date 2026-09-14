@@ -21,7 +21,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import {
   ArrowLeft,
-  Loader2,
   Users,
   Send,
   CheckCheck,
@@ -41,6 +40,7 @@ import {
   getRecipientStatus,
 } from '@/lib/broadcast-status';
 import { useTranslations } from 'next-intl';
+import { Spinner } from '@/components/ui/spinner';
 import {
   PageSkeleton,
   StatRowSkeleton,
@@ -437,7 +437,7 @@ export default function BroadcastDetailPage() {
                 disabled={resumingScope !== null}
               >
                 {resumingScope === 'pending' ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <Spinner size="sm" />
                 ) : (
                   <PlayCircle className="h-3.5 w-3.5" />
                 )}
@@ -453,7 +453,7 @@ export default function BroadcastDetailPage() {
                 className="border-border text-muted-foreground hover:bg-muted"
               >
                 {resumingScope === 'failed' ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <Spinner size="sm" />
                 ) : (
                   <RotateCcw className="h-3.5 w-3.5" />
                 )}

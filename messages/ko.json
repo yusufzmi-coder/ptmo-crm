@@ -1960,7 +1960,8 @@
     "unreadLabel": "읽지 않음",
     "retry": "다시 시도",
     "toastMarkReadFailed": "알림을 읽음으로 표시하지 못했습니다",
-    "toastMarkAllFailed": "모두 읽음으로 표시하지 못했습니다"
+    "toastMarkAllFailed": "모두 읽음으로 표시하지 못했습니다",
+    "loading": "알림 불러오는 중"
   },
   "Interactive": {
     "emptyButtons": "버튼, 메시지 내용 없음",

@@ -42,7 +42,6 @@ import {
   MoreHorizontal,
   Pencil,
   Trash2,
-  Loader2,
   Users,
   ChevronLeft,
   ChevronRight,
@@ -57,6 +56,7 @@ import { CustomFieldsManager } from '@/components/contacts/custom-fields-manager
 import { useCan } from '@/hooks/use-can';
 import { GatedButton } from '@/components/ui/gated-button';
 import { useTranslations } from 'next-intl';
+import { Spinner } from '@/components/ui/spinner';
 import { Skeleton } from '@/components/dashboard/skeleton';
 
 const PAGE_SIZE = 25;
@@ -802,7 +802,7 @@ export default function ContactsPage() {
               onClick={handleDelete}
               disabled={deleting}
             >
-              {deleting && <Loader2 className="size-4 animate-spin" />}
+              {deleting && <Spinner size="sm" />}
               {t('deleteBtn')}
             </Button>
           </DialogFooter>
@@ -833,7 +833,7 @@ export default function ContactsPage() {
               onClick={handleBulkDelete}
               disabled={deleting}
             >
-              {deleting && <Loader2 className="size-4 animate-spin" />}
+              {deleting && <Spinner size="sm" />}
               {t('deleteBtn')}
             </Button>
           </DialogFooter>
