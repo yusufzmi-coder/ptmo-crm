@@ -57,7 +57,7 @@ interface ConversationListProps {
 
 const STATUS_COLORS: Record<ConversationStatus, string> = {
   open: "bg-primary",
-  pending: "bg-amber-500",
+  pending: "bg-warning",
   closed: "bg-muted-foreground",
 };
 
@@ -680,7 +680,7 @@ function ConversationItem({
                 reads for anyone who can't tell them apart. */}
             {otherViewers > 0 && (
               <span
-                className="inline-flex items-center text-amber-600 dark:text-amber-400"
+                className="inline-flex items-center text-warning"
                 title={t("otherViewers", { count: otherViewers })}
                 aria-label={t("otherViewers", { count: otherViewers })}
               >
