@@ -2215,6 +2215,7 @@
       "minutes": "{count, plural, =1 {1 minute} other {# minutes}} ago",
       "hours": "{count, plural, =1 {1 hour} other {# hours}} ago",
       "days": "{count, plural, =1 {1 day} other {# days}} ago"
-    }
+    },
+    "underASecond": "under a second"
   }
 }
