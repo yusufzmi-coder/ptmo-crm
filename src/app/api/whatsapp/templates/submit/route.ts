@@ -15,6 +15,7 @@ import {
 import { buildMetaTemplatePayload } from '@/lib/whatsapp/template-components'
 import { ensureImageHeaderHandle } from '@/lib/whatsapp/template-header-handle'
 import { normalizeStatus } from '@/lib/whatsapp/template-status-normalize'
+import { resolveConfig, resolveFailureMessage } from '@/lib/whatsapp/resolve-config';
 
 /**
  * Shared upsert payload builder — both the Meta-failure path and the
@@ -138,11 +139,18 @@ export async function POST(request: Request) {
       metaTemplateId = `dry-run-${crypto.randomUUID()}`
       metaStatus = 'PENDING'
     } else {
-      const { data: config, error: configError } = await supabase
-        .from('whatsapp_config')
-        .select('*')
-        .eq('account_id', accountId)
-        .single()
+      // Templates belong to the WABA, not to any one number, so any of
+      // the account's numbers answers the same. `allowPrimary` is safe
+      // here precisely because this path does NOT message a parent —
+      // unlike the send paths, which must use the thread's own number.
+      const configResolved = await resolveConfig(supabase, accountId, {
+        allowPrimary: true,
+        columns: '*',
+      });
+      const config = configResolved.ok ? configResolved.config : null;
+      const configError = configResolved.ok
+        ? null
+        : new Error(resolveFailureMessage(configResolved.reason));
       if (configError || !config) {
         return NextResponse.json(
           {
@@ -169,7 +177,7 @@ export async function POST(request: Request) {
       // building the payload. Surfaces a 400 with an actionable message
       // (missing META_APP_ID, unreachable URL, wrong type/size).
       try {
-        await ensureImageHeaderHandle(payload, accessToken)
+        await ensureImageHeaderHandle(payload, accessToken, supabase)
       } catch (e) {
         return NextResponse.json(
           { error: e instanceof Error ? e.message : 'Header image upload failed.' },

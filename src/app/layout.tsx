@@ -44,6 +44,11 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: "#ffffff",
   colorScheme: "light dark",
+  // Lets the page extend under the notch and the home indicator, which
+  // is also the precondition for `env(safe-area-inset-*)` reporting
+  // anything but zero — the inbox composer pads its bottom with it so
+  // the send button clears the home indicator on a notched iPhone.
+  viewportFit: "cover",
 };
 
 // Inline boot script — runs before React hydrates so the user's

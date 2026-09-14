@@ -29,6 +29,7 @@ import {
 import { resolveTemplateRow } from '@/lib/whatsapp/template-body';
 import type { MessageTemplate } from '@/types';
 import { findOrCreateContact } from '@/lib/api/v1/contacts';
+import { resolveConfig, resolveFailureMessage } from '@/lib/whatsapp/resolve-config';
 
 /** Thrown by createBroadcast on a caller-visible failure; route maps it. */
 export class BroadcastError extends Error {
@@ -54,6 +55,13 @@ export interface CreateBroadcastParams {
   templateName: string;
   templateLanguage?: string | null;
   recipients: BroadcastRecipientInput[];
+  /**
+   * Which connected number to send from — for Minda Optima, which
+   * branch (migration 040). Required once an account holds more than
+   * one; with a single number connected the resolver still finds it,
+   * so existing callers keep working untouched.
+   */
+  configId?: string | null;
 }
 
 interface PlannedRecipient {
@@ -88,7 +96,7 @@ export async function createBroadcast(
   auditUserId: string,
   params: CreateBroadcastParams
 ): Promise<BroadcastPlan> {
-  const { name, templateName, recipients } = params;
+  const { name, templateName, recipients, configId } = params;
 
   if (!templateName) {
     throw new BroadcastError('bad_request', "'template_name' is required", 400);
@@ -110,18 +118,25 @@ export async function createBroadcast(
 
   // Config (fail fast + provides the audit trail owner already resolved
   // by the caller). Meta send needs phone_number_id + decrypted token.
-  const { data: config, error: configError } = await db
-    .from('whatsapp_config')
-    .select('*')
-    .eq('account_id', accountId)
-    .single();
-  if (configError || !config) {
+  // Deliberately NO `allowPrimary`: a broadcast reaches hundreds of
+  // parents at once, so sending from a guessed number is the most
+  // expensive mistake this codebase can make. With one number
+  // connected this resolves to it; with several it requires the caller
+  // to have named one, and stops and asks if they did not.
+  const resolvedConfig = await resolveConfig(db, accountId, {
+    configId: configId ?? undefined,
+    columns: '*',
+  });
+  if (!resolvedConfig.ok) {
+    // Say which of the two it is — nothing connected, or several
+    // connected and none chosen. They need different fixes.
     throw new BroadcastError(
       'whatsapp_not_configured',
-      'WhatsApp not configured. Please set up your WhatsApp integration first.',
+      resolveFailureMessage(resolvedConfig.reason),
       400
     );
   }
+  const config = resolvedConfig.config;
   const accessToken = decrypt(config.access_token);
 
   // Template row (once) for header/button components; guard a
@@ -211,6 +226,12 @@ export async function createBroadcast(
       // Frozen per-recipient params (migration 038) — without them a
       // resume of this broadcast has no way to reconstruct {{1}}.
       p_template_params: deduped.map((r) => r.params),
+      // The branch this campaign leaves on (migration 048). Frozen for
+      // the same reason the params are: a resume days later has only a
+      // broadcast id to work from, and must not re-derive the number —
+      // re-deriving it would mail the second half of a Batu Caves
+      // campaign from the Rawang number.
+      p_whatsapp_config_id: config.id,
     }
   );
   if (createErr || !createdRows || createdRows.length === 0) {

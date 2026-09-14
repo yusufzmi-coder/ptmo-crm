@@ -1,0 +1,4 @@
+slug=ptmo-crm
+tajuk=PTMO CRM — akses multi-zone HQ
+dicipta=2026-09-12
+drive=/Users/yusufazmi/Library/CloudStorage/GoogleDrive-yusufptmo@gmail.com/My Drive/ucop-vault/projects/ptmo-crm

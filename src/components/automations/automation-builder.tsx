@@ -60,7 +60,7 @@ import {
   blankButtonsPayload,
   blankListPayload,
 } from "@/components/interactive/interactive-builder"
-import { interactivePayloadPreviewText } from "@/lib/whatsapp/interactive"
+import { interactivePreviewText } from "@/lib/inbox/interactive-preview"
 import { createClient } from "@/lib/supabase/client"
 import {
   childPath,
@@ -1089,6 +1089,7 @@ function StepRenderer({
   basePath: StepPath
 } & Omit<StepListProps, "steps" | "basePath" | "scope">) {
   const t = useTranslations("Automations.builder")
+  const tInteractive = useTranslations("Interactive")
   const path = childPath(basePath, scope, index)
   const meta = STEP_META[step.step_type]
   const Icon = meta.icon
@@ -1136,7 +1137,7 @@ function StepRenderer({
                 {isCondition ? "Condition" : step.step_type === "wait" ? "Wait" : "Action"}
               </div>
               <div className="truncate text-sm font-medium text-foreground">{t(`steps.${meta.label}`)}</div>
-              <div className="truncate text-[11px] text-muted-foreground">{previewFor(step)}</div>
+              <div className="truncate text-[11px] text-muted-foreground">{previewFor(step, t, tInteractive)}</div>
             </div>
             <ChevronDown
               className={cn("h-4 w-4 text-muted-foreground transition-transform", expanded && "rotate-180")}
@@ -1528,21 +1529,64 @@ function FieldBlock({
   )
 }
 
-function previewFor(step: BuilderStep): string {
+/**
+ * Wait units the builder offers, mapped to their preview keys. The
+ * dropdown at `config.units.*` writes these three values; anything else
+ * would be data we never wrote, so the lookup falls back to the same
+ * default the config editor uses.
+ */
+const WAIT_PREVIEW_KEY: Record<string, string> = {
+  minutes: "previewWaitMinutes",
+  hours: "previewWaitHours",
+  days: "previewWaitDays",
+}
+
+/**
+ * One-line summary under a step's title in the builder tree.
+ *
+ * Takes both translators because the two namespaces are not
+ * interchangeable: the placeholders for an empty interactive payload are
+ * shared with the inbox and settings panels that render the same
+ * preview, so they live under `Interactive`, while the builder's own
+ * wording stays under `Automations.builder`.
+ */
+function previewFor(
+  step: BuilderStep,
+  t: (key: string, values?: Record<string, string | number>) => string,
+  tInteractive: (key: string) => string,
+): string {
   switch (step.step_type) {
     case "send_message":
-      return (step.step_config.text as string) || "no text yet"
+      // Same wording as an empty interactive payload — both mean "this
+      // step has no message text yet", so they share one key rather
+      // than drifting into two phrasings of the same sentence.
+      return (step.step_config.text as string) || t("previewNoBody")
     case "send_buttons":
     case "send_list":
-      return interactivePayloadPreviewText(asInteractive(step.step_config)) || "no body yet"
+      return (
+        interactivePreviewText(asInteractive(step.step_config), tInteractive) ||
+        t("previewNoBody")
+      )
     case "send_template":
-      return (step.step_config.template_name as string) || "pick a template"
-    case "wait":
-      return `${step.step_config.amount ?? "?"} ${step.step_config.unit ?? ""}`
-    case "condition":
-      return `when ${step.step_config.subject ?? "?"}`
+      return (step.step_config.template_name as string) || t("previewNoTemplate")
+    case "wait": {
+      // "5" on its own does not say five of what, so the unit is part
+      // of the translated string, not concatenated after it. Each unit
+      // is its own ICU plural — languages do not agree on how (or
+      // whether) a count changes the noun.
+      const amount = Number(step.step_config.amount)
+      if (!Number.isFinite(amount)) return t("previewWaitUnset")
+      const unit = (step.step_config.unit as string) ?? "hours"
+      return t(WAIT_PREVIEW_KEY[unit] ?? WAIT_PREVIEW_KEY.hours, { amount })
+    }
+    case "condition": {
+      const subject = step.step_config.subject as string | undefined
+      return subject
+        ? t("previewCondition", { subject })
+        : t("previewConditionUnset")
+    }
     case "send_webhook":
-      return (step.step_config.url as string) || "no url"
+      return (step.step_config.url as string) || t("previewNoUrl")
     default:
       return ""
   }

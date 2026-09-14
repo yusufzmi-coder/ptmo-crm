@@ -38,11 +38,10 @@ function fakeStorage(uploadError: { message: string } | null = null) {
           uploads.push({ bucket, path, body, options });
           return { error: uploadError };
         },
-        getPublicUrl(path: string) {
-          return {
-            data: { publicUrl: `https://cdn.test/storage/${bucket}/${path}` },
-          };
-        },
+        // No `getPublicUrl` stub on purpose. Migration 047 made
+        // `chat-media` private, so the mirror must not reach for a public
+        // URL any more — its absence here means a reintroduced call would
+        // throw rather than quietly produce a link that 400s.
       };
     },
   };
@@ -138,7 +137,7 @@ describe("mirrorInboundMedia", () => {
     vi.restoreAllMocks();
   });
 
-  it("uploads to chat-media and returns the durable public URL", async () => {
+  it("uploads to chat-media and returns a durable proxy pointer", async () => {
     const { storage, uploads } = fakeStorage();
     const download = fakeDownload(1024);
 
@@ -157,9 +156,13 @@ describe("mirrorInboundMedia", () => {
       `account-${ACCOUNT}/inbound/${MEDIA_ID}-image-1754899200.jpg`,
     );
     expect(uploads[0].options.contentType).toBe("image/jpeg");
+    // The value is persisted to `messages.media_url`, so it has to be a
+    // pointer the app can resolve for as long as the object exists — not
+    // a public URL, which 047 turns into a dead link.
     expect(url).toBe(
-      `https://cdn.test/storage/chat-media/account-${ACCOUNT}/inbound/${MEDIA_ID}-image-1754899200.jpg`,
+      `/api/media/chat-media/account-${ACCOUNT}/inbound/${MEDIA_ID}-image-1754899200.jpg`,
     );
+    expect(url).not.toContain("/object/public/");
   });
 
   it("writes the same path on a redelivery, so a retry can't orphan a copy", async () => {

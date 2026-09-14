@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Loader2, Plus, Trash2, Pencil, RefreshCw, BookOpen } from 'lucide-react';
+import { Skeleton } from '@/components/dashboard/skeleton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -171,9 +172,21 @@ export function AiKnowledgeCard({
       </CardHeader>
       <CardContent className="space-y-4">
         {loading ? (
-          <div className="flex items-center py-4 text-sm text-muted-foreground">
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t('loading')}
-          </div>
+          <ul
+            className="divide-y divide-border rounded-md border border-border"
+            aria-busy="true"
+            aria-label={t('loading')}
+          >
+            {[0, 1, 2].map((i) => (
+              <li
+                key={i}
+                className="flex items-center justify-between gap-2 px-3 py-2"
+              >
+                <Skeleton className="h-4 w-48 max-w-full" />
+                <Skeleton className="size-7 shrink-0" />
+              </li>
+            ))}
+          </ul>
         ) : (
           <>
             {docs.length === 0 && editing === null && (

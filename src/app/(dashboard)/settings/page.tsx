@@ -12,6 +12,7 @@ import { ProfileForm } from '@/components/settings/profile-form';
 import { SecurityPanel } from '@/components/settings/security-panel';
 import { AppearancePanel } from '@/components/settings/appearance-panel';
 import { WhatsAppConfig } from '@/components/settings/whatsapp-config';
+import { CentresPanel } from '@/components/settings/centres-panel';
 import { TemplateManager } from '@/components/settings/template-manager';
 import { QuickRepliesManager } from '@/components/settings/quick-replies-manager';
 import { FieldsAndTagsPanel } from '@/components/settings/fields-and-tags-panel';
@@ -45,6 +46,8 @@ function SettingsPageInner() {
   const { defaultCurrency } = useAuth();
   const { mode } = useTheme();
   const t = useTranslations('Settings');
+  // Stored identifier → translated label; see ColorMode in the catalogue.
+  const tMode = useTranslations('ColorMode');
 
   // The URL (`?tab=`) is the single source of truth for the active
   // section — deep-linkable, and it keeps the existing links in the
@@ -63,10 +66,10 @@ function SettingsPageInner() {
   // already in context.
   const hints: Partial<Record<SettingsSection, ReactNode>> = useMemo(
     () => ({
-      appearance: mode.charAt(0).toUpperCase() + mode.slice(1),
+      appearance: tMode(mode),
       deals: defaultCurrency,
     }),
-    [mode, defaultCurrency],
+    [mode, defaultCurrency, tMode],
   );
 
   const panel: Record<SettingsSection, ReactNode> = {
@@ -75,6 +78,7 @@ function SettingsPageInner() {
     security: <SecurityPanel />,
     appearance: <AppearancePanel />,
     whatsapp: <WhatsAppConfig />,
+    centres: <CentresPanel />,
     templates: <TemplateManager />,
     'quick-replies': <QuickRepliesManager />,
     fields: <FieldsAndTagsPanel />,

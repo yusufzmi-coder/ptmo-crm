@@ -231,6 +231,8 @@ function sendPathDb(
           if (table === 'conversations') captured.conversation = row;
           return builder;
         },
+        // resolveConfig narrows with `.limit(2)` — see onlyConfig().
+        limit: () => builder,
         maybeSingle: async () => ({ data: null, error: null }),
         single: async () => {
           if (table === 'conversations') {
@@ -242,12 +244,15 @@ function sendPathDb(
           }
           return { data: null, error: null };
         },
-        // Bare-await result — only message_templates is read this way.
-        then: (resolve: (r: { data: unknown[]; error: null }) => unknown) =>
-          resolve({
-            data: table === 'message_templates' ? templateRows : [],
-            error: null,
-          }),
+        // Bare-await result. message_templates is read this way, and so
+        // is whatsapp_config since migration 040 — resolveConfig lists
+        // the account's numbers rather than assuming a single row.
+        then: (resolve: (r: { data: unknown[]; error: null }) => unknown) => {
+          let data: unknown[] = [];
+          if (table === 'message_templates') data = templateRows;
+          if (table === 'whatsapp_config') data = [config];
+          return resolve({ data, error: null });
+        },
       };
       return builder;
     },

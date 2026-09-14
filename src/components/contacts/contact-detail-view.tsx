@@ -40,6 +40,7 @@ import {
   DollarSign,
   LayoutTemplate,
 } from 'lucide-react';
+import { Skeleton } from '@/components/dashboard/skeleton';
 import { useTranslations } from 'next-intl';
 
 interface ContactDetailViewProps {
@@ -384,8 +385,37 @@ export function ContactDetailView({
         className="bg-popover border-border text-popover-foreground sm:max-w-lg w-full p-0"
       >
         {loading || !contact ? (
-          <div className="flex items-center justify-center h-full">
-            <Loader2 className="size-6 animate-spin text-primary" />
+          // The sheet slides in before the contact resolves, so a bare
+          // centred spinner meant the whole panel was empty and then
+          // fully populated in one jump. These blocks stand where the
+          // header, the action row and the tab strip are about to be.
+          <div
+            className="flex flex-col h-full"
+            aria-busy="true"
+            aria-label={t('loadingContact')}
+          >
+            <div className="p-4 border-b border-border/50">
+              <div className="flex items-center gap-3">
+                <Skeleton className="size-12 shrink-0 rounded-full" />
+                <div className="flex-1 min-w-0 space-y-2">
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-3 w-28" />
+                </div>
+              </div>
+              <div className="mt-4 flex gap-2">
+                <Skeleton className="h-8 w-24" />
+                <Skeleton className="h-8 w-24" />
+              </div>
+            </div>
+            <div className="flex gap-2 px-4 py-3 border-b border-border/50">
+              {['w-16', 'w-14', 'w-16', 'w-12'].map((w, i) => (
+                <Skeleton key={i} className={`h-7 ${w}`} />
+              ))}
+            </div>
+            <div className="flex-1 space-y-3 px-4 py-3">
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+            </div>
           </div>
         ) : (
           <div className="flex flex-col h-full">
@@ -602,8 +632,17 @@ export function ContactDetailView({
 
                 <div className="flex-1 overflow-y-auto space-y-2">
                   {loadingNotes ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="size-5 animate-spin text-muted-foreground" />
+                    <div aria-busy="true" aria-label={t('loadingNotes')} className="space-y-2">
+                      {[0, 1, 2].map((i) => (
+                        <div
+                          key={i}
+                          className="rounded-lg bg-muted/50 border border-border/50 p-3"
+                        >
+                          <Skeleton className="h-3.5 w-full" />
+                          <Skeleton className="mt-2 h-3.5 w-2/3" />
+                          <Skeleton className="mt-2.5 h-2.5 w-24" />
+                        </div>
+                      ))}
                     </div>
                   ) : notes.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-8">
@@ -644,8 +683,13 @@ export function ContactDetailView({
               {/* Custom Fields Tab */}
               <TabsContent value="custom" className="flex-1 overflow-y-auto px-4 py-3">
                 {loadingCustom ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="size-5 animate-spin text-muted-foreground" />
+                  <div aria-busy="true" aria-label={t('loadingCustomFields')} className="space-y-3">
+                    {[0, 1, 2].map((i) => (
+                      <div key={i} className="space-y-1.5">
+                        <Skeleton className="h-3 w-24" />
+                        <Skeleton className="h-9 w-full" />
+                      </div>
+                    ))}
                   </div>
                 ) : customFields.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-8">
@@ -691,8 +735,19 @@ export function ContactDetailView({
               {/* Deals Tab */}
               <TabsContent value="deals" className="flex-1 overflow-y-auto px-4 py-3">
                 {loadingDeals ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="size-5 animate-spin text-primary" />
+                  <div aria-busy="true" aria-label={t('loadingDeals')} className="space-y-2">
+                    {[0, 1].map((i) => (
+                      <div
+                        key={i}
+                        className="rounded-lg border border-border bg-muted/50 p-3"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <Skeleton className="h-4 w-36" />
+                          <Skeleton className="h-4 w-16 shrink-0" />
+                        </div>
+                        <Skeleton className="mt-2 h-3 w-20" />
+                      </div>
+                    ))}
                   </div>
                 ) : deals.length === 0 ? (
                   <p className="text-xs text-muted-foreground">{t('dealsTab.noDeals')}</p>

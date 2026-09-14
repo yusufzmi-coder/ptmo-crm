@@ -11,6 +11,10 @@ import {
   validateSendMessageParams,
   SendMessageError,
 } from '@/lib/whatsapp/send-message'
+import {
+  resolveConfig,
+  resolveFailureMessage,
+} from '@/lib/whatsapp/resolve-config'
 
 // The dashboard's outbound-send endpoint. It owns auth, per-user rate
 // limiting, and the two ways the UI targets a thread — an existing
@@ -48,6 +52,10 @@ export async function POST(request: Request) {
       // yet (Contact detail → Send template) — we find-or-create one below.
       conversation_id: conversationIdInput,
       contact_id,
+      // Which branch's number to open the thread on (migration 040).
+      // Only consulted on the contact_id path — an existing thread
+      // always replies on the number it already carries.
+      whatsapp_config_id,
       message_type,
       content_text,
       media_url,
@@ -126,11 +134,29 @@ export async function POST(request: Request) {
         )
       }
 
+      // Pick the number BEFORE creating anything. A conversation
+      // created without one is permanently unsendable — the send core
+      // refuses to guess a branch for a thread that talks to a parent —
+      // so an unresolvable number must leave no rows behind.
+      const resolvedConfig = await resolveConfig(supabase, accountId, {
+        configId:
+          typeof whatsapp_config_id === 'string' ? whatsapp_config_id : undefined,
+        allowPrimary: true,
+        columns: 'id',
+      })
+      if (!resolvedConfig.ok) {
+        return NextResponse.json(
+          { error: resolveFailureMessage(resolvedConfig.reason) },
+          { status: 400 }
+        )
+      }
+
       const resolved = await findOrCreateConversation(
         supabase,
         accountId,
         userId,
-        contact_id
+        contact_id,
+        resolvedConfig.config.id
       )
       if (!resolved) {
         return NextResponse.json(
@@ -192,26 +218,65 @@ export async function POST(request: Request) {
 type SendSupabase = Awaited<ReturnType<typeof createClient>>
 
 /**
- * Return the contact's conversation id in this account, creating one if
- * it doesn't exist yet. Mirrors the webhook's find-or-create so an
- * inbound-then-outbound (or outbound-first) sequence converges on a single
- * thread per contact. Runs under the caller's RLS — the conversations_insert
- * policy requires account agent membership, which the caller already is.
+ * Return the contact's conversation id ON `configId`, creating one if it
+ * doesn't exist yet. Mirrors the webhook's find-or-create so an
+ * inbound-then-outbound (or outbound-first) sequence converges on a
+ * single thread per (contact, number). Runs under the caller's RLS — the
+ * conversations_insert policy requires account agent membership, which
+ * the caller already is.
+ *
+ * The lookup is scoped to the number, and the created row carries it.
+ * Both matter: since migration 042 a contact may hold one thread per
+ * branch, so an account-wide `.maybeSingle()` here errors as soon as a
+ * parent has written to two branches, and a thread created without a
+ * number can never be replied to.
  */
 async function findOrCreateConversation(
   supabase: SendSupabase,
   accountId: string,
   userId: string,
   contactId: string,
+  configId: string,
 ): Promise<string | null> {
-  const { data: existing } = await supabase
+  const { data: existingRows, error: findError } = await supabase
     .from('conversations')
     .select('id')
     .eq('account_id', accountId)
     .eq('contact_id', contactId)
-    .maybeSingle()
+    .eq('whatsapp_config_id', configId)
+    .order('created_at', { ascending: true })
+    .limit(1)
 
-  if (existing) return existing.id
+  if (findError) {
+    console.error('Error finding conversation for contact send:', findError.message)
+    return null
+  }
+  if (existingRows && existingRows.length > 0) return existingRows[0].id
+
+  // Adopt a thread that predates migration 040 and carries no number,
+  // rather than stranding the contact's history in an unbranded thread
+  // and opening a second one beside it. The `.is(null)` filter is
+  // repeated on the UPDATE so two concurrent callers on different
+  // numbers cannot both claim it — the loser updates zero rows.
+  const { data: orphanRows } = await supabase
+    .from('conversations')
+    .select('id')
+    .eq('account_id', accountId)
+    .eq('contact_id', contactId)
+    .is('whatsapp_config_id', null)
+    .order('created_at', { ascending: true })
+    .limit(1)
+
+  if (orphanRows && orphanRows.length > 0) {
+    const { data: adopted } = await supabase
+      .from('conversations')
+      .update({ whatsapp_config_id: configId })
+      .eq('id', orphanRows[0].id)
+      .is('whatsapp_config_id', null)
+      .select('id')
+    if (adopted && adopted.length > 0) return adopted[0].id
+    // Lost the claim — fall through and open this number's own thread.
+  }
 
   const { data: created, error } = await supabase
     .from('conversations')
@@ -219,6 +284,7 @@ async function findOrCreateConversation(
       account_id: accountId,
       user_id: userId,
       contact_id: contactId,
+      whatsapp_config_id: configId,
     })
     .select('id')
     .single()

@@ -128,9 +128,18 @@ interface PlanWrites {
 function planDb(fx: PlanFixture, writes: PlanWrites = {}): SupabaseClient {
   return {
     from(table: string) {
+      // The id resolveConfig names when the broadcast carries a frozen
+      // number. Answering regardless of it would let a caller reaching
+      // for the WRONG branch pass silently.
+      let askedForId: string | null = null;
       const b: Record<string, unknown> = {
         select: () => b,
-        eq: () => b,
+        eq: (col: string, val: unknown) => {
+          if (table === 'whatsapp_config' && col === 'id') {
+            askedForId = val as string;
+          }
+          return b;
+        },
         order: () => b,
         in: (col: string, vals: unknown) => {
           if (col === 'status') writes.statusFilter = vals;
@@ -141,10 +150,29 @@ function planDb(fx: PlanFixture, writes: PlanWrites = {}): SupabaseClient {
           writes.failedUpdate = row;
           return b;
         },
-        maybeSingle: async () => ({
-          data: fx.broadcast === undefined ? null : fx.broadcast,
+        // Since migration 040 resolveConfig lists the account's numbers
+        // with `.limit(2)` rather than assuming a single row. A resume
+        // supplies no configId and refuses the account primary, so an
+        // empty list here is what "cannot resolve a number" looks like.
+        limit: async () => ({
+          data: table === 'whatsapp_config' && fx.config ? [fx.config] : [],
           error: null,
         }),
+        maybeSingle: async () => {
+          // resolveConfig looks a named number up by id (migration 048
+          // freezes one on the broadcast), so this can no longer answer
+          // with the broadcast row for every table.
+          if (table === 'whatsapp_config') {
+            const row = fx.config ?? null;
+            const matches =
+              row && (askedForId === null || row.id === askedForId);
+            return { data: matches ? row : null, error: null };
+          }
+          return {
+            data: fx.broadcast === undefined ? null : fx.broadcast,
+            error: null,
+          };
+        },
         single: async () => ({
           data: fx.config === undefined ? null : fx.config,
           error: null,
@@ -170,7 +198,7 @@ const BROADCAST = {
   template_language: 'en_US',
 };
 
-const CONFIG = { phone_number_id: 'pn-1', access_token: 'tok' };
+const CONFIG = { id: 'cfg-1', phone_number_id: 'pn-1', access_token: 'tok' };
 
 function recipient(
   id: string,
@@ -183,6 +211,66 @@ function recipient(
     contact: phone ? { phone } : null,
   };
 }
+
+// ============================================================
+// Which number a resume sends on (migration 048). A campaign outlives
+// the request that created it, so the branch is read off the broadcast
+// rather than re-derived — re-deriving it days later would mail the
+// leftovers of one branch's campaign from another branch's number.
+// ============================================================
+
+describe('planBroadcastResume — the frozen number', () => {
+  it('sends on the number the first pass used, not the account default', async () => {
+    const { plan } = await planBroadcastResume(
+      planDb({
+        broadcast: { ...BROADCAST, whatsapp_config_id: 'cfg-batu-caves' },
+        // Only the named row answers the by-id lookup; a second number
+        // exists on the account but must never be reached for.
+        config: { id: 'cfg-batu-caves', phone_number_id: 'pn-batu-caves', access_token: 'tok' },
+        recipients: [recipient('r1', '+14155550123')],
+      }),
+      'acct-1',
+      'bc-1',
+      'pending',
+    );
+
+    expect(plan.phoneNumberId).toBe('pn-batu-caves');
+  });
+
+  it('refuses when the branch it was sent from is no longer connected', async () => {
+    // The by-id lookup misses — resolveConfig returns not_found, and a
+    // silent switch to another branch would be worse than refusing.
+    await expect(
+      planBroadcastResume(
+        planDb({
+          broadcast: { ...BROADCAST, whatsapp_config_id: 'cfg-gone' },
+          config: null,
+          recipients: [recipient('r1', '+14155550123')],
+        }),
+        'acct-1',
+        'bc-1',
+        'pending',
+      ),
+    ).rejects.toBeInstanceOf(BroadcastError);
+  });
+
+  it('still resolves a pre-048 broadcast that carries no number', async () => {
+    // Rows created before the column existed. With a single number
+    // connected this resolves to it, so old campaigns stay resumable.
+    const { plan } = await planBroadcastResume(
+      planDb({
+        broadcast: BROADCAST,
+        config: CONFIG,
+        recipients: [recipient('r1', '+14155550123')],
+      }),
+      'acct-1',
+      'bc-1',
+      'pending',
+    );
+
+    expect(plan.phoneNumberId).toBe('pn-1');
+  });
+});
 
 describe('planBroadcastResume', () => {
   it('plans the outstanding recipients with their frozen params', async () => {

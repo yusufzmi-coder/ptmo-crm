@@ -6,6 +6,14 @@ import { MessageTemplate } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { configDisplayName } from '@/lib/whatsapp/resolve-config';
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -23,9 +31,20 @@ interface AudienceConfig {
   csvContacts?: { phone: string; name?: string }[];
 }
 
+/** A connected number, as the picker shows it. */
+interface ConfigOption {
+  id: string;
+  label: string | null;
+  phone_number_id: string;
+  is_primary: boolean;
+}
+
 interface Step4Props {
   name: string;
   onNameChange: (name: string) => void;
+  /** The number the campaign goes out on; null until resolved below. */
+  whatsappConfigId: string | null;
+  onWhatsappConfigIdChange: (id: string) => void;
   template: MessageTemplate;
   audience: AudienceConfig;
   onSend: () => void;
@@ -38,6 +57,8 @@ interface Step4Props {
 export function Step4ScheduleSend({
   name,
   onNameChange,
+  whatsappConfigId,
+  onWhatsappConfigIdChange,
   template,
   audience,
   onSend,
@@ -50,6 +71,38 @@ export function Step4ScheduleSend({
   const [showConfirm, setShowConfirm] = useState(false);
   const [estimatedReach, setEstimatedReach] = useState<number>(0);
   const [loadingReach, setLoadingReach] = useState(true);
+  const [configs, setConfigs] = useState<ConfigOption[]>([]);
+
+  // Which number the campaign leaves on. A broadcast reaches hundreds of
+  // parents at once, so the API deliberately refuses to guess a branch
+  // (see broadcast-core.ts) — once a second number is connected the
+  // sender must choose, and this is where they do it.
+  useEffect(() => {
+    let cancelled = false;
+    async function loadConfigs() {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from('whatsapp_config')
+        .select('id, label, phone_number_id, is_primary')
+        .order('label', { ascending: true });
+      if (cancelled) return;
+      const rows = (data ?? []) as ConfigOption[];
+      setConfigs(rows);
+      // Preselect so a single-number account never sees the picker and
+      // a multi-number one starts on a defensible default.
+      if (!whatsappConfigId && rows.length > 0) {
+        const preferred = rows.find((r) => r.is_primary) ?? rows[0];
+        onWhatsappConfigIdChange(preferred.id);
+      }
+    }
+    loadConfigs();
+    return () => {
+      cancelled = true;
+    };
+    // Runs once — re-running on every id change would fight the
+    // preselect it performs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     async function calculateReach() {
@@ -111,6 +164,34 @@ export function Step4ScheduleSend({
           className="border-border bg-muted text-foreground placeholder:text-muted-foreground"
         />
       </div>
+
+      {/* Which number this goes out on. Hidden while the account holds
+          one — there is nothing to choose, and the API resolves it. */}
+      {configs.length > 1 && (
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-foreground">
+            {t('scheduleSend.sendFrom')}
+          </label>
+          <Select
+            value={whatsappConfigId ?? undefined}
+            onValueChange={(v) => v && onWhatsappConfigIdChange(v)}
+          >
+            <SelectTrigger className="w-full border-border bg-muted text-foreground">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {configs.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {configDisplayName(c)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            {t('scheduleSend.sendFromHint')}
+          </p>
+        </div>
+      )}
 
       {/* Summary Card */}
       <div className="rounded-xl border border-border bg-card/50 p-4 space-y-3">

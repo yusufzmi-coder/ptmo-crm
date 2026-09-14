@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Loader2, Plus, Tag as TagIcon, X } from 'lucide-react';
+import { Skeleton } from '@/components/dashboard/skeleton';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
@@ -163,8 +164,14 @@ export function TagManager() {
       </CardHeader>
       <CardContent className="space-y-4">
         {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="size-6 animate-spin text-primary" />
+          <div
+            className="flex flex-wrap gap-2"
+            aria-busy="true"
+            aria-label={t('loading')}
+          >
+            {['w-24', 'w-20', 'w-28', 'w-16', 'w-24'].map((w, i) => (
+              <Skeleton key={i} className={`h-8 rounded-full ${w}`} />
+            ))}
           </div>
         ) : (
           <>

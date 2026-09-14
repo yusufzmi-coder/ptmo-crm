@@ -6,6 +6,9 @@ import { useAuth } from "@/hooks/use-auth";
 import { usePresence } from "@/hooks/use-presence";
 import { PresenceDot } from "@/components/presence/presence-dot";
 import { presenceLabel } from "@/lib/presence";
+import { setFocusedConversation } from "@/lib/presence-focus";
+import { configDisplayName } from "@/lib/whatsapp/resolve-config";
+import { isOptimistic, optimisticId } from "@/lib/inbox/optimistic";
 import { cn } from "@/lib/utils";
 import type {
   Conversation,
@@ -27,6 +30,7 @@ import {
   RefreshCw,
   PanelRightOpen,
   PanelRightClose,
+  Eye,
 } from "lucide-react";
 import { format, isToday, isYesterday, differenceInHours } from "date-fns";
 import { useTranslations } from "next-intl";
@@ -54,6 +58,7 @@ import { AiThreadBanner } from "./ai-thread-banner";
 import { buildReplyPreview } from "./reply-quote";
 import { renderTemplateBody } from "@/lib/whatsapp/template-body";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/dashboard/skeleton";
 
 interface ReplyDraft {
   id: string;
@@ -80,6 +85,12 @@ interface MessageThreadProps {
    * mobile only.
    */
   onBack?: () => void;
+  /**
+   * True when the account holds more than one WhatsApp number, i.e.
+   * when naming the branch tells the agent something. Same gate the
+   * conversation list uses, so the two surfaces agree.
+   */
+  showBranch?: boolean;
   /**
    * Increment to force the messages + reactions fetch effects to refire.
    * Parent bumps this on realtime reconnect / tab visibility → visible
@@ -159,6 +170,7 @@ export function MessageThread({
   onStatusChange,
   onAssignChange,
   onBack,
+  showBranch = false,
   resyncToken = 0,
   onRefresh,
   contactPanelOpen,
@@ -169,7 +181,7 @@ export function MessageThread({
   const tQuote = useTranslations("Inbox.replyQuote");
 
   const { user } = useAuth();
-  const { getPresence, getRow, now } = usePresence();
+  const { getPresence, getRow, getCoViewers, now } = usePresence();
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
@@ -272,6 +284,18 @@ export function MessageThread({
 
   const conversationId = conversation?.id;
   const hasUnread = (conversation?.unread_count ?? 0) > 0;
+
+  // Tell the presence heartbeat which thread this tab has open, so the
+  // other agents covering the shared inbox can see it (migration 041).
+  // The heartbeat lives in the dashboard shell, so the two talk through
+  // a module-level store rather than a prop drilled through every page;
+  // the release function only clears the store if this thread's id is
+  // still the current one, which keeps a thread switch (new setup runs
+  // before old cleanup) from wiping the id that was just published.
+  useEffect(() => {
+    if (!conversationId) return;
+    return setFocusedConversation(conversationId);
+  }, [conversationId]);
 
   const mediaMessageId =
     openMedia && openMedia.conversationId === conversationId
@@ -380,7 +404,7 @@ export function MessageThread({
             // the pill doesn't double up after a successful POST.
             const tempIdx = prev.findIndex(
               (r) =>
-                r.id.startsWith("temp-") &&
+                isOptimistic(r.id) &&
                 r.message_id === row.message_id &&
                 r.actor_type === row.actor_type &&
                 r.actor_id === row.actor_id,
@@ -467,7 +491,7 @@ export function MessageThread({
     async (text: string, replyToId?: string) => {
       if (!conversation) return;
 
-      const tempId = `temp-${Date.now()}`;
+      const tempId = optimisticId();
 
       // Optimistic update — shows the message immediately with "sending" status
       const optimisticMsg: Message = {
@@ -532,7 +556,7 @@ export function MessageThread({
           ? payload.caption || payload.filename || "Document"
           : payload.caption;
 
-      const tempId = `temp-${Date.now()}`;
+      const tempId = optimisticId();
       const optimisticMsg: Message = {
         id: tempId,
         conversation_id: conversation.id,
@@ -590,7 +614,7 @@ export function MessageThread({
     async (payload: InteractiveMessagePayload, replyToId?: string) => {
       if (!conversation) return;
 
-      const tempId = `temp-${Date.now()}`;
+      const tempId = optimisticId();
       // Optimistic bubble — renders the buttons/list immediately via the
       // interactive_payload, same as the persisted row will.
       const optimisticMsg: Message = {
@@ -670,7 +694,7 @@ export function MessageThread({
       if (!conversation) return;
 
       const renderedBody = renderTemplateBody(template.body_text, values.body);
-      const tempId = `temp-${Date.now()}`;
+      const tempId = optimisticId();
 
       const optimisticMsg: Message = {
         id: tempId,
@@ -785,7 +809,7 @@ export function MessageThread({
         console.warn("[reactions] missing user or conversation");
         return;
       }
-      if (messageId.startsWith("temp-")) {
+      if (isOptimistic(messageId)) {
         toast.error("Wait for the message to finish sending");
         return;
       }
@@ -809,7 +833,7 @@ export function MessageThread({
         return [
           ...prev,
           {
-            id: `temp-${Date.now()}`,
+            id: optimisticId(),
             message_id: messageId,
             conversation_id: convId,
             actor_type: "agent",
@@ -884,11 +908,35 @@ export function MessageThread({
   const currentStatus = STATUS_OPTIONS.find(
     (s) => s.value === conversation.status
   );
+  // The branch this thread belongs to, named if an admin has named it.
+  //
+  // Gated on `showBranch` (the account holding more than one number),
+  // matching the conversation list. Migration 040 backfills the config
+  // on single-number accounts, so without the gate the header claimed
+  // "replying as …" for tenants who have no second branch to confuse it
+  // with — contradicting the comment below it, which promised exactly
+  // the opposite.
+  const branchName =
+    showBranch && conversation.whatsapp_config
+      ? configDisplayName(conversation.whatsapp_config)
+      : null;
   const assignedAgentId = conversation.assigned_agent_id ?? null;
   const currentAssignee = profiles.find((p) => p.user_id === assignedAgentId);
   const assignLabel = assignedAgentId
     ? (currentAssignee?.full_name ?? t("assigned"))
     : t("assign");
+
+  // Who else has this exact thread open right now. Two or three people
+  // share this inbox; sorted newest-first they all land on the same
+  // unanswered message, and the parent gets three answers to one
+  // question. The warning has to arrive before anyone types, which is
+  // why the heartbeat reports a thread change immediately instead of
+  // waiting for its next tick.
+  const coViewerIds = getCoViewers(conversationId);
+  const coViewerNames = coViewerIds.map(
+    (id) =>
+      profiles.find((p) => p.user_id === id)?.full_name ?? t("aTeammate"),
+  );
 
   return (
     // `min-w-0` is load-bearing: the page already puts min-w-0 on the
@@ -921,7 +969,22 @@ export function MessageThread({
           </div>
           <div className="min-w-0">
             <h2 className="truncate text-sm font-semibold text-foreground">{displayName}</h2>
-            <p className="truncate text-xs text-muted-foreground">{contact.phone}</p>
+            <p className="truncate text-xs text-muted-foreground">
+              {contact.phone}
+              {/* Which of our numbers this thread is on — the branch
+                  (migration 040). Context while reading; the binding
+                  copy lives in the composer, where the agent actually
+                  is when they decide what to send. This line truncates
+                  and that one does not. */}
+              {branchName && (
+                <>
+                  <span aria-hidden> · </span>
+                  <span className="text-primary">
+                    {t("replyingAsBranch", { branch: branchName })}
+                  </span>
+                </>
+              )}
+            </p>
           </div>
           {/* Session timer badge — hidden on the narrowest phones so
               the name + back arrow keep their room. */}
@@ -1079,11 +1142,53 @@ export function MessageThread({
         </div>
       </div>
 
+      {/* Someone else is in this thread. Icon + sentence, never colour
+          alone — this has to read the same to an agent who cannot tell
+          the amber strip from the doodle background. `role="status"`
+          so it is announced when it appears mid-session rather than
+          interrupting like an alert. */}
+      {coViewerNames.length > 0 && (
+        <div
+          role="status"
+          className="flex items-start gap-2 border-b border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 sm:px-4 dark:text-amber-300"
+        >
+          <Eye className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" aria-hidden />
+          <span>
+            {t("alsoViewing", {
+              names: coViewerNames.join(", "),
+              count: coViewerNames.length,
+            })}
+          </span>
+        </div>
+      )}
+
       {/* Messages Area */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4">
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          // Alternating bubble-shaped blocks, so the thread reads as a
+          // conversation arriving rather than a blank pane with a dot
+          // spinning in it.
+          <div
+            className="space-y-3"
+            aria-busy="true"
+            aria-label={t("loadingMessages")}
+          >
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className={cn(
+                  "flex",
+                  i % 2 === 0 ? "justify-start" : "justify-end",
+                )}
+              >
+                <Skeleton
+                  className={cn(
+                    "h-10 rounded-2xl",
+                    i % 3 === 0 ? "w-48" : i % 3 === 1 ? "w-64" : "w-40",
+                  )}
+                />
+              </div>
+            ))}
           </div>
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12">
@@ -1182,6 +1287,8 @@ export function MessageThread({
         onOpenTemplates={handleOpenTemplates}
         replyTo={replyTo}
         onClearReply={() => setReplyTo(null)}
+        branchName={branchName}
+        coViewerNames={coViewerNames}
       />
 
       <TemplatePicker

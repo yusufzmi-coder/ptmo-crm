@@ -11,6 +11,7 @@ import {
 } from '@/lib/whatsapp/template-validators'
 import { buildMetaTemplatePayload } from '@/lib/whatsapp/template-components'
 import { ensureImageHeaderHandle } from '@/lib/whatsapp/template-header-handle'
+import { resolveConfig, resolveFailureMessage } from '@/lib/whatsapp/resolve-config';
 
 /**
  * Per-template lifecycle endpoint.
@@ -138,11 +139,18 @@ export async function PATCH(
     }
 
     if (!isDryRun()) {
-      const { data: config, error: configError } = await supabase
-        .from('whatsapp_config')
-        .select('*')
-        .eq('account_id', accountId)
-        .single()
+      // Templates belong to the WABA, not to any one number, so any of
+      // the account's numbers answers the same. `allowPrimary` is safe
+      // here precisely because this path does NOT message a parent —
+      // unlike the send paths, which must use the thread's own number.
+      const configResolved = await resolveConfig(supabase, accountId, {
+        allowPrimary: true,
+        columns: '*',
+      });
+      const config = configResolved.ok ? configResolved.config : null;
+      const configError = configResolved.ok
+        ? null
+        : new Error(resolveFailureMessage(configResolved.reason));
       if (configError || !config) {
         return NextResponse.json(
           { error: 'WhatsApp not configured.' },
@@ -154,7 +162,7 @@ export async function PATCH(
       // Image headers need a fresh Resumable-Upload handle on every edit
       // (Meta replaces components wholesale). Derive from header_media_url.
       try {
-        await ensureImageHeaderHandle(payload, accessToken)
+        await ensureImageHeaderHandle(payload, accessToken, supabase)
       } catch (e) {
         return NextResponse.json(
           { error: e instanceof Error ? e.message : 'Header image upload failed.' },
@@ -278,11 +286,18 @@ export async function DELETE(
     }
 
     if (existing.meta_template_id && !isDryRun()) {
-      const { data: config, error: configError } = await supabase
-        .from('whatsapp_config')
-        .select('*')
-        .eq('account_id', accountId)
-        .single()
+      // Templates belong to the WABA, not to any one number, so any of
+      // the account's numbers answers the same. `allowPrimary` is safe
+      // here precisely because this path does NOT message a parent —
+      // unlike the send paths, which must use the thread's own number.
+      const configResolved = await resolveConfig(supabase, accountId, {
+        allowPrimary: true,
+        columns: '*',
+      });
+      const config = configResolved.ok ? configResolved.config : null;
+      const configError = configResolved.ok
+        ? null
+        : new Error(resolveFailureMessage(configResolved.reason));
       if (configError || !config || !config.waba_id) {
         return NextResponse.json(
           { error: 'WhatsApp not configured — cannot delete on Meta.' },

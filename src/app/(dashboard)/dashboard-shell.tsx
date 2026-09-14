@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
@@ -15,6 +16,7 @@ import { PresenceHeartbeat } from "@/components/presence/presence-heartbeat";
 function DashboardShellInner({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const t = useTranslations("DashboardShell");
 
   // Sidebar drawer state — only used on mobile. On lg+ the sidebar is
   // always visible and this stays at `false` (ignored by the component).
@@ -29,10 +31,10 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
+      <div className="flex h-dvh items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <p className="text-sm text-muted-foreground">Loading...</p>
+          <p className="text-sm text-muted-foreground">{t("loading")}</p>
         </div>
       </div>
     );
@@ -40,8 +42,14 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
 
   if (!user) return null;
 
+  // `h-dvh`, not `h-screen`: on iOS Safari `100vh` is the LARGE viewport
+  // — it includes the strip behind the toolbar. Combined with the
+  // `overflow-hidden` here and below, the bottom of the layout (in the
+  // inbox, the composer and its send button) renders under the toolbar
+  // with no scroll that can reach it. `100dvh` tracks the viewport that
+  // is actually visible.
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-dvh overflow-hidden bg-background">
       {/* Reports this tab's online/away presence once we know a user is
           signed in. Headless — renders nothing. */}
       <PresenceHeartbeat />

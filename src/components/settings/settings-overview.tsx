@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState, type ReactNode } from 'react';
-import { ChevronRight, Loader2 } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
+import { Skeleton } from '@/components/dashboard/skeleton';
 import { useTranslations } from 'next-intl';
 
 import { createClient } from '@/lib/supabase/client';
@@ -41,6 +42,8 @@ export function SettingsOverview({
   const { mode, theme } = useTheme();
   const t = useTranslations('Settings.overview');
   const tRoles = useTranslations('Settings.roles');
+  // Stored identifier → translated label; see ColorMode in the catalogue.
+  const tMode = useTranslations('ColorMode');
   const tSections = useTranslations('Settings.sections');
 
   const [counts, setCounts] = useState<OverviewCounts | null>(null);
@@ -121,16 +124,20 @@ export function SettingsOverview({
     (async () => {
       setWhatsappLoading(true);
       const [row, health] = await Promise.allSettled([
+        // `limit(1)` not `maybeSingle()`: an account may hold one
+        // number per branch since migration 040, and this only asks
+        // whether any is configured at all.
         supabase
           .from('whatsapp_config')
           .select('phone_number_id')
           .eq('account_id', acctId)
-          .maybeSingle(),
+          .limit(1),
         fetch('/api/whatsapp/config', { cache: 'no-store' }).then((r) => r.json()),
       ]);
       if (cancelled) return;
       setWhatsapp({
-        configured: row.status === 'fulfilled' && !!row.value.data?.phone_number_id,
+        configured:
+          row.status === 'fulfilled' && !!row.value.data?.[0]?.phone_number_id,
         connected: health.status === 'fulfilled' && !!health.value?.connected,
       });
       setWhatsappLoading(false);
@@ -149,7 +156,6 @@ export function SettingsOverview({
   const currencyLabel =
     CURRENCIES.find((c) => c.code === defaultCurrency)?.label ?? defaultCurrency;
   const themeName = THEMES.find((t) => t.id === theme)?.name ?? theme;
-  const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
   // Per-tile loading + subtitle. `null` counts render as a graceful
   // fallback so a single failed query never blanks a tile.
@@ -215,7 +221,7 @@ export function SettingsOverview({
     {
       section: 'appearance',
       loading: false,
-      subtitle: t('appearance', { mode: cap(mode), theme: themeName }),
+      subtitle: t('appearance', { mode: tMode(mode), theme: themeName }),
     },
   ];
 
@@ -273,9 +279,13 @@ export function SettingsOverview({
                 </span>
                 <span className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
                   {loading ? (
-                    <>
-                      <Loader2 className="size-3 animate-spin" /> {t('loading')}
-                    </>
+                    // One spinner per section row meant six of them
+                    // spinning at once down the page. A single quiet bar
+                    // the width of the subtitle it replaces reads calmer
+                    // and reserves the same line.
+                    <span aria-busy="true" aria-label={t('loading')}>
+                      <Skeleton className="block h-3 w-40 max-w-full" />
+                    </span>
                   ) : (
                     subtitle
                   )}

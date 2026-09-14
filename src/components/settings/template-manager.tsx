@@ -13,6 +13,7 @@ import {
   RotateCcw,
   Upload,
 } from 'lucide-react';
+import { SettingsPanelSkeleton } from './settings-panel-skeleton';
 import { createClient } from '@/lib/supabase/client';
 import {
   uploadAccountMedia,
@@ -448,11 +449,7 @@ export function TemplateManager() {
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="size-6 animate-spin text-primary" />
-      </div>
-    );
+    return <SettingsPanelSkeleton rows={4} label={t('loading')} />;
   }
 
   const headerNeedsMedia =
@@ -471,8 +468,12 @@ export function TemplateManager() {
     }
     setUploadingHeader(true);
     try {
-      const { publicUrl } = await uploadAccountMedia('chat-media', file);
-      setForm((f) => ({ ...f, header_media_url: publicUrl }));
+      // A pointer, not a public URL — the bucket is private as of 047.
+      // Both things that consume this resolve it server-side:
+      // `ensureImageHeaderHandle` reads the bytes straight out of storage
+      // when submitting the template to Meta, and the send path signs it.
+      const { pointerUrl } = await uploadAccountMedia('chat-media', file);
+      setForm((f) => ({ ...f, header_media_url: pointerUrl }));
       toast.success(t('toastUploadSuccess'));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('toastUploadFailed'));

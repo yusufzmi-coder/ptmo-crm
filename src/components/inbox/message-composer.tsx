@@ -22,6 +22,8 @@ import {
   Plus,
   MessageSquareDashed,
   Zap,
+  Building2,
+  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GatedButton } from "@/components/ui/gated-button";
@@ -46,6 +48,7 @@ import {
   deleteAccountMedia,
   MEDIA_MAX_BYTES_BY_KIND,
 } from "@/lib/storage/upload-media";
+import { PICKER_ACCEPT, firstAttachable } from "@/lib/inbox/attachments";
 import { ReplyQuote } from "./reply-quote";
 import { useTranslations } from "next-intl";
 import {
@@ -89,17 +92,6 @@ interface ReplyDraft {
   preview: string;
 }
 
-// Mirrors the chat-media bucket's allowed_mime_types (migration 023) for
-// the file picker so unsupported files are rejected before upload rather
-// than failing with a confusing Storage error. Audio has no picker — it's
-// captured via the recorder.
-const PICKER_ACCEPT: Record<"image" | "video" | "document", string> = {
-  image: "image/png,image/jpeg,image/webp",
-  video: "video/mp4,video/3gpp",
-  document:
-    "application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain",
-};
-
 interface MediaDraft {
   kind: ComposerMediaKind;
   mediaUrl: string;
@@ -118,6 +110,32 @@ interface MessageComposerProps {
   onOpenTemplates: () => void;
   replyTo?: ReplyDraft | null;
   onClearReply?: () => void;
+  /**
+   * The branch this thread replies AS — `whatsapp_config.label`, or the
+   * raw number when an admin has not named it. Null on a single-number
+   * account, where naming the branch on every reply is noise.
+   *
+   * The thread header names the branch too, but it does so as the tail
+   * of a `truncate`d 12px muted line, ~300px and a scrolling message
+   * list away from the textarea — and on a laptop-width column with a
+   * 12-digit Malaysian number in front of it, `truncate` eats it
+   * entirely. The one fact standing between an agent and a parent
+   * hearing from a centre they never contacted cannot be the first
+   * thing dropped when space runs short, so it is repeated here, where
+   * the typing happens.
+   */
+  branchName?: string | null;
+  /**
+   * Teammates with this same thread open right now.
+   *
+   * MessageThread shows this as a banner, but the banner sits ABOVE the
+   * message list: the agent scrolls down to read what the parent asked,
+   * and by the time they reach the composer it has left the viewport.
+   * Two or three people share this inbox and a newest-first sort lands
+   * them all on the same unanswered message, so a collision is the
+   * common case rather than the rare one.
+   */
+  coViewerNames?: string[];
 }
 
 function formatDuration(seconds: number): string {
@@ -140,11 +158,14 @@ export function MessageComposer({
   onOpenTemplates,
   replyTo,
   onClearReply,
+  branchName,
+  coViewerNames,
 }: MessageComposerProps) {
   const t = useTranslations("Inbox.composer");
+  const coViewers = coViewerNames ?? [];
 
   const [text, setText] = useState("");
-  const [sending, setSending] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [drafting, setDrafting] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -159,6 +180,12 @@ export function MessageComposer({
   // attachment; `busy` covers the upload/transcode window.
   const [draft, setDraft] = useState<MediaDraft | null>(null);
   const [busy, setBusy] = useState(false);
+  // Whether a file is currently hovering the composer. `dragDepthRef`
+  // counts enter/leave pairs: dragging across a child element fires
+  // `dragleave` on the parent before `dragenter` on the child, so a
+  // boolean alone would flicker the overlay off mid-hover.
+  const [dragActive, setDragActive] = useState(false);
+  const dragDepthRef = useRef(0);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
@@ -220,11 +247,26 @@ export function MessageComposer({
     el.style.height = `${Math.min(el.scrollHeight, 96)}px`;
   }, []);
 
-  const handleSend = useCallback(async () => {
+  // What actually prevents a double-send is `setText("")`: the second
+  // submit re-reads `text`, finds it empty, and bails on `!trimmed`.
+  // React flushes state for discrete events (keydown, click) before the
+  // next one is handled, so a fast Enter-Enter or a double-click cannot
+  // slip a second copy through.
+  //
+  // `submitting` is only a re-entrancy latch for THIS submit. It is
+  // deliberately NOT held for the duration of the network call: the send
+  // is fire-and-forget by design (MessageThread renders an optimistic
+  // bubble and reconciles it when the row arrives), and an agent
+  // covering sixteen branches must be able to type and send the next
+  // message while the previous one is still in the air. An earlier
+  // version wrapped this in `async` + `try/finally`, which read as if it
+  // awaited the send — it never did, since `onSend` returns void, so the
+  // latch cleared in the same tick regardless.
+  const handleSend = useCallback(() => {
     const trimmed = text.trim();
-    if (!trimmed || sending || sessionExpired) return;
+    if (!trimmed || submitting || sessionExpired) return;
 
-    setSending(true);
+    setSubmitting(true);
     try {
       onSend(trimmed, replyTo?.id);
       setText("");
@@ -232,9 +274,9 @@ export function MessageComposer({
         textareaRef.current.style.height = "auto";
       }
     } finally {
-      setSending(false);
+      setSubmitting(false);
     }
-  }, [text, sending, sessionExpired, onSend, replyTo?.id]);
+  }, [text, submitting, sessionExpired, onSend, replyTo?.id]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -398,10 +440,10 @@ export function MessageComposer({
       }
       setBusy(true);
       try {
-        const { publicUrl, path } = await uploadAccountMedia(CHAT_MEDIA_BUCKET, file);
+        const { pointerUrl, path } = await uploadAccountMedia(CHAT_MEDIA_BUCKET, file);
         // Replacing an existing draft? GC the previous object first.
         removeStaged(draftRef.current?.path);
-        setDraft({ kind, mediaUrl: publicUrl, path, filename: file.name, caption: "" });
+        setDraft({ kind, mediaUrl: pointerUrl, path, filename: file.name, caption: "" });
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Upload failed.");
       } finally {
@@ -416,6 +458,97 @@ export function MessageComposer({
       if (file) void stageUpload(kind, file);
     },
     [stageUpload],
+  );
+
+  // ---- Drag-and-drop / paste attachment (issue evidence) ------------
+  //
+  // Both paths converge here. The attach menu stays the keyboard- and
+  // screen-reader-accessible route to the same thing; dropping and
+  // pasting are shortcuts layered on top, never the only way in.
+
+  /** True while the composer can take a new attachment at all. */
+  const canAccept = !inputsDisabled && !busy && !draft && !recording;
+
+  const stageDropped = useCallback(
+    (files: readonly File[]) => {
+      const picked = firstAttachable(files);
+      if (!picked) {
+        toast.error(t("unsupportedFile"));
+        return;
+      }
+      if (files.length > 1) {
+        // One attachment per message is a WhatsApp constraint, not ours
+        // — say so rather than silently dropping the rest.
+        toast.info(t("onlyFirstFile", { filename: picked.file.name }));
+      }
+      void stageUpload(picked.kind, picked.file);
+    },
+    [stageUpload, t],
+  );
+
+  // Only react to drags carrying actual files. Dragging selected text
+  // within the textarea also fires these events, and hijacking that
+  // would break ordinary editing.
+  const dragCarriesFiles = (e: React.DragEvent) =>
+    e.dataTransfer?.types?.includes("Files") ?? false;
+
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    if (!dragCarriesFiles(e)) return;
+    e.preventDefault();
+    dragDepthRef.current += 1;
+    setDragActive(true);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    if (!dragCarriesFiles(e)) return;
+    // Without this the browser navigates away to the dropped file.
+    e.preventDefault();
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    if (!dragCarriesFiles(e)) return;
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+    if (dragDepthRef.current === 0) setDragActive(false);
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      if (!dragCarriesFiles(e)) return;
+      e.preventDefault();
+      dragDepthRef.current = 0;
+      setDragActive(false);
+      if (!canAccept) {
+        // Explain the refusal instead of swallowing the drop: a silent
+        // no-op reads as a broken feature.
+        toast.error(
+          readOnly
+            ? t("readOnlyTitle")
+            : sessionExpired
+              ? t("sessionExpiredHint")
+              : t("attachmentBusy"),
+        );
+        return;
+      }
+      stageDropped(Array.from(e.dataTransfer.files));
+    },
+    [canAccept, readOnly, sessionExpired, stageDropped, t],
+  );
+
+  // Pasting a screenshot is how evidence actually reaches an agent.
+  // Only intercept when the clipboard carries files — a plain text
+  // paste must still land in the textarea untouched.
+  const handlePaste = useCallback(
+    (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+      const files = Array.from(e.clipboardData?.files ?? []);
+      if (files.length === 0) return;
+      e.preventDefault();
+      if (!canAccept) {
+        toast.error(busy || draft ? t("attachmentBusy") : t("readOnlyTitle"));
+        return;
+      }
+      stageDropped(files);
+    },
+    [busy, canAccept, draft, stageDropped, t],
   );
 
   // ---- Voice recording (client-side Ogg/Opus, no server transcode) ---
@@ -436,9 +569,9 @@ export function MessageComposer({
       }
       setBusy(true);
       try {
-        const { publicUrl, path } = await uploadAccountMedia(CHAT_MEDIA_BUCKET, file);
+        const { pointerUrl, path } = await uploadAccountMedia(CHAT_MEDIA_BUCKET, file);
         removeStaged(draftRef.current?.path);
-        setDraft({ kind: "audio", mediaUrl: publicUrl, path, filename: file.name, caption: "" });
+        setDraft({ kind: "audio", mediaUrl: pointerUrl, path, filename: file.name, caption: "" });
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Upload failed.");
       } finally {
@@ -536,7 +669,74 @@ export function MessageComposer({
   // ---- Render --------------------------------------------------------
 
   return (
-    <div className="border-t border-border bg-card p-3">
+    <div
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className={cn(
+        // `shrink-0` because the textarea auto-grows: without it the
+        // composer is the flex child that gets squeezed when the thread
+        // is long. The bottom pad clears the iPhone home indicator —
+        // `max()` so it stays the normal 0.75rem everywhere else.
+        // `relative` anchors the drag overlay below.
+        "relative shrink-0 border-t bg-card p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]",
+        // A co-viewer recolours the whole composer edge. The banner up
+        // in the thread is the polite announcement; this is the thing
+        // still on screen at the moment of typing, and an agent who has
+        // scrolled past the banner has no other signal left.
+        coViewers.length > 0 ? "border-amber-500/50" : "border-border",
+      )}
+    >
+      {/* Drop overlay. `pointer-events-none` so it cannot swallow the
+          drop event from the container that is listening for it. The
+          state it reports is text + icon, never colour alone. */}
+      {dragActive && (
+        <div
+          role="status"
+          className={cn(
+            "pointer-events-none absolute inset-1 z-20 flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed backdrop-blur-sm",
+            canAccept
+              ? "border-primary bg-primary-soft/90 text-primary"
+              : "border-border bg-muted/90 text-muted-foreground",
+          )}
+        >
+          <Paperclip className="h-5 w-5" aria-hidden />
+          <span className="px-3 text-center text-xs font-semibold">
+            {canAccept ? t("dropToAttach") : t("dropUnavailable")}
+          </span>
+        </div>
+      )}
+      {/* Who this reply goes out as, and who else is already here. Both
+          live above the textarea rather than in the header: this is the
+          last surface the agent looks at before pressing Enter. */}
+      {(branchName || coViewers.length > 0) && (
+        <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+          {branchName && (
+            <span className="inline-flex max-w-full items-center gap-1 rounded-full border border-primary-soft-2 bg-primary-soft px-2 py-0.5 text-xs font-semibold text-primary">
+              <Building2 className="h-3 w-3 shrink-0" aria-hidden />
+              {/* Deliberately NOT truncated. If the name is long enough
+                  to wrap, it wraps — this is the string that must never
+                  be the one that disappears. */}
+              <span className="break-words">
+                {t("replyingAsBranch", { branch: branchName })}
+              </span>
+            </span>
+          )}
+          {coViewers.length > 0 && (
+            <span
+              role="status"
+              className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-400"
+            >
+              <Eye className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              {t("alsoViewing", {
+                names: coViewers.join(", "),
+                count: coViewers.length,
+              })}
+            </span>
+          )}
+        </div>
+      )}
       {replyTo && (
         <div className="mb-2">
           <ReplyQuote
@@ -731,12 +931,19 @@ export function MessageComposer({
             value={text}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
             placeholder={
               readOnly
                 ? t("readOnlyPlaceholder")
                 : sessionExpired
                   ? t("sessionExpiredPlaceholder")
-                  : t("typeMessagePlaceholder")
+                  : // Belt and braces with the pill above: the pill can
+                    // scroll out of a short composer once a long draft
+                    // grows the textarea, but the placeholder sits
+                    // inside the field the cursor is already in.
+                    branchName
+                    ? t("typeMessageAsBranch", { branch: branchName })
+                    : t("typeMessagePlaceholder")
             }
             disabled={sessionExpired || readOnly}
             rows={1}
@@ -754,7 +961,7 @@ export function MessageComposer({
             size="sm"
             canAct={!readOnly}
             gateReason="send messages"
-            disabled={!text.trim() || sessionExpired || sending}
+            disabled={!text.trim() || sessionExpired || submitting}
             onClick={handleSend}
             className="h-9 w-9 shrink-0 bg-primary p-0 hover:bg-primary/90 disabled:opacity-40"
           >

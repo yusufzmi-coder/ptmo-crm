@@ -14,6 +14,7 @@ import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import type { Message } from "@/types";
 import { downloadMediaMessage } from "@/lib/media/download";
+import { resolveStoredMediaUrl } from "@/lib/media/proxy-url";
 import { useMediaBlobUrl } from "@/hooks/use-media-blob-url";
 
 /**
@@ -92,7 +93,7 @@ function MediaActionButton({
       // Own surface rather than inheriting the bubble's, so the same button
       // reads on the muted inbound fill, the primary outbound fill, and on
       // top of an arbitrary photo.
-      className="flex h-7 w-7 items-center justify-center rounded-full border border-border/60 bg-background/85 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-background disabled:opacity-60"
+      className="flex h-9 w-9 items-center justify-center rounded-full border border-border/60 bg-background/85 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-background disabled:opacity-60 lg:h-7 lg:w-7"
     >
       {busy ? (
         <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -121,7 +122,7 @@ export function MediaImageBubble({
   onOpen?: () => void;
   t: Translator;
 }) {
-  const { src, status } = useMediaBlobUrl(message.media_url);
+  const { src, status } = useMediaBlobUrl(resolveStoredMediaUrl(message.media_url) ?? undefined);
   // The fetch can succeed and the bytes still not be a decodable image.
   const [broken, setBroken] = useState(false);
   const { downloading, download } = useMediaDownload(message, t);
@@ -196,7 +197,7 @@ export function MediaVideoBubble({
       {/* Plain URL, not a blob: the element should stream rather than wait
           for up to 16 MB to land. */}
       <video
-        src={message.media_url}
+        src={resolveStoredMediaUrl(message.media_url) ?? undefined}
         controls
         preload="metadata"
         className={cn(MEDIA_BOX, "rounded-lg")}
@@ -234,7 +235,11 @@ export function MediaAudioBubble({
 
   return (
     <div className="flex items-center gap-2">
-      <audio src={message.media_url} controls className="max-w-60" />
+      <audio
+        src={resolveStoredMediaUrl(message.media_url) ?? undefined}
+        controls
+        className="max-w-60"
+      />
       <MediaActionButton
         icon={Download}
         label={t("download")}
@@ -257,7 +262,7 @@ export function MediaDocumentBubble({
   return (
     <div className="flex items-center gap-2">
       <a
-        href={message.media_url}
+        href={resolveStoredMediaUrl(message.media_url) ?? undefined}
         target="_blank"
         rel="noopener noreferrer"
         className="flex min-w-0 flex-1 items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 text-sm hover:bg-muted"

@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/card";
 import { UsersRound } from "lucide-react";
 import { BrandAuthHeader } from "@/components/brand/brand-logo";
+import { GoogleButton } from "@/components/auth/google-button";
 
 // `useSearchParams` opts the component out of static prerendering
 // unless it sits under a Suspense boundary. We split the form into
@@ -39,9 +40,15 @@ function LoginPageInner() {
   const inviteToken = searchParams.get("invite");
   const t = useTranslations("LoginPage");
 
+  // `/auth/callback` bounces back here with `?error=` when an OAuth
+  // sign-in is refused, cancelled, or the code exchange fails. Seed the
+  // error state from it so the reason is visible instead of the visitor
+  // landing on an apparently untouched login form.
+  const callbackError = searchParams.get("error");
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(callbackError);
   const [loading, setLoading] = useState(false);
   const supabase = createClient();
 
@@ -149,6 +156,26 @@ function LoginPageInner() {
               {loading ? t('signingIn') : t('signIn')}
             </Button>
           </form>
+
+          <div className="my-5 flex items-center gap-3">
+            <span className="h-px flex-1 bg-border" />
+            <span className="text-xs uppercase tracking-wide text-muted-foreground">
+              {t("or")}
+            </span>
+            <span className="h-px flex-1 bg-border" />
+          </div>
+
+          {/* Same destination the password form uses, so an invited user
+              who signs in with Google still lands on the invitation. */}
+          <GoogleButton
+            label={t("continueWithGoogle")}
+            next={
+              inviteToken
+                ? `/join/${encodeURIComponent(inviteToken)}`
+                : "/dashboard"
+            }
+            disabled={loading}
+          />
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
             {t('noAccount')}{" "}

@@ -98,11 +98,18 @@ export async function POST(request: Request) {
     // Find-or-create the conversation for this phone, then send. Both
     // steps share `SendMessageError`, so one catch maps the whole
     // pipeline to the envelope.
+    // `config_id` names the number this thread belongs to, for accounts
+    // that connect more than one (migration 040 — for Minda Optima, one
+    // per branch). Omitted, the account primary is used: this endpoint is
+    // outbound-first, so there is no inbound thread whose number we owe
+    // the parent. Either way the choice is stamped on the conversation,
+    // so every later reply in it leaves on the same number.
     const resolved = await resolveConversationByPhone(
       ctx.supabase,
       ctx.accountId,
       to,
-      typeof body.name === 'string' ? body.name : null
+      typeof body.name === 'string' ? body.name : null,
+      typeof body.config_id === 'string' ? body.config_id : null
     );
 
     const result = await sendMessageToConversation(

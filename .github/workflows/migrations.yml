@@ -69,3 +69,108 @@ jobs:
       # just the absence of an error.
       - name: Verify the resulting schema
         run: supabase db query --local --file supabase/ci/verify-schema.sql
+
+      # The step above proves the schema EXISTS. It cannot prove the RLS
+      # policies WORK, and that distinction is the whole reason this step
+      # was added.
+      #
+      # Migration 044 keeps every zone apart with a single SQL function,
+      # `is_account_member()`, scoped to the caller's ACTIVE zone. Large
+      # parts of this application query their tables with no account_id
+      # filter at all — ~41 client-side mutations, all of src/lib/ops/,
+      # src/lib/dashboard/queries.ts — and are correct only because that
+      # function narrows them. Widen it and nothing throws, no existing
+      # test goes red, and one zone's staff quietly start reading
+      # another's parents.
+      #
+      # supabase/tests/ closes that gap: it queries real tables as real
+      # authenticated personas, through the real policies, and counts
+      # rows. The suite is verified to BITE — removing the active-zone
+      # condition from `is_account_member()` turns 8 of its assertions
+      # red — so a green run here means something.
+      # The path is passed explicitly rather than relying on a default:
+      # `supabase test db` takes it as a required argument, and naming the
+      # directory also means a test file added outside it fails loudly
+      # instead of being skipped silently.
+      - name: Prove zone isolation under RLS
+        run: supabase test db --local supabase/tests
+
+  # ============================================================
+  # The job above proves the migrations build a correct schema from
+  # NOTHING. That is only half the question, and not the dangerous half.
+  #
+  # Production is not empty. It sits at 041 with real rows in it, and
+  # five of the migrations in this release read those rows:
+  #
+  #   042  runs merge_duplicate_conversations(), which DELETEs
+  #   044  backfills one account_members row per profile — miss one and
+  #        that user is refused by all ~119 RLS policies
+  #   045  swaps a primary key on a populated table
+  #   048  backfills broadcasts.whatsapp_config_id
+  #
+  # Against a blank database all four are no-ops that pass. So this job
+  # builds the shape production actually has — including the two rows a
+  # clean replay can never produce, a profile with a NULL account_role
+  # and messages holding pre-047 public bucket URLs — and only then
+  # applies the release on top.
+  #
+  # It also asserts the negative: no migration in 042-049 may touch
+  # messages.media_url. A media backfill was written and withdrawn
+  # because SQL cannot validate the storage host; the mapping lives in
+  # resolveStoredMediaUrl() instead. verify-upgrade.sql fails if one
+  # ever reappears.
+  # ============================================================
+  upgrade:
+    name: Apply to a database that is already at 041
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install the Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.113.0
+
+      # Hold the release back so the reset below stops at 041. The files
+      # are moved rather than skipped by flag because the CLI has no
+      # "apply up to N" for a reset — the migrations directory IS the
+      # instruction.
+      - name: Hold back the unapplied migrations
+        run: |
+          mkdir -p /tmp/held
+          mv supabase/migrations/0[45][0-9]_*.sql /tmp/held/
+          # 040 and 041 are live in production, so they belong in the
+          # baseline, not in the release. Put them back.
+          mv /tmp/held/040_*.sql /tmp/held/041_*.sql supabase/migrations/
+          echo "baseline:"; ls supabase/migrations | tail -3
+          echo "held:";     ls /tmp/held
+
+      - name: Start Postgres
+        run: supabase db start
+
+      - name: Build the production baseline (001-041)
+        run: supabase db reset --local --no-seed
+
+      - name: Seed production-shaped rows
+        run: supabase db query --local --file supabase/ci/seed-legacy-state.sql
+
+      - name: Restore the release
+        run: mv /tmp/held/*.sql supabase/migrations/
+
+      # `migration up` applies only what the baseline has not seen, which
+      # is exactly the upgrade production will perform. A reset here
+      # would throw the seeded rows away and prove nothing.
+      - name: Apply 042-049 on top
+        run: supabase migration up --local
+
+      - name: Verify the resulting schema
+        run: supabase db query --local --file supabase/ci/verify-schema.sql
+
+      # The assertions that only mean something on a populated database:
+      # did the backfills reach every row, and did they leave alone the
+      # rows they were not meant to touch?
+      - name: Verify what happened to the existing data
+        run: supabase db query --local --file supabase/ci/verify-upgrade.sql
+
+      - name: Prove zone isolation still holds
+        run: supabase test db --local supabase/tests

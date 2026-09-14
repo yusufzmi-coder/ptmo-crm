@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { mediaProxyPath, type ProxyableBucket } from "@/lib/media/proxy-url";
 
 /**
  * Shared media-upload helper for Supabase Storage buckets that use the
@@ -77,22 +78,32 @@ export function buildMediaPath(
 }
 
 export interface UploadAccountMediaResult {
-  /** Public URL Meta can fetch at send time. */
-  publicUrl: string;
+  /**
+   * Pointer at the authenticated media route — `/api/media/<bucket>/<path>`.
+   *
+   * This is the value to persist and to render. It is NOT something Meta
+   * can fetch: the buckets are private as of migration 047, so a
+   * Meta-facing link is minted at send time by `metaFetchableLink`
+   * (@/lib/media/outbound-link) and never stored.
+   */
+  pointerUrl: string;
   /** Storage object path (account-scoped). */
   path: string;
 }
 
 /**
- * Upload a file to an account-scoped Storage bucket and return its public
- * URL. Throws with a user-facing message on auth / account-resolution /
+ * Upload a file to an account-scoped Storage bucket and return a pointer
+ * to it. Throws with a user-facing message on auth / account-resolution /
  * upload failure — callers surface it via a toast.
  *
  * Size validation is the caller's responsibility (limits can differ per
  * feature); `MEDIA_MAX_BYTES` is exported for the common case.
  */
 export async function uploadAccountMedia(
-  bucket: string,
+  // Narrowed from `string`: the returned pointer is only resolvable for a
+  // bucket the media route serves, so a typo'd bucket should fail to
+  // compile rather than produce a link that 404s at render time.
+  bucket: ProxyableBucket,
   file: File,
 ): Promise<UploadAccountMediaResult> {
   const supabase = createClient();
@@ -125,11 +136,7 @@ export async function uploadAccountMedia(
   });
   if (upErr) throw new Error(upErr.message);
 
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from(bucket).getPublicUrl(path);
-
-  return { publicUrl, path };
+  return { pointerUrl: mediaProxyPath(bucket, path), path };
 }
 
 /**

@@ -1,0 +1,201 @@
+# Zones — HQ multi-zone access
+
+PTMO runs as several **zones** (A, B, C, D). Each zone is a separate
+Supabase account. Zone staff see only their own zone. A few HQ people
+belong to every zone and switch between them to answer any of them.
+
+This document explains the design, and — more importantly — what breaks
+if you change it. The reasoning is not obvious from the code, and one
+line in particular looks redundant while being the only thing holding
+tenant isolation together.
+
+## The shape
+
+Two questions were being answered by one column, `profiles.account_id`.
+They are now separate:
+
+| Question | Where it lives |
+|---|---|
+| Which zones may I enter, and as what? | `account_members` (durable) |
+| Which zone am I looking at right now? | `profiles.account_id` (momentary) |
+
+A **zone** is an account. A **centre** is a `whatsapp_config` row within
+it — one WhatsApp number each (migration 040). So a zone holds many
+centres, and a parent who messages two zones exists as two separate
+contact rows, because `contacts` is account-scoped with a unique index
+on `(account_id, phone_normalized)` (migration 022).
+
+Switching zones is one RPC, `set_active_account(uuid)`. It validates
+membership, then repoints `profiles.account_id` and refreshes the cached
+`profiles.account_role`.
+
+## The load-bearing line
+
+`is_account_member(target_account_id, min_role)` still means *my active
+zone*. Its body reads the role from `account_members`, but this condition
+remains:
+
+```sql
+AND p.account_id = target_account_id   -- ACTIVE ZONE
+```
+
+It looks redundant — we already joined `account_members`, so why also
+require the target to be the zone the user is currently in?
+
+Because roughly **119 RLS policies** call this one function, and large
+parts of the application query their tables with **no `account_id` filter
+at all**:
+
+- ~41 client-side Supabase mutations in `src/components/**` and
+  `src/app/(dashboard)/**`
+- all of `src/lib/ops/`
+- `src/lib/dashboard/queries.ts`
+
+Those are correct today *only* because this function narrows them to a
+single account. Remove the ACTIVE ZONE line and every one of them
+silently starts returning rows from every zone the user belongs to.
+Nothing throws. No test goes red. Zone A staff simply begin seeing
+Zone B parents.
+
+This is why the design keeps RLS **fail-closed** rather than widening it
+and re-narrowing in the application. Widening is not recoverable by code
+review: it takes one forgotten filter in one of forty-one places.
+Staying fail-closed needs no review at all.
+
+`supabase/tests/zone_isolation_test.sql` proves this. Removing the
+ACTIVE ZONE condition turns **8 of 25 assertions red**, including the
+core one.
+
+## Cross-zone reads
+
+The HQ roll-up dashboard is deliberately **not** served by these
+policies. Cross-zone reads go through purpose-built `SECURITY DEFINER`
+RPCs that check membership via `is_account_member_any()` and return
+**aggregates only** — never raw rows.
+
+`is_account_member_any()` must never appear in a `CREATE POLICY`. It
+exists for exactly two callers: the zone switcher (may I move here?) and
+those aggregate RPCs (may I count this zone?).
+
+## Ownership
+
+`UNIQUE(owner_user_id)` on `accounts` was dropped, deliberately. One
+person owning all four zones is the intended operating model, and
+recovery depends on it: if a zone lead loses access, the owner is the
+only one who can restore it.
+
+This diverges from upstream `wacrm`, which assumes one account per user.
+Expect a merge conflict here, and keep the reasoning rather than the
+upstream constraint. `supabase/ci/verify-schema.sql` asserts the index
+stays gone, so a re-run of 017 or an upstream merge that re-creates it
+fails CI instead of quietly blocking multi-zone ownership.
+
+## Known limitation: one active zone per user, not per tab
+
+The active zone lives in the database, so it is shared across every tab
+that user has open. Switch zones in one tab and the others are pointing
+somewhere else without knowing.
+
+This is the direct cost of keeping RLS fail-closed — a cookie or header
+cannot reach RLS, and anything RLS cannot see cannot be trusted to scope
+a query. The mitigation is a client-supplied `X-Zone-Id` header on write
+paths, compared server-side against the real active zone, returning
+**409** on a mismatch so a stale tab cannot reply into the wrong zone.
+
+Realtime subscriptions must be torn down and rebuilt on a zone change,
+and cached state cleared — `usePresence` calls `setRows(new Map())` when
+`accountId` changes. The database will not serve the old zone's rows
+after a switch, but stale client state can still display them.
+
+## Media
+
+The storage buckets were world-readable until 047: `anon` could fetch any
+zone's attachments without authenticating, and migration 039 mirrors
+every inbound WhatsApp attachment into one of them.
+
+Media privacy now inherits zone isolation from the **same** mechanism as
+everything else, not a second one. A media pointer carries
+`account-<id>` as its first path segment, and the proxy route compares
+that against the caller's **active** account — so the ACTIVE ZONE rule
+above governs attachments too.
+
+`avatars` is the exception: it is pathed `<user_id>/`, so its policy
+allows the owner plus teammates in the active zone.
+
+**Outgoing signed URLs are the only place an outside party reads our
+storage.** Meta fetches media itself — `sendMediaMessage` sends
+`{ link }` — so those links must be real signed URLs, not proxy
+pointers. They live one hour and are generated at send time only. Never
+store one: a stored signed URL is a public URL with a delay on it.
+
+That `{ link }` requirement reaches four paths, not one — the inbox
+composer and public API, the Flows media node, templates sent with a
+header, and template *creation*, which fetches the bytes server-side to
+get a Resumable-Upload handle. The last one reads straight from storage
+rather than over HTTP, because it uses `redirect: "manual"` and would
+reject the redirect the proxy route answers with.
+
+## Migrations
+
+| # | What |
+|---|---|
+| 040 | one account, many numbers — a centre is a `whatsapp_config` row |
+| 041 | `member_presence.viewing_conversation_id` — who has a thread open |
+| 042 | one thread per (account, contact, number), not per (account, contact) |
+| 043 | branch-aware quick replies |
+| 044 | `account_members`, `set_active_account`, `my_accounts` — this document |
+| 045 | presence keyed per tab |
+| 046 | lock four `SECURITY DEFINER` functions that were callable by anyone |
+| 048 | `broadcasts.whatsapp_config_id`, so a resumed broadcast keeps its number |
+
+## What is not built yet
+
+Migration 044 provides the model. **Nothing in `src/` calls it.** Verified:
+
+```
+set_active_account     0 callers
+my_accounts            0 callers
+is_account_member_any  0 callers
+```
+
+There is no zone switcher component, and `use-auth` exposes no zone state.
+So today a zone can only be switched by running `set_active_account` in
+SQL, and the active zone's name is displayed nowhere.
+
+That is a deliberate stopping point, not an oversight — the membership
+layer was landed and proven first, because widening it later is far more
+dangerous than adding UI later. But it means the feature is unusable by
+staff until the following exists. In dependency order:
+
+1. **Server context.** `getCurrentAccount()` already returns the active
+   zone and needs no change. Add a `listMyZones()` wrapper over
+   `my_accounts()`, and an `assertZone(request, ctx)` helper.
+2. **`GET`/`POST /api/account/zones`** — list zones, and switch via
+   `set_active_account`.
+3. **Header switcher.** Expose `zones`, `activeZone`, `switchZone()` from
+   `src/hooks/use-auth.tsx` — it is the only client-side auth provider, so
+   everything else follows it. Hide the control entirely when the user
+   belongs to one zone, so zone staff see no change at all.
+   `switchZone()` must tear down realtime subscriptions and clear cached
+   state before reloading — see the realtime note in
+   `docs/open-findings.md`.
+4. **`X-Zone-Id` guard** on the write paths where a mistake is most
+   expensive: `whatsapp/send`, `whatsapp/broadcast`, `whatsapp/media`,
+   `whatsapp/react`. Compare against the real active zone, answer **409**
+   on mismatch. This is the mitigation for the one-active-zone-per-user
+   limitation above — without it, a stale tab can reply into the wrong
+   zone, which is the single most costly failure this design can produce.
+5. **HQ roll-up dashboard** — a `SECURITY DEFINER` RPC checking
+   `is_account_member_any()` and returning aggregates only. Reuse the
+   existing pure logic in `src/lib/ops/` rather than rewriting it.
+
+Not affected and needing no work, verified: the inbound webhook (it
+resolves the account from `phone_number_id`, not the active zone), the
+`/api/v1` public API (an API key is already bound to one account), and the
+automation/flow engines (service-role with an explicit `account_id`).
+
+## If you change this
+
+Run `supabase test db --local supabase/tests` before and after. If your
+change does not turn assertions red when you break the ACTIVE ZONE
+condition on purpose, the suite is not testing what you think it is.

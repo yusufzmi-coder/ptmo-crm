@@ -4,7 +4,16 @@ import { useEffect, useRef } from "react";
 
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { HEARTBEAT_MS, IDLE_AFTER_MS, type StoredPresence } from "@/lib/presence";
+import {
+  deriveReportedStatus,
+  HEARTBEAT_MS,
+  type StoredPresence,
+} from "@/lib/presence";
+import {
+  getFocusedConversation,
+  subscribeFocusedConversation,
+} from "@/lib/presence-focus";
+import { getTabId } from "@/lib/presence-tab";
 
 /**
  * PresenceHeartbeat — headless. Mount ONCE per signed-in dashboard tab
@@ -12,9 +21,9 @@ import { HEARTBEAT_MS, IDLE_AFTER_MS, type StoredPresence } from "@/lib/presence
  * presence to the `member_presence` table via the `touch_presence` RPC
  * roughly every HEARTBEAT_MS.
  *
- * The client only ever reports 'online' or 'away':
- *   - 'away'   when the tab is hidden, or no user input for IDLE_AFTER_MS
- *   - 'online' otherwise
+ * The client only ever reports 'online' or 'away', off ONE clock: how
+ * long since this tab last saw its human (input, or the tab becoming
+ * visible again). Past AWAY_AFTER_MS it reports 'away'.
  * It keeps heartbeating while away (so the row stays fresh, i.e. not
  * offline). When the tab closes the beats simply stop and viewers derive
  * 'offline' from staleness — no unreliable unload write needed.
@@ -36,28 +45,58 @@ export function PresenceHeartbeat() {
     const supabase = createClient();
     let cancelled = false;
     let lastBeatAt = 0;
+    let trailing: ReturnType<typeof setTimeout> | null = null;
     lastActivityRef.current = Date.now();
 
     const markActive = () => {
       lastActivityRef.current = Date.now();
     };
 
-    const currentStatus = (): StoredPresence => {
-      if (typeof document !== "undefined" && document.hidden) return "away";
-      if (Date.now() - lastActivityRef.current > IDLE_AFTER_MS) return "away";
-      return "online";
-    };
+    // A hidden tab used to report 'away' on the spot. That read as
+    // "gone" for an agent who alt-tabbed to a spreadsheet for thirty
+    // seconds, and took their eye icon off a thread they were in the
+    // middle of answering. Being hidden now just means no activity is
+    // observable, so the same clock runs — and returning to the tab
+    // marks activity through `onReturn` below, which is what makes a
+    // short switch away cost nothing.
+    const currentStatus = (): StoredPresence =>
+      deriveReportedStatus(lastActivityRef.current, Date.now());
 
     const beat = async () => {
       if (cancelled) return;
       // Coalesce bursts: a tab refocus fires visibilitychange AND focus
-      // together, so skip a beat within 1s of the last to avoid two RPCs
-      // in the same frame. The 30s interval is never affected.
+      // together, so two RPCs would otherwise land in the same frame.
+      // Within 1s of the last beat the request is DEFERRED, not dropped:
+      // a dropped beat may be the one carrying a just-opened thread, and
+      // losing it would leave the co-viewer warning blind until the next
+      // 30s tick — long enough for both agents to finish typing. The 30s
+      // interval itself is never affected.
       const t = Date.now();
-      if (t - lastBeatAt < 1_000) return;
+      if (t - lastBeatAt < 1_000) {
+        if (trailing === null) {
+          trailing = setTimeout(
+            () => {
+              trailing = null;
+              void beat();
+            },
+            1_000 - (t - lastBeatAt),
+          );
+        }
+        return;
+      }
       lastBeatAt = t;
       const { error } = await supabase.rpc("touch_presence", {
         p_status: currentStatus(),
+        // Which thread this tab has open (migration 041). Only a hint —
+        // the RPC drops it unless the conversation is in the caller's
+        // own account.
+        p_viewing_conversation_id: getFocusedConversation(),
+        // Which tab is reporting (migration 045). Before this, every
+        // dashboard tab wrote the same row, so a backgrounded tab's
+        // ('away', no thread) kept overwriting the inbox tab's
+        // ('online', thread X) and the co-viewer guard went blind
+        // roughly half the time.
+        p_tab_id: getTabId(),
       });
       if (error && !cancelled) {
         // Non-fatal: presence is best-effort. Log once per failure so a
@@ -87,11 +126,19 @@ export function PresenceHeartbeat() {
     document.addEventListener("visibilitychange", onReturn);
     window.addEventListener("focus", onReturn);
 
+    // Opening or leaving a thread is reported at once rather than on
+    // the next tick: the warning only earns its keep if it appears
+    // before the second agent starts typing, and 30s is longer than it
+    // takes to write a reply.
+    const unsubscribeFocus = subscribeFocusedConversation(() => void beat());
+
     void beat();
     const interval = setInterval(() => void beat(), HEARTBEAT_MS);
 
     return () => {
       cancelled = true;
+      unsubscribeFocus();
+      if (trailing !== null) clearTimeout(trailing);
       clearInterval(interval);
       activityEvents.forEach((e) =>
         document.removeEventListener(e, markActive),

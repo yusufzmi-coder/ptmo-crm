@@ -14,6 +14,11 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Vendored minified opus-recorder encoder worker (served statically).
     "public/opus/**",
+    // Untracked vendored copies of the command-board app, bundled dist/
+    // and .next/ included. Not this project's code; linting them reported
+    // 15 errors from files nobody here maintains.
+    "project-command-board/**",
+    "tools/**",
   ]),
 ]);
 

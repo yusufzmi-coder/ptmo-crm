@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 
 import { useTranslations } from "next-intl";
+import { PageSkeleton, CardGridSkeleton } from "../page-skeletons";
 import { useCan } from "@/hooks/use-can";
 import { Button } from "@/components/ui/button";
 import { GatedButton } from "@/components/ui/gated-button";
@@ -193,9 +194,9 @@ export default function FlowsPage() {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
+      <PageSkeleton label={t("loading")}>
+        <CardGridSkeleton count={6} />
+      </PageSkeleton>
     );
   }
 

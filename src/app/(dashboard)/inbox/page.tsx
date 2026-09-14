@@ -8,8 +8,10 @@ import {
   CONVERSATION_SELECT,
   normalizeConversation,
 } from "@/lib/inbox/conversations";
+import { reconcileIncomingMessage } from "@/lib/inbox/optimistic";
 import type { Conversation, Message, Contact, ConversationStatus } from "@/types";
 import { useRealtime } from "@/hooks/use-realtime";
+import { useAuth } from "@/hooks/use-auth";
 import { ConversationList } from "@/components/inbox/conversation-list";
 import { MessageThread } from "@/components/inbox/message-thread";
 import { ContactSidebar } from "@/components/inbox/contact-sidebar";
@@ -25,15 +27,38 @@ const CONTACT_PANEL_STORAGE_KEY = "wacrm:inbox:contact-panel-open";
 // boundary or the production build bails to CSR and errors out. Thin
 // wrapper supplies it; the inner component holds all the inbox state.
 export default function InboxPage() {
+  const { accountId } = useAuth();
+
+  // The `key` is how a zone switch clears the inbox.
+  //
+  // Every piece of inbox state is local: conversations, messages and the
+  // per-thread unread counts live in `InboxPageInner`, but the composer
+  // draft, the conversation list's own rows, thread scroll position and
+  // the `reactions:${conversationId}` channel live inside children this
+  // component cannot reach. Resetting the state we own would leave the
+  // rest showing the previous zone. Remounting the subtree discards all
+  // of it at once, and the children refetch on mount as they already do.
+  //
+  // RLS stops the DATABASE from serving another zone's rows, but it
+  // cannot reach into state this client already holds — see
+  // `docs/zones.md`.
+  //
+  // Holding back until `accountId` resolves keeps this from firing on
+  // first load, when it settles null → uuid and would remount the whole
+  // inbox for no reason.
   return (
     <Suspense fallback={null}>
-      <InboxPageInner />
+      {accountId ? <InboxPageInner key={accountId} /> : null}
     </Suspense>
   );
 }
 
 function InboxPageInner() {
   const t = useTranslations("Inbox.page");
+  // Same value the `key` above is built from, so it cannot drift: this
+  // component only exists for one zone, and the realtime topic below is
+  // scoped to it.
+  const { accountId } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   /**
@@ -48,6 +73,8 @@ function InboxPageInner() {
     useState<Conversation | null>(null);
   const [activeContact, setActiveContact] = useState<Contact | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  /** How many WhatsApp numbers the account holds (migration 040). */
+  const [numberCount, setNumberCount] = useState(0);
   const [whatsappConnected, setWhatsappConnected] = useState<boolean | null>(
     null
   );
@@ -200,13 +227,20 @@ function InboxPageInner() {
         return;
       }
 
+      // One row per branch since migration 040, so `maybeSingle()`
+      // would throw once a second branch is connected. Two things come
+      // out of this read: whether ANY number is connected (clears the
+      // banner), and how many exist at all — the list only labels
+      // threads with their branch when there is more than one, since
+      // the same chip on every row would be noise.
       const { data } = await supabase
         .from("whatsapp_config")
         .select("status")
-        .eq("account_id", accountId)
-        .maybeSingle();
+        .eq("account_id", accountId);
 
-      setWhatsappConnected(data?.status === "connected");
+      const rows = data ?? [];
+      setWhatsappConnected(rows.some((r) => r.status === "connected"));
+      setNumberCount(rows.length);
     };
 
     checkConnection();
@@ -223,15 +257,12 @@ function InboxPageInner() {
           activeConversation &&
           newMsg.conversation_id === activeConversation.id
         ) {
-          setMessages((prev) => {
-            // Avoid duplicates
-            if (prev.some((m) => m.id === newMsg.id)) return prev;
-            // Replace optimistic message if it exists
-            const withoutOptimistic = prev.filter(
-              (m) => !m.id.startsWith("temp-")
-            );
-            return [...withoutOptimistic, newMsg];
-          });
+          // Dedupes, and retires at most the ONE optimistic bubble this
+          // row plausibly is. The realtime channel is unfiltered, so an
+          // inbound message, an AI auto-reply, or a second agent in the
+          // same thread all land here — none of them may take this
+          // agent's in-flight (or failed) bubble with them.
+          setMessages((prev) => reconcileIncomingMessage(prev, newMsg));
         }
 
         // Update conversation list preview. We need to know *synchronously*
@@ -247,10 +278,21 @@ function InboxPageInner() {
                     ...c,
                     last_message_text: newMsg.content_text ?? "",
                     last_message_at: newMsg.created_at,
+                    // Only the CUSTOMER's messages are unread. The server
+                    // agrees — bump_conversation_on_inbound (migration
+                    // 037) fires on inbound only — so bumping here for
+                    // our own agent replies and AI auto-replies showed a
+                    // badge the database never had. It self-corrected
+                    // milliseconds later off the conversation UPDATE that
+                    // follows a send, but survived whenever that event
+                    // was dropped, leaving a permanent phantom count on a
+                    // thread the team had already answered.
                     unread_count:
-                      activeConversation?.id === newMsg.conversation_id
-                        ? 0
-                        : c.unread_count + 1,
+                      newMsg.sender_type !== "customer"
+                        ? c.unread_count
+                        : activeConversation?.id === newMsg.conversation_id
+                          ? 0
+                          : c.unread_count + 1,
                   }
                 : c,
             ),
@@ -343,6 +385,7 @@ function InboxPageInner() {
   // throttle) are simply lost. We need a way to catch up.
   const { isConnected } = useRealtime({
     channelName: "inbox-realtime",
+    accountId,
     onMessageEvent: handleMessageEvent,
     onConversationEvent: handleConversationEvent,
     enabled: true,
@@ -562,7 +605,7 @@ function InboxPageInner() {
   const hasActiveConv = !!activeConversation;
 
   return (
-    <div className="-m-4 flex h-[calc(100vh-3.5rem)] flex-col overflow-hidden sm:-m-6">
+    <div className="-m-4 flex h-[calc(100dvh-3.5rem)] flex-col overflow-hidden sm:-m-6">
       {/* WhatsApp connection banner — in the flex column, not absolute,
           so it pushes the panels down instead of overlapping them. */}
       {whatsappConnected === false && (
@@ -590,6 +633,7 @@ function InboxPageInner() {
             conversations={conversations}
             onConversationsLoaded={handleConversationsLoaded}
             resyncToken={resyncToken}
+            showBranch={numberCount > 1}
           />
         </div>
 
@@ -619,6 +663,7 @@ function InboxPageInner() {
             onStatusChange={handleStatusChange}
             onAssignChange={handleAssignChange}
             onBack={handleCloseConversation}
+            showBranch={numberCount > 1}
             resyncToken={resyncToken}
             onRefresh={handleManualRefresh}
             contactPanelOpen={contactPanelOpen}

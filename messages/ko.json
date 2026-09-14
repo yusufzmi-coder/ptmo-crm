@@ -12,7 +12,9 @@
     "signingIn": "로그인 중...",
     "signIn": "로그인",
     "noAccount": "계정이 없으신가요?",
-    "createAccount": "계정 만들기"
+    "createAccount": "계정 만들기",
+    "or": "또는",
+    "continueWithGoogle": "Google로 계속하기"
   },
   "Sidebar": {
     "title": "CRM PTMO OPERATION DEPT",
@@ -27,6 +29,9 @@
     "aiAgents": "AI 에이전트",
     "ops": "Belum Dibalas",
     "settings": "설정",
+    "groupConversations": "대화",
+    "groupCustomers": "고객",
+    "groupAutomation": "캠페인 및 자동화",
     "beta": "베타",
     "unreadConversations": "읽지 않은 대화 {count}건",
     "unreadNotifications": "읽지 않은 알림 {count}건",
@@ -49,6 +54,8 @@
     "pipelines": "파이프라인",
     "broadcasts": "브로드캐스트",
     "automations": "자동화",
+    "flows": "플로우",
+    "aiAgents": "AI 에이전트",
     "ops": "Belum Dibalas",
     "settings": "설정",
     "openMenu": "메뉴 열기",
@@ -58,6 +65,20 @@
     "menuProfile": "프로필",
     "menuSettings": "설정",
     "menuSignOut": "로그아웃"
+  },
+  "ZoneSwitcher": {
+    "menuLabel": "구역 전환",
+    "currentZone": "구역: {zone}",
+    "openZoneMenu": "구역 전환 — 현재 {zone}",
+    "stillIn": "현재 {zone}에 있습니다.",
+    "errorNotMember": "해당 구역에 대한 접근 권한이 없습니다.",
+    "errorFailed": "구역을 전환하지 못했습니다. 다시 시도해 주세요.",
+    "role": {
+      "owner": "소유자",
+      "admin": "관리자",
+      "agent": "상담원",
+      "viewer": "뷰어"
+    }
   },
   "ModeToggle": {
     "switchMode": "{mode} 모드로 전환"
@@ -151,7 +172,17 @@
       "clearAll": "모두 지우기",
       "noConversations": "대화를 찾을 수 없습니다",
       "noMessagesYet": "아직 메시지가 없습니다",
-      "unknown": "알 수 없음"
+      "unknown": "알 수 없음",
+      "otherViewers": "팀원 {count}명이 이 대화를 보고 있습니다",
+      "assignment": "담당자",
+      "assignAnyone": "전체",
+      "assignMine": "내 담당",
+      "assignUnassigned": "미할당",
+      "assignOthers": "다른 담당자",
+      "assignedTo": "{name} 담당",
+      "assignedToYou": "내가 담당",
+      "assignedToUnknown": "팀원 담당",
+      "loadingConversations": "대화를 불러오는 중"
     },
     "messageThread": {
       "backToConversations": "대화 목록으로 돌아가기",
@@ -175,7 +206,11 @@
       "selectConversation": "대화를 선택하세요",
       "selectConversationHint": "왼쪽에서 대화를 선택해 메시지를 시작하세요",
       "today": "오늘",
-      "yesterday": "어제"
+      "yesterday": "어제",
+      "replyingAsBranch": "replying as {branch}",
+      "aTeammate": "팀원",
+      "alsoViewing": "지금 {names}님도 이 대화를 보고 있습니다 — 답장 전에 확인하세요.",
+      "loadingMessages": "메시지를 불러오는 중"
     },
     "sessionTimer": {
       "expired": "만료됨",
@@ -211,7 +246,21 @@
       "send": "보내기",
       "quickReplyNamePrompt": "이 빠른 답장의 이름을 지정하세요:",
       "quickReplySaved": "빠른 답장으로 저장되었습니다.",
-      "quickReplySaveError": "빠른 답장을 저장하지 못했습니다."
+      "quickReplySaveError": "빠른 답장을 저장하지 못했습니다.",
+      "quickRepliesFor": "답장 주체: {branch}",
+      "quickReplyPinned": "{branch} 전용",
+      "quickReplyUnavailable": "지점 정보 필요",
+      "quickReplyUnavailableHint": "이 스니펫은 지점 이름을 채워 넣지만, 이 대화는 WhatsApp 번호에 연결되어 있지 않습니다.",
+      "quickReplyForeignBranch": "{branches} 언급",
+      "replyingAsBranch": "{branch}(으)로 답장",
+      "typeMessageAsBranch": "{branch}(으)로 메시지 입력... (줄바꿈은 Shift+Enter)",
+      "alsoViewing": "{names}님도 이 대화를 보고 있습니다 — 답장 전에 확인하세요.",
+      "loadingQuickReplies": "빠른 답장을 불러오는 중",
+      "dropToAttach": "놓아서 첨부",
+      "dropUnavailable": "지금은 첨부할 수 없습니다",
+      "unsupportedFile": "WhatsApp에서 보낼 수 없는 파일 형식입니다.",
+      "onlyFirstFile": "메시지당 첨부는 하나입니다 — {filename}을(를) 사용합니다.",
+      "attachmentBusy": "현재 첨부를 보내거나 삭제한 뒤 다시 시도하세요."
     },
     "bubble": {
       "photo": "사진",
@@ -279,7 +328,8 @@
       "finalUrl": "최종 URL: {url}",
       "back": "뒤로",
       "cancel": "취소",
-      "send": "템플릿 보내기"
+      "send": "템플릿 보내기",
+      "loadingTemplates": "템플릿을 불러오는 중"
     },
     "sidebar": {
       "contactInfo": "연락처 정보",
@@ -288,7 +338,8 @@
       "deals": "딜",
       "noTags": "태그 없음",
       "noDeals": "딜 없음",
-      "addNotePlaceholder": "메모 추가..."
+      "addNotePlaceholder": "메모 추가...",
+      "noContact": "선택된 연락처 없음"
     },
     "aiBanner": {
       "pausedTitle": "이 대화에서 AI 어시스턴트가 일시 중지됨",
@@ -438,7 +489,11 @@
       "toastCustomFieldsSaved": "커스텀 필드가 저장되었습니다",
       "toastCustomFieldsFailed": "커스텀 필드를 저장하지 못했습니다",
       "toastTemplateSent": "\"{name}\" 템플릿을 보냈습니다",
-      "toastTemplateFailed": "템플릿을 보내지 못했습니다: {reason}"
+      "toastTemplateFailed": "템플릿을 보내지 못했습니다: {reason}",
+      "loadingContact": "연락처 불러오는 중",
+      "loadingNotes": "메모 불러오는 중",
+      "loadingCustomFields": "맞춤 필드 불러오는 중",
+      "loadingDeals": "거래 불러오는 중"
     },
     "importModal": {
       "title": "연락처 가져오기",
@@ -632,7 +687,8 @@
         "date": "날짜"
       },
       "errorLoad": "브로드캐스트를 불러오지 못했습니다",
-      "retry": "다시 시도"
+      "retry": "다시 시도",
+      "loading": "브로드캐스트 불러오는 중"
     },
     "status": {
       "draft": "초안",
@@ -692,7 +748,8 @@
       "retryFailed": "실패 재시도 ({count})",
       "toastResumeStarted": "{count}명에게 백그라운드로 발송 중입니다.",
       "toastResumeStartedCapped": "{count}명에게 백그라운드로 발송 중입니다. 나머지 {remaining}명은 한 번 더 실행해야 합니다.",
-      "toastResumeFailed": "이어서 발송할 수 없습니다: {error}"
+      "toastResumeFailed": "이어서 발송할 수 없습니다: {error}",
+      "loading": "브로드캐스트 불러오는 중"
     },
     "new": {
       "title": "새 브로드캐스트",
@@ -718,7 +775,8 @@
         "subtitle": "브로드캐스트에 사용할 승인된 메시지 템플릿을 선택하세요.",
         "noTemplates": "사용 가능한 템플릿이 없습니다.",
         "createFirst": "먼저 설정에서 템플릿을 만드세요.",
-        "errorLoad": "템플릿을 불러오지 못했습니다"
+        "errorLoad": "템플릿을 불러오지 못했습니다",
+        "loading": "템플릿 불러오는 중"
       },
       "selectAudience": {
         "title": "대상 선택",
@@ -753,7 +811,9 @@
         "errorLoadTags": "태그를 불러오지 못했습니다",
         "errorLoadFields": "커스텀 필드를 불러오지 못했습니다",
         "errorCsvParse": "CSV 파일을 파싱할 수 없습니다.",
-        "errorCsvMissingPhone": "CSV에 'phone' 열이 있어야 합니다."
+        "errorCsvMissingPhone": "CSV에 'phone' 열이 있어야 합니다.",
+        "loadingTags": "태그 불러오는 중",
+        "loadingFields": "맞춤 필드 불러오는 중"
       },
       "personalize": {
         "title": "변수 개인화",
@@ -801,7 +861,9 @@
         "sending": "전송 중...",
         "preparing": "준비 중...",
         "progressDesc": "수신자 {total}명 중 {current}명 처리 중...",
-        "toastFailedPreview": "미리보기 데이터를 불러오지 못했습니다"
+        "toastFailedPreview": "미리보기 데이터를 불러오지 못했습니다",
+        "sendFrom": "Send from",
+        "sendFromHint": "Replies and this campaign go out on this number. Parents see the branch they know."
       }
     }
   },
@@ -834,7 +896,8 @@
         "updateError": "업데이트하지 못했습니다",
         "duplicateError": "복제하지 못했습니다",
         "deleteError": "삭제하지 못했습니다"
-      }
+      },
+      "loading": "자동화 불러오는 중"
     },
     "edit": {
       "loading": "불러오는 중...",
@@ -856,7 +919,8 @@
         "failed": "실패"
       },
       "back": "뒤로",
-      "backAria": "뒤로"
+      "backAria": "뒤로",
+      "loading": "자동화 로그 불러오는 중"
     },
     "builder": {
       "steps": {
@@ -1013,7 +1077,16 @@
         "matchWordHint": "키워드가 독립된 단어일 때만 일치하므로 \"k\"가 \"thanks\"에서 실행되지 않습니다. 공백으로 단어를 구분하는 언어의 짧은 키워드에 적합하며, 공백 없이 표기하는 언어에는 \"포함\"을 사용하세요.",
         "matchExact": "정확히 일치",
         "closeConversationHint": "대화 상태를 \"닫힘\"으로 설정합니다. 추가 설정이 필요 없습니다."
-      }
+      },
+      "previewNoBody": "메시지 내용 없음",
+      "previewNoTemplate": "템플릿 선택",
+      "previewNoUrl": "URL 없음",
+      "previewCondition": "{subject}일 때",
+      "previewConditionUnset": "조건 미설정",
+      "previewWaitMinutes": "{amount, plural, other {#분}}",
+      "previewWaitHours": "{amount, plural, other {#시간}}",
+      "previewWaitDays": "{amount, plural, other {#일}}",
+      "previewWaitUnset": "기간 미설정"
     }
   },
   "Flows": {
@@ -1048,12 +1121,14 @@
       "triggerKeywordNone": "키워드로 트리거 (설정 안 됨)",
       "triggerKeyword": "트리거 조건: {keywords}",
       "triggerFirstInbound": "연락처의 첫 수신 메시지에서 트리거됨",
-      "triggerManual": "수동 트리거"
+      "triggerManual": "수동 트리거",
+      "loading": "플로우 불러오는 중"
     },
     "edit": {
       "notFound": "플로우를 찾을 수 없습니다.",
       "backToFlows": "← 플로우로 돌아가기",
-      "loadError": "플로우를 불러올 수 없습니다."
+      "loadError": "플로우를 불러올 수 없습니다.",
+      "loadingEditor": "플로우 편집기 불러오는 중"
     },
     "logs": {
       "title": "실행 기록",
@@ -1072,7 +1147,8 @@
       "statusHandedOff": "인계됨",
       "statusTimedOut": "시간 초과",
       "statusPaused": "상담원이 일시 중지함",
-      "statusFailed": "실패"
+      "statusFailed": "실패",
+      "loading": "플로우 실행 내역 불러오는 중"
     },
     "builder": {
       "triggerTitle": "트리거",
@@ -1287,7 +1363,8 @@
       "removeDialogDesc": "<bold>{name}</bold>을(를) 이 계정에서 제거하시겠습니까? 이 계정에서 로그아웃되며 다음 로그인 시 새로운 개인 계정이 발급됩니다. 로그인 정보 자체는 삭제되지 않습니다.",
       "cancel": "취소",
       "removing": "제거 중...",
-      "removeBtn": "멤버 제거"
+      "removeBtn": "멤버 제거",
+      "loading": "구성원 불러오는 중"
     },
     "invite": {
       "inviteCreated": "초대가 생성되었습니다",
@@ -1350,7 +1427,8 @@
         "blue": "파랑",
         "violet": "보라",
         "pink": "분홍"
-      }
+      },
+      "loading": "태그 불러오는 중"
     },
     "templates": {
       "title": "메시지 템플릿",
@@ -1371,13 +1449,11 @@
       "deleteLocallyAria": "로컬에서 템플릿 삭제",
       "deleteMetaLocallyTitle": "Meta와 로컬에서 삭제",
       "deleteLocallyTitle": "로컬에서 삭제",
-
       "dialogEditTitle": "메시지 템플릿 수정",
       "dialogNewTitle": "새 메시지 템플릿",
       "dialogEditDesc": "변경 사항을 저장해 Meta에 재제출하세요. 검토 중에는 상태가 다시 대기 중으로 바뀝니다.",
       "dialogNewDesc": "템플릿을 만들어 Meta 승인을 요청하세요. 승인되면 브로드캐스트와 인박스에서 사용할 수 있습니다.",
       "authWarning": "AUTHENTICATION 템플릿은 본문과 OTP 버튼 형식이 고정되어 있어 별도의 빌더가 필요합니다. 지금은 Meta WhatsApp 관리자에서 만든 뒤 <bold>Meta에서 동기화</bold>로 가져오세요.",
-
       "templateName": "템플릿 이름",
       "namePlaceholder": "예: order_confirmation",
       "nameFixed": "템플릿이 Meta에 존재하면 이름이 고정됩니다 — 변경하려면 새 템플릿을 만드세요.",
@@ -1386,7 +1462,6 @@
       "language": "언어",
       "langFixed": "템플릿이 Meta에 존재하면 언어가 고정됩니다.",
       "langHint": "Meta의 정확한 코드와 일치해야 합니다 — <code>en_US</code>와 <code>en</code>은 다른 코드입니다.",
-
       "header": "헤더",
       "headerNone": "없음",
       "headerText": "텍스트",
@@ -1396,7 +1471,6 @@
       "headerTextPlaceholder": "헤더 텍스트 (최대 60자, {{1}} 선택 가능)",
       "headerSampleAria": "헤더 변수 샘플 값",
       "headerSamplePlaceholder": "{{1}}의 샘플 값 (Meta 검토에 필요)",
-
       "uploadImage": "이미지 업로드",
       "uploadHint": "JPEG 또는 PNG, 5MB 이하",
       "mediaUrlPlaceholder": "https://… (또는 공개 {format} 링크 붙여넣기)",
@@ -1404,17 +1478,14 @@
       "mediaHint": "공개적으로 접근 가능한 HTTPS 링크여야 합니다. Meta가 검토 중 한 번 가져오므로 약 24시간 동안 살아있어야 합니다.",
       "videoHint": " 권장: MP4 / 3GPP, 16MB 이하, 60초 이하.",
       "documentHint": " 권장: PDF, 100MB 이하.",
-
       "bodyText": "본문 텍스트",
       "bodyPlaceholder": "안녕하세요 {{1}}님, 주문 {{2}}이(가) 확정되었습니다.",
       "sampleValues": "샘플 값 (Meta가 템플릿 검토에 사용합니다)",
       "bodyHint": "변수에는 {{1}}, {{2}}를 사용하세요 ({{1}}부터 연속되어야 합니다).",
       "sampleAria": "본문 변수 {var}의 샘플 값",
       "samplePlaceholder": "{var}의 샘플",
-
       "footer": "푸터 (선택)",
       "footerPlaceholder": "선택적 푸터 텍스트 (최대 60자)",
-
       "buttons": "버튼 (선택)",
       "addButton": "버튼 추가",
       "buttonsLimit": "최대 {max}개 버튼. QUICK_REPLY 버튼은 URL / 전화 / 코드 복사 버튼보다 앞에 와야 합니다.",
@@ -1427,19 +1498,16 @@
       "urlSamplePlaceholder": "{{1}}의 예시 값 (URL에 변수가 있을 때 필요)",
       "phonePlaceholder": "+15551234567",
       "codePlaceholder": "예시 코드 (예: SUMMER20)",
-
       "cancel": "취소",
       "saving": "저장 중…",
       "submitting": "제출 중…",
       "saveResubmit": "저장 & 재제출",
       "submitApproval": "승인 요청",
-
       "deleteDialogTitle": "템플릿을 삭제하시겠습니까?",
       "deleteMetaDesc": "\"{name}\"이(가) Meta와 CRM PTMO Operation Dept에서 삭제됩니다. 이 템플릿을 사용하는 활성 브로드캐스트는 다음 전송부터 실패하기 시작합니다. 되돌릴 수 없습니다.",
       "deleteLocalDesc": "\"{name}\"이(가) CRM PTMO Operation Dept에서 삭제됩니다. Meta에 제출된 적이 없으므로 별도의 원격 정리가 필요하지 않습니다.",
       "deleting": "삭제 중…",
       "delete": "삭제",
-
       "toastLoadFailed": "템플릿을 불러오지 못했습니다",
       "toastSubmitFailed": "제출하지 못했습니다",
       "toastSubmitEditSuccess": "수정 사항이 제출되었습니다 — Meta는 보통 24시간 이내에 검토합니다.",
@@ -1456,7 +1524,8 @@
       "toastInvalidImage": "헤더 이미지는 JPEG 또는 PNG여야 합니다.",
       "toastImageTooLarge": "이미지 크기가 {size}MB입니다 — Meta 제한은 5MB입니다.",
       "toastUploadSuccess": "이미지가 업로드되었습니다.",
-      "toastUploadFailed": "업로드에 실패했습니다."
+      "toastUploadFailed": "업로드에 실패했습니다.",
+      "loading": "템플릿 불러오는 중"
     },
     "roles": {
       "admin": "관리자",
@@ -1538,7 +1607,22 @@
       "step4_3": "위의 <strong class=\"text-foreground\">웹훅 콜백 URL</strong>을 붙여넣기",
       "step4_4": "여기서 설정한 것과 동일한 <strong class=\"text-foreground\">인증 토큰</strong>을 입력",
       "step4_5": "\"messages\" 웹훅 필드를 구독",
-      "metaDocs": "Meta WhatsApp API 문서"
+      "metaDocs": "Meta WhatsApp API 문서",
+      "branchLabel": "Branch name",
+      "branchLabelPlaceholder": "e.g. Rawang",
+      "branchLabelHint": "Shown in the inbox and on reports so staff can tell one number from another. You can connect one number per branch.",
+      "connectedNumbers": "Connected numbers",
+      "connectedNumbersDesc": "Every WhatsApp number this account answers on.",
+      "primaryBadge": "Default",
+      "noNumbersYet": "No numbers connected yet.",
+      "addAnotherNumber": "Add another number",
+      "editNumber": "Edit",
+      "branchUnnamed": "Name this branch",
+      "branchRenameHint": "Click to name this branch",
+      "branchRenameSave": "Save",
+      "branchRenameCancel": "Cancel",
+      "branchRenameFailed": "Could not save the branch name.",
+      "loading": "WhatsApp 번호 불러오는 중"
     },
     "sections": {
       "overview": "개요",
@@ -1551,7 +1635,8 @@
       "fields": "필드 & 태그",
       "deals": "딜 & 통화",
       "members": "팀원",
-      "api": "API 키"
+      "api": "API 키",
+      "centres": "Centres & zones"
     },
     "groups": {
       "account": "계정",
@@ -1585,7 +1670,6 @@
       "profileSaved": "프로필이 저장되었습니다",
       "emailChangeFailed": "이메일 변경 실패: {message}",
       "profileSavedEmailCheck": "프로필이 저장되었습니다 — 이메일 주소 변경을 확인하려면 이메일을 확인하세요",
-
       "passwordTitle": "비밀번호",
       "passwordDesc": "최소 {min}자 이상 사용하세요. 변경 후에도 이 기기에서는 로그인이 유지됩니다.",
       "currentPassword": "현재 비밀번호",
@@ -1599,7 +1683,6 @@
       "currentPasswordIncorrect": "현재 비밀번호가 올바르지 않습니다",
       "passwordUpdateFailed": "비밀번호 업데이트 실패: {message}",
       "passwordUpdated": "비밀번호가 업데이트되었습니다",
-
       "sessionsTitle": "활성 세션",
       "sessionsDesc": "이 기기를 포함해 로그인되어 있는 모든 기기에서 로그아웃합니다. 노트북을 분실했거나 비밀번호를 공유한 경우 유용합니다.",
       "signOutAll": "모든 기기에서 로그아웃",
@@ -1617,7 +1700,9 @@
       "useMode": "{mode} 모드 사용",
       "active": "사용 중",
       "accentColor": "강조 색상",
-      "useTheme": "{name} 테마 사용"
+      "useTheme": "{name} 테마 사용",
+      "modeGroupLabel": "색상 모드",
+      "themeId": "테마 id: {id}"
     },
     "security": {
       "title": "로그인 & 보안",
@@ -1659,7 +1744,8 @@
       "newKeyTitle": "새 API 키",
       "newKeyDesc": "이 키를 사용할 연동 서비스의 이름을 붙이고, 필요한 권한 범위만 부여하세요.",
       "done": "완료",
-      "networkError": "서버에 연결할 수 없습니다"
+      "networkError": "서버에 연결할 수 없습니다",
+      "loading": "API 키 불러오는 중"
     },
     "deals": {
       "title": "딜 & 통화",
@@ -1711,7 +1797,8 @@
       "saveSuccess": "AI 어시스턴트가 저장되었습니다.",
       "saveFailed": "저장하지 못했습니다.",
       "removeSuccess": "AI 설정이 제거되었습니다.",
-      "removeFailed": "제거하지 못했습니다."
+      "removeFailed": "제거하지 못했습니다.",
+      "loading": "AI 설정 불러오는 중"
     },
     "aiKnowledge": {
       "loadFailed": "지식베이스를 불러오지 못했습니다",
@@ -1739,6 +1826,67 @@
       "reindex": "재색인",
       "reindexTooltip": "모든 문서를 다시 임베딩합니다 (예: 임베딩 키 추가 후)",
       "loading": "불러오는 중…"
+    },
+    "centres": {
+      "title": "Centres & zones",
+      "description": "Every branch, and the zones they sit in. A parent belongs to a centre -- which is how HQ knows who to escalate to, whichever number they wrote to.",
+      "zonesTitle": "Zones",
+      "zonesDesc": "A grouping of centres, for reporting and coverage. Not an access boundary.",
+      "zonePlaceholder": "e.g. Zon Utara",
+      "addZone": "Add zone",
+      "noZones": "No zones yet.",
+      "centresTitle": "Centres",
+      "centresDesc": "Each branch, its zone, and the phone staff still answer on.",
+      "addCentre": "Add centre",
+      "newCentre": "New centre",
+      "noCentres": "No centres yet. Add your first branch to get started.",
+      "unassigned": "No zone",
+      "nameLabel": "Centre name",
+      "namePlaceholder": "e.g. Rawang",
+      "zoneLabel": "Zone",
+      "phoneLabel": "Phone",
+      "phonePlaceholder": "e.g. 012-345 6789",
+      "addressLabel": "Address",
+      "hoursLabel": "Operating hours",
+      "hoursPlaceholder": "e.g. Mon-Thu 8.30am-1.30pm",
+      "none": "None",
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "nameRequired": "Name is required",
+      "loadFailed": "Failed to load centres",
+      "saveFailed": "Could not save",
+      "deleteFailed": "Could not delete",
+      "zoneAdded": "Zone added",
+      "centreAdded": "Centre added",
+      "deleted": "Deleted",
+      "deleteZoneTitle": "Delete this zone?",
+      "deleteZoneDesc": "Centres in it are kept -- they just stop belonging to a zone.",
+      "deleteCentreTitle": "Delete this centre?",
+      "deleteCentreDesc": "Parents linked to it are kept, but stop being linked to any centre.",
+      "loading": "센터 불러오는 중"
+    },
+    "quickReplies": {
+      "title": "빠른 답장",
+      "description": "일반 텍스트 또는 저장된 인터랙티브 메시지 — 상담원이 받은편지함 작성란에서 바로 삽입할 수 있는 재사용 스니펫입니다.",
+      "newQuickReply": "새 빠른 답장",
+      "loading": "빠른 답장 불러오는 중",
+      "empty": "아직 빠른 답장이 없습니다. 하나 만들어 여러 대화에서 재사용하세요.",
+      "createTitle": "새 빠른 답장",
+      "editTitle": "빠른 답장 편집",
+      "nameLabel": "이름",
+      "namePlaceholder": "예: 영업시간",
+      "kindText": "텍스트",
+      "kindInteractive": "인터랙티브",
+      "contentPlaceholder": "삽입할 메시지 텍스트",
+      "cancel": "취소",
+      "save": "저장",
+      "nameRequired": "빠른 답장의 이름을 입력하세요.",
+      "created": "빠른 답장이 생성되었습니다.",
+      "updated": "빠른 답장이 수정되었습니다.",
+      "saveFailed": "빠른 답장을 저장하지 못했습니다.",
+      "deleteConfirm": "이 빠른 답장을 삭제할까요?",
+      "deleteFailed": "빠른 답장을 삭제하지 못했습니다."
     }
   },
   "Ops": {
@@ -1796,5 +1944,88 @@
       "hoursAgo": "{count, plural, =1 {1 hour} other {# hours}} ago",
       "daysAgo": "{count, plural, =1 {1 day} other {# days}} ago"
     }
+  },
+  "Notifications": {
+    "title": "알림",
+    "description": "다른 팀원이 나에게 배정한 대화가 여기에 표시됩니다.",
+    "markAllRead": "모두 읽음으로 표시",
+    "emptyTitle": "아직 알림이 없습니다",
+    "emptyHint": "누군가가 대화를 배정하면 여기에 알림이 표시됩니다.",
+    "unreadLabel": "읽지 않음",
+    "retry": "다시 시도",
+    "toastMarkReadFailed": "알림을 읽음으로 표시하지 못했습니다",
+    "toastMarkAllFailed": "모두 읽음으로 표시하지 못했습니다"
+  },
+  "Interactive": {
+    "emptyButtons": "버튼, 메시지 내용 없음",
+    "emptyList": "목록, 메시지 내용 없음"
+  },
+  "DashboardShell": {
+    "loading": "불러오는 중..."
+  },
+  "SignupPage": {
+    "errorPasswordMismatch": "비밀번호가 일치하지 않습니다",
+    "errorPasswordTooShort": "비밀번호는 6자 이상이어야 합니다",
+    "checkEmailTitle": "이메일을 확인하세요",
+    "checkEmailDesc": "<strong>{email}</strong> 주소로 확인 링크를 보냈습니다. 받은편지함에서 링크를 클릭해 계정을 인증해 주세요.",
+    "backToSignIn": "로그인으로 돌아가기",
+    "titleJoin": "계정 만들고 참여하기",
+    "title": "계정 만들기",
+    "descJoin": "이메일을 인증한 뒤 초대를 수락해 팀에 참여하세요.",
+    "desc": "CRM PTMO Operation Dept 시작하기",
+    "fullNameLabel": "이름",
+    "fullNamePlaceholder": "John Doe",
+    "emailLabel": "이메일",
+    "emailPlaceholder": "you@example.com",
+    "passwordLabel": "비밀번호",
+    "passwordPlaceholder": "6자 이상",
+    "confirmPasswordLabel": "비밀번호 확인",
+    "confirmPasswordPlaceholder": "비밀번호를 다시 입력하세요",
+    "creatingAccount": "계정 만드는 중...",
+    "submit": "계정 만들기",
+    "or": "또는",
+    "continueWithGoogle": "Google로 계속하기",
+    "haveAccount": "이미 계정이 있으신가요?",
+    "signIn": "로그인"
+  },
+  "ForgotPasswordPage": {
+    "checkEmailTitle": "이메일을 확인하세요",
+    "checkEmailDesc": "<strong>{email}</strong> 주소로 비밀번호 재설정 링크를 보냈습니다. 받은편지함을 확인해 주세요.",
+    "backToSignIn": "로그인으로 돌아가기",
+    "title": "비밀번호 재설정",
+    "desc": "이메일을 입력하시면 재설정 링크를 보내드립니다",
+    "emailLabel": "이메일",
+    "emailPlaceholder": "you@example.com",
+    "sending": "보내는 중...",
+    "submit": "재설정 링크 보내기"
+  },
+  "ResetPasswordPage": {
+    "errorTooShort": "비밀번호는 {min}자 이상이어야 합니다.",
+    "errorMismatch": "비밀번호가 일치하지 않습니다.",
+    "expiredTitle": "이 링크는 만료되었습니다",
+    "expiredDesc": "비밀번호 재설정 링크는 한 번만 사용할 수 있으며 잠시 후 만료됩니다. 계속하려면 새 링크를 요청하세요.",
+    "requestNewLink": "새 링크 요청",
+    "backToSignIn": "로그인으로 돌아가기",
+    "successTitle": "비밀번호가 변경되었습니다",
+    "successDesc": "새 비밀번호가 적용되었습니다. 이미 로그인된 상태입니다.",
+    "continueToDashboard": "Dashboard로 이동",
+    "title": "새 비밀번호 설정",
+    "desc": "{min}자 이상이어야 합니다",
+    "newPasswordLabel": "새 비밀번호",
+    "confirmPasswordLabel": "새 비밀번호 확인",
+    "updating": "변경 중...",
+    "submit": "비밀번호 변경"
+  },
+  "ColorMode": {
+    "light": "라이트",
+    "dark": "다크"
+  },
+  "ThemeTagline": {
+    "ptmo": "Minda Optima 블루 — 이 배포의 기본값입니다.",
+    "violet": "자신감 있고 살짝 경쾌한 색.",
+    "emerald": "성장의 색 — WhatsApp 그린을 따라 하지 않으면서 메시징의 느낌을 줍니다.",
+    "cobalt": "깔끔한 B2B SaaS 블루 — 차분하고 제품다운 느낌.",
+    "amber": "따뜻하고 친근한 색 — 중소기업 팀에 잘 어울립니다.",
+    "rose": "과감하고 현대적인 색 — D2C, 크리에이터 이코노미, 라이프스타일."
   }
 }

@@ -8,6 +8,7 @@ import {
   rateLimitResponse,
   RATE_LIMITS,
 } from '@/lib/rate-limit';
+import { resolveConfig, resolveFailureMessage } from '@/lib/whatsapp/resolve-config';
 
 /**
  * POST /api/whatsapp/react
@@ -88,20 +89,22 @@ export async function POST(request: Request) {
       );
     }
 
-    // WhatsApp config + access token. Account-scoped post-multi-user.
-    const { data: config, error: configError } = await supabase
-      .from('whatsapp_config')
-      .select('phone_number_id, access_token')
-      .eq('account_id', accountId)
-      .single();
+    // WhatsApp config + access token — the number THIS THREAD is on
+    // (migration 040). A reaction is a message to the parent, so it
+    // must leave on the number they wrote to.
+    const resolved = await resolveConfig(supabase, accountId, {
+      conversationId: targetMessage.conversation_id,
+      columns: 'id, account_id, phone_number_id, access_token, label, is_primary, waba_id, status',
+    });
 
-    if (configError || !config) {
+    if (!resolved.ok) {
       return NextResponse.json(
-        { error: 'WhatsApp not configured.' },
+        { error: resolveFailureMessage(resolved.reason) },
         { status: 400 },
       );
     }
 
+    const config = resolved.config;
     const accessToken = decrypt(config.access_token);
     const sanitizedPhone = sanitizePhoneForMeta(contact.phone);
 

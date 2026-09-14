@@ -162,6 +162,18 @@ export interface Conversation {
   user_id: string;
   contact_id: string;
   status: ConversationStatus;
+  /**
+   * The WhatsApp number this thread arrived on — the branch, for a
+   * multi-branch account (migration 040). Replies must go out on this
+   * number; see src/lib/whatsapp/resolve-config.ts.
+   */
+  whatsapp_config_id?: string | null;
+  /** Embedded branch, when the query asks for it. */
+  whatsapp_config?: {
+    id: string;
+    label: string | null;
+    phone_number_id: string;
+  } | null;
   assigned_agent_id?: string;
   last_message_text?: string;
   last_message_at?: string;
@@ -275,6 +287,18 @@ export interface MessageReaction {
 export interface WhatsAppConfig {
   id: string;
   user_id: string;
+  /**
+   * Human name for this number — the branch it serves (migration 040).
+   * NULL on rows saved before 040; the UI falls back to the
+   * phone_number_id until an admin names it.
+   */
+  label?: string | null;
+  /**
+   * The account's default number, used only where no conversation and
+   * no explicit choice supplies one. Exactly one row per account is
+   * true. See src/lib/whatsapp/resolve-config.ts for the full rule.
+   */
+  is_primary?: boolean;
   phone_number_id: string;
   waba_id?: string;
   access_token: string;
@@ -677,6 +701,64 @@ export interface QuickReply {
   content_text?: string | null;
   /** Set when `kind === 'interactive'`. */
   interactive_payload?: InteractiveMessagePayload | null;
+  /**
+   * Branch this snippet is pinned to (migration 043). NULL — the
+   * default — means every branch, which is the right answer for
+   * anything using the `{{cawangan}}` token.
+   */
+  whatsapp_config_id?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * A quick reply as one thread's branch sees it — what
+ * `GET /api/quick-replies?conversationId=…` returns.
+ *
+ * `content_text` and `interactive_payload` arrive already expanded, so
+ * the composer inserts them verbatim and never has to know about
+ * branches.
+ */
+export interface BranchedQuickReply extends QuickReply {
+  /**
+   * The snippet uses `{{cawangan}}` but the thread's branch could not
+   * be resolved, so it must not be offered — expanding would blank the
+   * token or send the braces to a parent.
+   */
+  branch_unresolved?: boolean;
+  /** Why expansion failed, when it broke Meta's interactive limits. */
+  branch_expand_error?: string;
+  /** Other centres this snippet names in its text. Empty is the norm. */
+  foreign_branches?: string[];
+}
+
+// ---- Centres & regions (migration 049) ----------------------
+//
+// A centre used to be a `whatsapp_config` row. It is now its own
+// thing, so a parent can belong to a branch no matter which WhatsApp
+// number they wrote to. `region` is a business grouping ("Zon" in the
+// UI) -- NOT the account-level tenancy zone in docs/zones.md.
+
+export interface Region {
+  id: string;
+  account_id: string;
+  name: string;
+  description: string | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Centre {
+  id: string;
+  account_id: string;
+  region_id: string | null;
+  name: string;
+  code: string | null;
+  address: string | null;
+  phone: string | null;
+  operating_hours: string | null;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
 }

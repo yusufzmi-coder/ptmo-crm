@@ -1,6 +1,7 @@
 import type { Message } from "@/types";
 import { loadMediaBlob, MediaResponseError } from "./blob-cache";
 import { mediaFilename } from "./filename";
+import { resolveStoredMediaUrl } from "./proxy-url";
 
 /**
  * Save a chat attachment to the agent's machine.
@@ -17,7 +18,9 @@ import { mediaFilename } from "./filename";
  * fallback below.
  */
 export async function downloadMediaMessage(message: Message): Promise<void> {
-  const url = message.media_url;
+  // Pre-047 rows hold an absolute public-bucket URL that no longer
+  // resolves; `resolveStoredMediaUrl` maps those onto the proxy.
+  const url = resolveStoredMediaUrl(message.media_url);
   if (!url) throw new Error("This message has no attachment.");
 
   let blob: Blob;

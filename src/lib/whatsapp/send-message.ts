@@ -35,6 +35,11 @@ import {
   type InteractiveMessagePayload,
 } from '@/lib/whatsapp/interactive';
 import { decrypt, encrypt, isLegacyFormat } from '@/lib/whatsapp/encryption';
+import {
+  resolveConfig,
+  resolveFailureMessage,
+} from '@/lib/whatsapp/resolve-config';
+import { metaFetchableLink } from '@/lib/media/outbound-link';
 import { supabaseAdmin } from '@/lib/flows/admin-client';
 import {
   sanitizePhoneForMeta,
@@ -251,20 +256,28 @@ export async function sendMessageToConversation(
     );
   }
 
-  // WhatsApp config, account-scoped.
-  const { data: config, error: configError } = await db
-    .from('whatsapp_config')
-    .select('*')
-    .eq('account_id', accountId)
-    .single();
+  // WhatsApp config — the number THIS THREAD arrived on (migration
+  // 040). An account can hold one number per branch, and a reply must
+  // leave on the same number the parent wrote to; anything else shows
+  // them a branch they never contacted and splits the thread on their
+  // phone. `resolveConfig` owns that rule — see resolve-config.ts.
+  // No `allowPrimary` here on purpose: this path talks to a parent, so
+  // an unresolvable number is an error, never a guess.
+  const resolved = await resolveConfig(db, accountId, {
+    conversationId,
+    columns: '*',
+  });
 
-  if (configError || !config) {
+  if (!resolved.ok) {
     throw new SendMessageError(
-      'whatsapp_not_configured',
-      'WhatsApp not configured. Please set up your WhatsApp integration first.',
+      resolved.reason === 'not_configured'
+        ? 'whatsapp_not_configured'
+        : 'whatsapp_number_unresolved',
+      resolveFailureMessage(resolved.reason),
       400
     );
   }
+  const config = resolved.config;
 
   const accessToken = decrypt(config.access_token);
 
@@ -336,6 +349,29 @@ export async function sendMessageToConversation(
     sendLanguage = resolved.language;
   }
 
+  // A template with a media header sends that media by link, and Meta
+  // fetches the link itself (template-send-builder.ts:113). Since 047 the
+  // stored `header_media_url` is a pointer at our authenticated route, so
+  // it has to be signed for this send — the same treatment plain media
+  // gets below, applied one layer up because the builder is synchronous.
+  //
+  // `headerMediaUrl` in the caller's params wins over the template's
+  // stored value (template-send-builder.ts:107), so only fill it in when
+  // the caller did not, and only when there is a pointer to resolve.
+  let templateSendParams = templateMessageParams;
+  if (messageType === 'template' && templateRow?.header_media_url) {
+    const existing = (templateMessageParams ?? {}) as {
+      headerMediaUrl?: string;
+      headerMediaId?: string;
+    };
+    if (!existing.headerMediaUrl && !existing.headerMediaId) {
+      const signed = await metaFetchableLink(db, templateRow.header_media_url);
+      if (signed !== templateRow.header_media_url) {
+        templateSendParams = { ...existing, headerMediaUrl: signed };
+      }
+    }
+  }
+
   const attempt = async (phone: string): Promise<string> => {
     if (messageType === 'template') {
       const result = await sendTemplateMessage({
@@ -345,19 +381,26 @@ export async function sendMessageToConversation(
         templateName: templateName!,
         language: sendLanguage,
         template: templateRow ?? undefined,
-        messageParams: templateMessageParams ?? undefined,
+        messageParams: templateSendParams ?? undefined,
         params: templateParams || [],
         contextMessageId,
       });
       return result.messageId;
     }
     if (isMediaKind) {
+      // Meta fetches this URL itself, unauthenticated, so a pointer at our
+      // own authenticated route would be useless to it. Mint a short-lived
+      // signed URL for the send only — `mediaUrl` itself stays the pointer
+      // and is what gets persisted below, because that is the value the
+      // inbox has to resolve months from now. An external URL from the
+      // public API passes through untouched.
+      const link = await metaFetchableLink(db, mediaUrl!);
       const result = await sendMediaMessage({
         phoneNumberId: config.phone_number_id,
         accessToken,
         to: phone,
         kind: messageType as MediaKind,
-        link: mediaUrl!,
+        link,
         caption: contentText || undefined,
         filename: filename || undefined,
         contextMessageId,

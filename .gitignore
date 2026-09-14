@@ -48,3 +48,15 @@ supabase/.temp/
 
 # brand master artwork — large binary, lives in Drive not git
 brand/MindaOptima-logo.ai
+
+# skrip ujian sementara — jangan commit
+_scratch/
+
+# Worktree sesi serentak hidup SEBELAH repo, bukan dalam ia:
+#   ~/Projects/ptmo-crm-<nama>, bukan ./.worktrees/<nama>
+# Sengaja tiada entri .worktrees/ di sini. Worktree bersarang ialah salinan
+# projek penuh di dalam repo, dan eslint serta tsc melangkahinya — 15 error
+# lint dan 145 error TypeScript yang tiada satu pun dari src/, yang memaksa
+# setiap gate release dijalankan atas arkib bersih. Mengabaikannya hanya
+# menyembunyikan kesan itu; tanpa entri ini, worktree bersarang yang
+# tersilap cipta akan muncul dalam `git status` dan dapat diperbaiki.

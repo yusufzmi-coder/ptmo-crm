@@ -246,17 +246,24 @@ async function processWebhook(body: { entry?: WhatsAppWebhookEntry[] }) {
 
       const value = change.value
 
-      // Handle status updates
-      if (value.statuses) {
-        for (const status of value.statuses) {
-          await handleStatusUpdate(status)
-        }
+      // Resolve the number this delivery arrived on BEFORE anything
+      // else touches the database. Status updates used to be handled
+      // above this block, which left them with no tenancy at all: a
+      // status carries only Meta's wamid, and `messages.message_id` is
+      // deliberately non-unique (migration 009 — Meta ids repeat across
+      // numbers), so an unscoped update could mark another account's —
+      // and, once accounts are zones, another zone's — message as
+      // delivered, read, or failed. Meta tells us which number the
+      // event is for; that is the tenancy key, and it must be resolved
+      // first.
+      const phoneNumberId = value.metadata?.phone_number_id
+
+      if (!phoneNumberId) {
+        console.error(
+          '[webhook] change carries no metadata.phone_number_id — cannot attribute it to an account, dropped',
+        )
+        continue
       }
-
-      // Handle incoming messages
-      if (!value.messages || !value.contacts) continue
-
-      const phoneNumberId = value.metadata.phone_number_id
 
       // Find user's config by phone_number_id. `.single()` returns
       // PGRST116 for both 0 rows AND ≥2 rows — distinguish them so
@@ -295,6 +302,17 @@ async function processWebhook(body: { entry?: WhatsAppWebhookEntry[] }) {
 
       const config = configRows[0]
 
+      // Status updates (sent / delivered / read / failed), now carrying
+      // the account and the branch they belong to.
+      if (value.statuses) {
+        for (const status of value.statuses) {
+          await handleStatusUpdate(status, config.account_id)
+        }
+      }
+
+      // Handle incoming messages
+      if (!value.messages || !value.contacts) continue
+
       const decryptedAccessToken = decrypt(config.access_token)
 
       for (let i = 0; i < value.messages.length; i++) {
@@ -315,7 +333,9 @@ async function processWebhook(body: { entry?: WhatsAppWebhookEntry[] }) {
           // Default ON: the column is NOT NULL DEFAULT TRUE, but a row
           // read before migration 039 lands would have it undefined,
           // and losing attachments is the failure mode worth avoiding.
-          config.mirror_inbound_media !== false
+          config.mirror_inbound_media !== false,
+          // The number this delivery came in on (migration 040).
+          config.id
         )
       }
     }
@@ -364,24 +384,52 @@ function isValidStatusTransition(current: string, incoming: string): boolean {
   return ii > ci
 }
 
-async function handleStatusUpdate(status: {
-  id: string
-  status: string
-  timestamp: string
-  recipient_id: string
-}) {
+async function handleStatusUpdate(
+  status: {
+    id: string
+    status: string
+    timestamp: string
+    recipient_id: string
+  },
+  /** The account the number this event arrived on belongs to. */
+  accountId: string,
+) {
   // 1) Mirror onto messages (legacy behavior) — Meta's status values
-  //    already match the CHECK constraint on messages.status. No
-  //    `.select()`: message_id is NOT unique (migration 009 — Meta ids
-  //    repeat across numbers), so this updates 0..N rows and must not
-  //    assume a single row.
-  const { error: msgErr } = await supabaseAdmin()
+  //    already match the CHECK constraint on messages.status.
+  //
+  //    `message_id` is NOT unique (migration 009 — Meta ids repeat
+  //    across numbers), so matching on it alone updates 0..N rows
+  //    spanning any number of accounts. `messages` carries no
+  //    account_id of its own; it is scoped through its conversation.
+  //    So resolve the ids inside this account first — the same
+  //    embedded-FK filter flagBroadcastReplyIfAny uses — and update
+  //    only those.
+  //
+  //    Scoped to the account, not to the individual number: a thread
+  //    that predates migration 040 has no whatsapp_config_id, and
+  //    filtering on the branch would silently stop updating its
+  //    messages. The account is the boundary that matters — it is the
+  //    one a wrong update crosses into someone else's data.
+  const { data: ownMessages, error: msgFindErr } = await supabaseAdmin()
     .from('messages')
-    .update({ status: status.status })
+    .select('id, conversations!inner(account_id)')
     .eq('message_id', status.id)
+    .eq('conversations.account_id', accountId)
 
-  if (msgErr) {
-    console.error('Error updating message status:', msgErr)
+  if (msgFindErr) {
+    console.error('Error resolving message for status update:', msgFindErr)
+  } else if (ownMessages && ownMessages.length > 0) {
+    const { error: msgErr } = await supabaseAdmin()
+      .from('messages')
+      .update({ status: status.status })
+      .in(
+        'id',
+        ownMessages.map((m: { id: string }) => m.id),
+      )
+
+    if (msgErr) {
+      console.error('Error updating message status:', msgErr)
+    }
   }
 
   // Webhook fan-out for this status change happens at the END of this
@@ -394,11 +442,20 @@ async function handleStatusUpdate(status: {
   //    sent/delivered/read/failed counts automatically.
   const tsIso = new Date(parseInt(status.timestamp) * 1000).toISOString()
 
-  const { data: recipient, error: recFetchErr } = await supabaseAdmin()
+  //    Account-scoped for the same reason as the messages mirror, and
+  //    `.limit(1)` rather than `.maybeSingle()`: maybeSingle ERRORS on
+  //    ≥2 rows, and a wamid colliding across two numbers would take
+  //    that path — the recipient update would then be skipped in
+  //    silence and the broadcast's delivered/read counts would stay
+  //    wrong with nothing in the logs to say why.
+  const { data: recipientRows, error: recFetchErr } = await supabaseAdmin()
     .from('broadcast_recipients')
-    .select('id, status')
+    .select('id, status, broadcasts!inner(account_id)')
     .eq('whatsapp_message_id', status.id)
-    .maybeSingle()
+    .eq('broadcasts.account_id', accountId)
+    .limit(1)
+
+  const recipient = recipientRows?.[0] ?? null
 
   if (recFetchErr) {
     console.error('Error fetching broadcast recipient:', recFetchErr)
@@ -425,30 +482,35 @@ async function handleStatusUpdate(status: {
 
   // 3) Webhook fan-out for messages we store (inbox / API sends).
   //    Runs last so a slow subscriber can't delay the mirrors above.
-  //    Bounded to one row (message_id isn't unique) purely to resolve
-  //    the owning account for delivery.
-  const { data: msgRow } = await supabaseAdmin()
+  //
+  //    This used to take the first row matching the wamid and dispatch
+  //    to whatever account it belonged to. Because message_id is not
+  //    unique across numbers, a collision could hand one account's
+  //    status event to a DIFFERENT account's webhook subscribers —
+  //    outbound delivery of someone else's data, which is worse than
+  //    the mis-write above. Scope it to the account the event actually
+  //    arrived on; `.limit(1)` then only picks between rows that are
+  //    already ours.
+  const { data: msgRows } = await supabaseAdmin()
     .from('messages')
-    .select('conversation_id, conversations(account_id)')
+    .select('conversation_id, conversations!inner(account_id)')
     .eq('message_id', status.id)
+    .eq('conversations.account_id', accountId)
     .limit(1)
-    .maybeSingle()
+
+  const msgRow = msgRows?.[0] ?? null
 
   if (msgRow) {
-    const conv = msgRow.conversations as { account_id: string } | null
-    const accountId = conv?.account_id
-    if (accountId) {
-      await dispatchWebhookEvent(
-        supabaseAdmin(),
-        accountId,
-        'message.status_updated',
-        {
-          whatsapp_message_id: status.id,
-          conversation_id: msgRow.conversation_id,
-          status: status.status,
-        }
-      )
-    }
+    await dispatchWebhookEvent(
+      supabaseAdmin(),
+      accountId,
+      'message.status_updated',
+      {
+        whatsapp_message_id: status.id,
+        conversation_id: msgRow.conversation_id,
+        status: status.status,
+      }
+    )
   }
 }
 
@@ -586,7 +648,12 @@ async function processMessage(
   accessToken: string,
   // Per-account opt-out for the inbound-media mirror (migration 039).
   // See parseMessageContent for what it turns off.
-  mirrorMedia: boolean
+  mirrorMedia: boolean,
+  // Which of the account's numbers this message arrived on — the
+  // branch, for a multi-branch account (migration 040). Stamped onto
+  // the conversation so replies leave on the same number the parent
+  // wrote to.
+  configId: string
 ) {
   const senderPhone = normalizePhone(message.from)
   const contactName = contact.profile.name
@@ -605,7 +672,8 @@ async function processMessage(
   const convResult = await findOrCreateConversation(
     accountId,
     configOwnerUserId,
-    contactRecord.id
+    contactRecord.id,
+    configId
   )
   if (!convResult) return
   const conversation = convResult.conversation
@@ -925,7 +993,12 @@ async function parseMessageContent(
   // receipt, so the `/api/whatsapp/media/<id>` proxy URL we used to
   // store is a pointer with an expiry date on it — every inbound
   // attachment silently became "Photo unavailable" a month later.
-  // Mirroring stores a durable public URL instead.
+  // Mirroring stores a pointer at our own copy instead, which does not
+  // expire: `/api/media/chat-media/<path>`, served by an authenticated
+  // route that signs on demand. It is a pointer rather than a public URL
+  // because migration 047 made the bucket private — the value here is
+  // persisted to `messages.media_url`, so a public URL would be a stored
+  // link that stops resolving.
   //
   // The mirror is strictly best-effort. `mirrorInboundMedia` swallows
   // its own failures and returns null, and we fall back to the proxy
@@ -1176,8 +1249,13 @@ async function findOrCreateConversation(
   accountId: string,
   configOwnerUserId: string,
   contactId: string,
+  configId: string,
 ) {
-  // Look for an existing conversation in this account, oldest-first.
+  // Look for this contact's thread ON THIS NUMBER, oldest-first
+  // (migration 042). Scoping the lookup to `configId` is what keeps a
+  // parent who writes to two branches from having the second branch's
+  // message filed into the first branch's thread — where the reply
+  // would then leave on the first branch's number.
   //
   // We deliberately do NOT use `.single()` here. `.single()` errors on
   // *both* 0 rows and ≥2 rows, and the old code treated any error as
@@ -1188,13 +1266,14 @@ async function findOrCreateConversation(
   // snowballing into a wall of duplicate chats (issue #363).
   //
   // Ordering oldest-first and taking one row makes the lookup resolve to
-  // the same canonical survivor the dedup migration (036) keeps, so any
-  // pre-existing duplicates converge instead of compounding.
+  // the same canonical survivor the dedup migrations (036, then 042)
+  // keep, so any pre-existing duplicates converge instead of compounding.
   const { data: existingRows, error: findError } = await supabaseAdmin()
     .from('conversations')
     .select('*')
     .eq('account_id', accountId)
     .eq('contact_id', contactId)
+    .eq('whatsapp_config_id', configId)
     .order('created_at', { ascending: true })
     .limit(1)
 
@@ -1207,6 +1286,49 @@ async function findOrCreateConversation(
     return { conversation: existingRows[0], created: false }
   }
 
+  // No thread on this number yet. Before opening one, check for a
+  // thread that predates migration 040 and carries no number at all:
+  // the inbound payload just told us which number it is on, so adopt it
+  // rather than stranding the parent's history in an unbranded thread
+  // and starting a second one beside it. 042's index allows at most one
+  // unbranded row per (account, contact), so this is unambiguous.
+  //
+  // The `.is(null)` filter is repeated on the UPDATE so two concurrent
+  // deliveries on DIFFERENT numbers cannot both claim the same orphan:
+  // the loser updates zero rows and falls through to creating its own.
+  const { data: orphanRows, error: orphanError } = await supabaseAdmin()
+    .from('conversations')
+    .select('*')
+    .eq('account_id', accountId)
+    .eq('contact_id', contactId)
+    .is('whatsapp_config_id', null)
+    .order('created_at', { ascending: true })
+    .limit(1)
+
+  if (orphanError) {
+    console.error('Error finding unbranded conversation:', orphanError)
+    return null
+  }
+
+  if (orphanRows && orphanRows.length > 0) {
+    const orphan = orphanRows[0]
+    const { data: adopted, error: adoptError } = await supabaseAdmin()
+      .from('conversations')
+      .update({ whatsapp_config_id: configId })
+      .eq('id', orphan.id)
+      .is('whatsapp_config_id', null)
+      .select()
+
+    if (adoptError) {
+      console.error('[webhook] could not stamp conversation number:', adoptError)
+    } else if (adopted && adopted.length > 0) {
+      return { conversation: adopted[0], created: false }
+    }
+    // Lost the claim (or could not stamp) — fall through and open this
+    // number's own thread rather than writing into a branch that now
+    // belongs to someone else.
+  }
+
   // Create new conversation. Same tenancy + audit split as
   // findOrCreateContact above.
   const { data: newConv, error: createError } = await supabaseAdmin()
@@ -1215,6 +1337,7 @@ async function findOrCreateConversation(
       account_id: accountId,
       user_id: configOwnerUserId,
       contact_id: contactId,
+      whatsapp_config_id: configId,
     })
     .select()
     .single()
@@ -1222,14 +1345,18 @@ async function findOrCreateConversation(
   if (createError) {
     // Lost a race: a concurrent inbound delivery created the
     // conversation between our lookup and insert, and the unique index
-    // (migration 036) rejected the duplicate. Re-resolve the winning
+    // (migration 042) rejected the duplicate. Re-resolve the winning
     // row instead of dropping the message — mirrors findOrCreateContact.
+    // Scoped to this number, like the lookup above: the racing delivery
+    // we lost to is the one on the same number, and resolving to any
+    // other branch's thread is the wrong-number bug by another route.
     if (isUniqueViolation(createError)) {
       const { data: raced } = await supabaseAdmin()
         .from('conversations')
         .select('*')
         .eq('account_id', accountId)
         .eq('contact_id', contactId)
+        .eq('whatsapp_config_id', configId)
         .order('created_at', { ascending: true })
         .limit(1)
       if (raced && raced.length > 0) {

@@ -921,11 +921,14 @@ function SendMediaForm({
       try {
         // Account-scoped upload (path `account-<id>/...`) — see
         // uploadAccountMedia + migration 020's flow-media RLS policy.
-        const { publicUrl } = await uploadAccountMedia(FLOW_MEDIA_BUCKET, file);
+        // A pointer, not a public URL — `flow-media` is private as of
+        // migration 047. The flow engine's send path signs it at send
+        // time, the same way the inbox composer's media is handled.
+        const { pointerUrl } = await uploadAccountMedia(FLOW_MEDIA_BUCKET, file);
         // Patch all fields in one call so the form doesn't re-render
         // with a half-uploaded state.
         onUpdateConfig({
-          media_url: publicUrl,
+          media_url: pointerUrl,
           filename: file.name,
         });
         toast.success("File uploaded.");

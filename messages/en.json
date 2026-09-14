@@ -12,7 +12,9 @@
     "signingIn": "Signing in...",
     "signIn": "Sign in",
     "noAccount": "Don't have an account?",
-    "createAccount": "Create account"
+    "createAccount": "Create account",
+    "or": "or",
+    "continueWithGoogle": "Continue with Google"
   },
   "Sidebar": {
     "title": "CRM PTMO OPERATION DEPT",
@@ -27,6 +29,9 @@
     "aiAgents": "AI Agents",
     "ops": "Belum Dibalas",
     "settings": "Settings",
+    "groupConversations": "Conversations",
+    "groupCustomers": "Customers",
+    "groupAutomation": "Campaigns & automation",
     "beta": "Beta",
     "unreadConversations": "{count} unread {count, plural, =1 {conversation} other {conversations}}",
     "unreadNotifications": "{count} unread {count, plural, =1 {notification} other {notifications}}",
@@ -49,6 +54,8 @@
     "pipelines": "Pipelines",
     "broadcasts": "Broadcasts",
     "automations": "Automations",
+    "flows": "Flows",
+    "aiAgents": "AI Agents",
     "ops": "Belum Dibalas",
     "settings": "Settings",
     "openMenu": "Open menu",
@@ -58,6 +65,20 @@
     "menuProfile": "Profile",
     "menuSettings": "Settings",
     "menuSignOut": "Sign out"
+  },
+  "ZoneSwitcher": {
+    "menuLabel": "Switch zone",
+    "currentZone": "Zone: {zone}",
+    "openZoneMenu": "Switch zone — currently {zone}",
+    "stillIn": "You are still in {zone}.",
+    "errorNotMember": "You do not have access to that zone.",
+    "errorFailed": "Could not switch zone. Please try again.",
+    "role": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "agent": "Agent",
+      "viewer": "Viewer"
+    }
   },
   "ModeToggle": {
     "switchMode": "Switch to {mode} mode"
@@ -151,7 +172,17 @@
       "clearAll": "Clear all",
       "noConversations": "No conversations found",
       "noMessagesYet": "No messages yet",
-      "unknown": "Unknown"
+      "unknown": "Unknown",
+      "otherViewers": "{count, plural, one {1 teammate has this chat open} other {# teammates have this chat open}}",
+      "assignment": "Assignment",
+      "assignAnyone": "Anyone",
+      "assignMine": "Mine",
+      "assignUnassigned": "Unassigned",
+      "assignOthers": "Others",
+      "assignedTo": "Assigned to {name}",
+      "assignedToYou": "Assigned to you",
+      "assignedToUnknown": "Assigned to a teammate",
+      "loadingConversations": "Loading conversations"
     },
     "messageThread": {
       "backToConversations": "Back to conversations",
@@ -175,7 +206,11 @@
       "selectConversation": "Select a conversation",
       "selectConversationHint": "Choose a conversation from the left to start messaging",
       "today": "Today",
-      "yesterday": "Yesterday"
+      "yesterday": "Yesterday",
+      "replyingAsBranch": "replying as {branch}",
+      "aTeammate": "A teammate",
+      "alsoViewing": "{names} {count, plural, one {is} other {are}} also in this chat right now — check before you reply.",
+      "loadingMessages": "Loading messages"
     },
     "sessionTimer": {
       "expired": "Expired",
@@ -211,7 +246,21 @@
       "send": "Send",
       "quickReplyNamePrompt": "Name this quick reply:",
       "quickReplySaved": "Saved as a quick reply.",
-      "quickReplySaveError": "Couldn't save the quick reply."
+      "quickReplySaveError": "Couldn't save the quick reply.",
+      "quickRepliesFor": "Replying as {branch}",
+      "quickReplyPinned": "{branch} only",
+      "quickReplyUnavailable": "Needs a branch",
+      "quickReplyUnavailableHint": "This snippet fills in the branch name, but this thread is not linked to a WhatsApp number.",
+      "quickReplyForeignBranch": "Names {branches}",
+      "replyingAsBranch": "Replying as {branch}",
+      "typeMessageAsBranch": "Type a message as {branch}... (Shift+Enter for new line)",
+      "alsoViewing": "{names} {count, plural, one {is} other {are}} also in this chat — check before you reply.",
+      "loadingQuickReplies": "Loading quick replies",
+      "dropToAttach": "Drop to attach",
+      "dropUnavailable": "Can't attach right now",
+      "unsupportedFile": "That file type can't be sent on WhatsApp.",
+      "onlyFirstFile": "One attachment per message — using {filename}.",
+      "attachmentBusy": "Finish or remove the current attachment first."
     },
     "bubble": {
       "photo": "Photo",
@@ -279,7 +328,8 @@
       "finalUrl": "Final URL: {url}",
       "back": "Back",
       "cancel": "Cancel",
-      "send": "Send template"
+      "send": "Send template",
+      "loadingTemplates": "Loading templates"
     },
     "sidebar": {
       "contactInfo": "Contact info",
@@ -288,7 +338,8 @@
       "deals": "Deals",
       "noTags": "No tags",
       "noDeals": "No deals",
-      "addNotePlaceholder": "Add a note..."
+      "addNotePlaceholder": "Add a note...",
+      "noContact": "No contact selected"
     },
     "aiBanner": {
       "pausedTitle": "AI assistant is paused here",
@@ -386,9 +437,9 @@
         "custom": "Custom Fields",
         "deals": "Deals",
         "tags": "Tags",
-      "noTags": "No tags",
-      "noDeals": "No deals",
-      "addNotePlaceholder": "Add a note..."
+        "noTags": "No tags",
+        "noDeals": "No deals",
+        "addNotePlaceholder": "Add a note..."
       },
       "actions": {
         "edit": "Edit",
@@ -438,7 +489,11 @@
       "toastCustomFieldsSaved": "Custom fields saved",
       "toastCustomFieldsFailed": "Failed to save custom fields",
       "toastTemplateSent": "Template \"{name}\" sent",
-      "toastTemplateFailed": "Failed to send template: {reason}"
+      "toastTemplateFailed": "Failed to send template: {reason}",
+      "loadingContact": "Loading contact",
+      "loadingNotes": "Loading notes",
+      "loadingCustomFields": "Loading custom fields",
+      "loadingDeals": "Loading deals"
     },
     "importModal": {
       "title": "Import Contacts",
@@ -632,7 +687,8 @@
         "date": "Date"
       },
       "errorLoad": "Failed to load broadcasts",
-      "retry": "Retry"
+      "retry": "Retry",
+      "loading": "Loading broadcasts"
     },
     "status": {
       "draft": "Draft",
@@ -692,7 +748,8 @@
       "retryFailed": "Retry failed ({count})",
       "toastResumeStarted": "Sending {count} recipients in the background.",
       "toastResumeStartedCapped": "Sending {count} recipients in the background. {remaining} more will need another run.",
-      "toastResumeFailed": "Could not resume: {error}"
+      "toastResumeFailed": "Could not resume: {error}",
+      "loading": "Loading broadcast"
     },
     "new": {
       "title": "New Broadcast",
@@ -718,7 +775,8 @@
         "subtitle": "Select an approved message template for your broadcast.",
         "noTemplates": "No templates available.",
         "createFirst": "Create a template in Settings first.",
-        "errorLoad": "Failed to load templates"
+        "errorLoad": "Failed to load templates",
+        "loading": "Loading templates"
       },
       "selectAudience": {
         "title": "Select Audience",
@@ -753,7 +811,9 @@
         "errorLoadTags": "Failed to load tags",
         "errorLoadFields": "Failed to load custom fields",
         "errorCsvParse": "Could not parse CSV file.",
-        "errorCsvMissingPhone": "CSV must have a 'phone' column."
+        "errorCsvMissingPhone": "CSV must have a 'phone' column.",
+        "loadingTags": "Loading tags",
+        "loadingFields": "Loading custom fields"
       },
       "personalize": {
         "title": "Personalize Variables",
@@ -801,7 +861,9 @@
         "sending": "Sending...",
         "preparing": "Preparing...",
         "progressDesc": "Processing {current} of {total} recipients...",
-        "toastFailedPreview": "Failed to load preview data"
+        "toastFailedPreview": "Failed to load preview data",
+        "sendFrom": "Send from",
+        "sendFromHint": "Replies and this campaign go out on this number. Parents see the branch they know."
       }
     }
   },
@@ -834,7 +896,8 @@
         "updateError": "Failed to update",
         "duplicateError": "Failed to duplicate",
         "deleteError": "Failed to delete"
-      }
+      },
+      "loading": "Loading automations"
     },
     "edit": {
       "loading": "Loading...",
@@ -856,7 +919,8 @@
         "failed": "failed"
       },
       "back": "Back",
-      "backAria": "Back"
+      "backAria": "Back",
+      "loading": "Loading automation logs"
     },
     "builder": {
       "steps": {
@@ -1013,7 +1077,16 @@
         "matchWordHint": "Matches the keyword only as a standalone word, so \"k\" no longer fires on \"thanks\". Best for short keywords in space-separated languages; use Contains for languages written without spaces.",
         "matchExact": "Exact",
         "closeConversationHint": "Sets the conversation status to \"closed\". No configuration needed."
-      }
+      },
+      "previewNoBody": "No message text yet",
+      "previewNoTemplate": "Pick a template",
+      "previewNoUrl": "No URL yet",
+      "previewCondition": "When {subject}",
+      "previewConditionUnset": "Condition not set",
+      "previewWaitMinutes": "{amount, plural, one {# minute} other {# minutes}}",
+      "previewWaitHours": "{amount, plural, one {# hour} other {# hours}}",
+      "previewWaitDays": "{amount, plural, one {# day} other {# days}}",
+      "previewWaitUnset": "Duration not set"
     }
   },
   "Flows": {
@@ -1048,12 +1121,14 @@
       "triggerKeywordNone": "Triggers on keyword (none set)",
       "triggerKeyword": "Triggers on: {keywords}",
       "triggerFirstInbound": "Triggers on a contact's first-ever inbound message",
-      "triggerManual": "Manual trigger"
+      "triggerManual": "Manual trigger",
+      "loading": "Loading flows"
     },
     "edit": {
       "notFound": "Flow not found.",
       "backToFlows": "← Back to flows",
-      "loadError": "Couldn't load flow."
+      "loadError": "Couldn't load flow.",
+      "loadingEditor": "Loading flow editor"
     },
     "logs": {
       "title": "Runs",
@@ -1072,7 +1147,8 @@
       "statusHandedOff": "Handed off",
       "statusTimedOut": "Timed out",
       "statusPaused": "Paused by agent",
-      "statusFailed": "Failed"
+      "statusFailed": "Failed",
+      "loading": "Loading flow runs"
     },
     "builder": {
       "triggerTitle": "Trigger",
@@ -1287,7 +1363,8 @@
       "removeDialogDesc": "Remove <bold>{name}</bold> from the account? They'll be signed out of this account and given a fresh personal account on their next sign-in. Their login isn't deleted.",
       "cancel": "Cancel",
       "removing": "Removing...",
-      "removeBtn": "Remove member"
+      "removeBtn": "Remove member",
+      "loading": "Loading members"
     },
     "invite": {
       "inviteCreated": "Invite created",
@@ -1350,7 +1427,8 @@
         "blue": "Blue",
         "violet": "Violet",
         "pink": "Pink"
-      }
+      },
+      "loading": "Loading tags"
     },
     "templates": {
       "title": "Message templates",
@@ -1371,13 +1449,11 @@
       "deleteLocallyAria": "Delete template locally",
       "deleteMetaLocallyTitle": "Delete from Meta and locally",
       "deleteLocallyTitle": "Delete locally",
-      
       "dialogEditTitle": "Edit Message Template",
       "dialogNewTitle": "New Message Template",
       "dialogEditDesc": "Save your changes to re-submit to Meta. Status will flip back to PENDING during review.",
       "dialogNewDesc": "Build a template and submit it to Meta for approval. Once approved, you can use it in broadcasts and the inbox.",
       "authWarning": "AUTHENTICATION templates have a fixed body + OTP button shape that needs a different builder. Create them in Meta WhatsApp Manager for now and use <bold>Sync from Meta</bold> to bring them in.",
-      
       "templateName": "Template Name",
       "namePlaceholder": "e.g. order_confirmation",
       "nameFixed": "Name is fixed once a template exists on Meta — create a new template to change it.",
@@ -1386,7 +1462,6 @@
       "language": "Language",
       "langFixed": "Language is fixed once a template exists on Meta.",
       "langHint": "Must match the exact code on Meta — <code>en_US</code> and <code>en</code> are distinct.",
-      
       "header": "Header",
       "headerNone": "None",
       "headerText": "Text",
@@ -1396,7 +1471,6 @@
       "headerTextPlaceholder": "Header text (max 60 chars, optional {{1}})",
       "headerSampleAria": "Sample value for header variable",
       "headerSamplePlaceholder": "Sample value for {{1}} (required for Meta review)",
-      
       "uploadImage": "Upload image",
       "uploadHint": "JPEG or PNG, ≤5 MB",
       "mediaUrlPlaceholder": "https://… (or paste a public {format} link)",
@@ -1404,17 +1478,14 @@
       "mediaHint": "Must be a publicly accessible HTTPS link. Meta fetches it once during review, so it needs to stay live for ~24 hrs.",
       "videoHint": " Recommended: MP4 / 3GPP, ≤16 MB, ≤60 seconds.",
       "documentHint": " Recommended: PDF, ≤100 MB.",
-      
       "bodyText": "Body Text",
       "bodyPlaceholder": "Hello {{1}}, your order {{2}} is confirmed.",
       "bodyHint": "Use {{1}}, {{2}} for variables (must be contiguous starting at {{1}}).",
       "sampleValues": "Sample values (Meta uses these to review your template)",
       "sampleAria": "Sample value for body variable {var}",
       "samplePlaceholder": "Sample for {var}",
-      
       "footer": "Footer (optional)",
       "footerPlaceholder": "Optional footer text (max 60 chars)",
-      
       "buttons": "Buttons (optional)",
       "addButton": "Add Button",
       "buttonsLimit": "Up to {max} buttons. QUICK_REPLY buttons must come before URL / phone / copy-code buttons.",
@@ -1427,19 +1498,16 @@
       "urlSamplePlaceholder": "Example value for {{1}} (required when URL has a variable)",
       "phonePlaceholder": "+15551234567",
       "codePlaceholder": "Example code (e.g. SUMMER20)",
-      
       "cancel": "Cancel",
       "saving": "Saving…",
       "submitting": "Submitting…",
       "saveResubmit": "Save & Resubmit",
       "submitApproval": "Submit for Approval",
-      
       "deleteDialogTitle": "Delete template?",
       "deleteMetaDesc": "\"{name}\" will be deleted from Meta and from CRM PTMO Operation Dept. Active broadcasts using this template will start failing on their next send. This can't be undone.",
       "deleteLocalDesc": "\"{name}\" will be deleted from CRM PTMO Operation Dept. It was never submitted to Meta, so no remote cleanup is needed.",
       "deleting": "Deleting…",
       "delete": "Delete",
-      
       "toastLoadFailed": "Failed to load templates",
       "toastSubmitFailed": "Failed to submit",
       "toastSubmitEditSuccess": "Edit submitted — Meta typically reviews within 24 hours.",
@@ -1456,7 +1524,8 @@
       "toastInvalidImage": "Header image must be a JPEG or PNG.",
       "toastImageTooLarge": "Image is {size} MB — Meta's limit is 5 MB.",
       "toastUploadSuccess": "Image uploaded.",
-      "toastUploadFailed": "Upload failed."
+      "toastUploadFailed": "Upload failed.",
+      "loading": "Loading templates"
     },
     "roles": {
       "admin": "Admin",
@@ -1538,7 +1607,22 @@
       "step4_3": "Paste the <strong class=\"text-foreground\">Webhook Callback URL</strong> from above",
       "step4_4": "Enter the same <strong class=\"text-foreground\">Verify Token</strong> you set here",
       "step4_5": "Subscribe to \"messages\" webhook field",
-      "metaDocs": "Meta WhatsApp API Documentation"
+      "metaDocs": "Meta WhatsApp API Documentation",
+      "branchLabel": "Branch name",
+      "branchLabelPlaceholder": "e.g. Rawang",
+      "branchLabelHint": "Shown in the inbox and on reports so staff can tell one number from another. You can connect one number per branch.",
+      "connectedNumbers": "Connected numbers",
+      "connectedNumbersDesc": "Every WhatsApp number this account answers on.",
+      "primaryBadge": "Default",
+      "noNumbersYet": "No numbers connected yet.",
+      "addAnotherNumber": "Add another number",
+      "editNumber": "Edit",
+      "branchUnnamed": "Name this branch",
+      "branchRenameHint": "Click to name this branch",
+      "branchRenameSave": "Save",
+      "branchRenameCancel": "Cancel",
+      "branchRenameFailed": "Could not save the branch name.",
+      "loading": "Loading WhatsApp numbers"
     },
     "sections": {
       "overview": "Overview",
@@ -1551,7 +1635,8 @@
       "fields": "Fields & tags",
       "deals": "Deals & currency",
       "members": "Team members",
-      "api": "API keys"
+      "api": "API keys",
+      "centres": "Centres & zones"
     },
     "groups": {
       "account": "Account",
@@ -1585,7 +1670,6 @@
       "profileSaved": "Profile saved",
       "emailChangeFailed": "Email change failed: {message}",
       "profileSavedEmailCheck": "Profile saved — check your email to confirm the address change",
-      
       "passwordTitle": "Password",
       "passwordDesc": "Use at least {min} characters. You will stay signed in on this device after changing it.",
       "currentPassword": "Current password",
@@ -1599,7 +1683,6 @@
       "currentPasswordIncorrect": "Current password is incorrect",
       "passwordUpdateFailed": "Password update failed: {message}",
       "passwordUpdated": "Password updated",
-      
       "sessionsTitle": "Active sessions",
       "sessionsDesc": "Sign out of every device where you're logged in — including this one. Useful if you lost a laptop or shared your password.",
       "signOutAll": "Sign out of all devices",
@@ -1617,7 +1700,9 @@
       "useMode": "Use {mode} mode",
       "active": "Active",
       "accentColor": "Accent color",
-      "useTheme": "Use {name} theme"
+      "useTheme": "Use {name} theme",
+      "modeGroupLabel": "Color mode",
+      "themeId": "Theme id: {id}"
     },
     "security": {
       "title": "Login & security",
@@ -1659,7 +1744,8 @@
       "newKeyTitle": "New API key",
       "newKeyDesc": "Name it after the integration that will use it, and grant only the scopes it needs.",
       "done": "Done",
-      "networkError": "Could not reach the server"
+      "networkError": "Could not reach the server",
+      "loading": "Loading API keys"
     },
     "deals": {
       "title": "Deals & currency",
@@ -1711,7 +1797,8 @@
       "saveSuccess": "AI assistant saved.",
       "saveFailed": "Failed to save.",
       "removeSuccess": "AI configuration removed.",
-      "removeFailed": "Failed to remove."
+      "removeFailed": "Failed to remove.",
+      "loading": "Loading AI configuration"
     },
     "aiKnowledge": {
       "loadFailed": "Failed to load knowledge base",
@@ -1739,6 +1826,67 @@
       "reindex": "Reindex",
       "reindexTooltip": "Re-embed all documents (e.g. after adding an embeddings key)",
       "loading": "Loading…"
+    },
+    "centres": {
+      "title": "Centres & zones",
+      "description": "Every branch, and the zones they sit in. A parent belongs to a centre -- which is how HQ knows who to escalate to, whichever number they wrote to.",
+      "zonesTitle": "Zones",
+      "zonesDesc": "A grouping of centres, for reporting and coverage. Not an access boundary.",
+      "zonePlaceholder": "e.g. Zon Utara",
+      "addZone": "Add zone",
+      "noZones": "No zones yet.",
+      "centresTitle": "Centres",
+      "centresDesc": "Each branch, its zone, and the phone staff still answer on.",
+      "addCentre": "Add centre",
+      "newCentre": "New centre",
+      "noCentres": "No centres yet. Add your first branch to get started.",
+      "unassigned": "No zone",
+      "nameLabel": "Centre name",
+      "namePlaceholder": "e.g. Rawang",
+      "zoneLabel": "Zone",
+      "phoneLabel": "Phone",
+      "phonePlaceholder": "e.g. 012-345 6789",
+      "addressLabel": "Address",
+      "hoursLabel": "Operating hours",
+      "hoursPlaceholder": "e.g. Mon-Thu 8.30am-1.30pm",
+      "none": "None",
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "nameRequired": "Name is required",
+      "loadFailed": "Failed to load centres",
+      "saveFailed": "Could not save",
+      "deleteFailed": "Could not delete",
+      "zoneAdded": "Zone added",
+      "centreAdded": "Centre added",
+      "deleted": "Deleted",
+      "deleteZoneTitle": "Delete this zone?",
+      "deleteZoneDesc": "Centres in it are kept -- they just stop belonging to a zone.",
+      "deleteCentreTitle": "Delete this centre?",
+      "deleteCentreDesc": "Parents linked to it are kept, but stop being linked to any centre.",
+      "loading": "Loading centres"
+    },
+    "quickReplies": {
+      "title": "Quick replies",
+      "description": "Reusable snippets — plain text or a saved interactive message — that agents can insert from the inbox composer.",
+      "newQuickReply": "New quick reply",
+      "loading": "Loading quick replies",
+      "empty": "No quick replies yet. Create one to reuse it across conversations.",
+      "createTitle": "New quick reply",
+      "editTitle": "Edit quick reply",
+      "nameLabel": "Name",
+      "namePlaceholder": "e.g. Business hours",
+      "kindText": "Text",
+      "kindInteractive": "Interactive",
+      "contentPlaceholder": "The message text to insert",
+      "cancel": "Cancel",
+      "save": "Save",
+      "nameRequired": "Give the quick reply a name.",
+      "created": "Quick reply created.",
+      "updated": "Quick reply updated.",
+      "saveFailed": "Couldn't save the quick reply.",
+      "deleteConfirm": "Delete this quick reply?",
+      "deleteFailed": "Couldn't delete the quick reply."
     }
   },
   "Ops": {
@@ -1796,5 +1944,88 @@
       "hoursAgo": "{count, plural, =1 {1 hour} other {# hours}} ago",
       "daysAgo": "{count, plural, =1 {1 day} other {# days}} ago"
     }
+  },
+  "Notifications": {
+    "title": "Notifications",
+    "description": "Conversations other teammates assign to you show up here.",
+    "markAllRead": "Mark all as read",
+    "emptyTitle": "No notifications yet",
+    "emptyHint": "You'll see an alert here when someone assigns you a conversation.",
+    "unreadLabel": "Unread",
+    "retry": "Retry",
+    "toastMarkReadFailed": "Failed to mark notification as read",
+    "toastMarkAllFailed": "Failed to mark all as read"
+  },
+  "Interactive": {
+    "emptyButtons": "Buttons, no message text",
+    "emptyList": "List, no message text"
+  },
+  "DashboardShell": {
+    "loading": "Loading..."
+  },
+  "SignupPage": {
+    "errorPasswordMismatch": "Passwords do not match",
+    "errorPasswordTooShort": "Password must be at least 6 characters",
+    "checkEmailTitle": "Check your email",
+    "checkEmailDesc": "We've sent a confirmation link to <strong>{email}</strong>. Please check your inbox and click the link to verify your account.",
+    "backToSignIn": "Back to sign in",
+    "titleJoin": "Create account & join",
+    "title": "Create account",
+    "descJoin": "Verify your email, then accept the invitation to join your team.",
+    "desc": "Get started with CRM PTMO Operation Dept",
+    "fullNameLabel": "Full name",
+    "fullNamePlaceholder": "John Doe",
+    "emailLabel": "Email",
+    "emailPlaceholder": "you@example.com",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "At least 6 characters",
+    "confirmPasswordLabel": "Confirm password",
+    "confirmPasswordPlaceholder": "Repeat your password",
+    "creatingAccount": "Creating account...",
+    "submit": "Create account",
+    "or": "or",
+    "continueWithGoogle": "Continue with Google",
+    "haveAccount": "Already have an account?",
+    "signIn": "Sign in"
+  },
+  "ForgotPasswordPage": {
+    "checkEmailTitle": "Check your email",
+    "checkEmailDesc": "We've sent a password reset link to <strong>{email}</strong>. Please check your inbox.",
+    "backToSignIn": "Back to sign in",
+    "title": "Reset password",
+    "desc": "Enter your email and we'll send you a reset link",
+    "emailLabel": "Email",
+    "emailPlaceholder": "you@example.com",
+    "sending": "Sending...",
+    "submit": "Send reset link"
+  },
+  "ResetPasswordPage": {
+    "errorTooShort": "Password must be at least {min} characters.",
+    "errorMismatch": "Passwords do not match.",
+    "expiredTitle": "This link has expired",
+    "expiredDesc": "Password reset links can only be used once, and they expire after a short while. Request a new one to continue.",
+    "requestNewLink": "Request a new link",
+    "backToSignIn": "Back to sign in",
+    "successTitle": "Password updated",
+    "successDesc": "Your new password is active. You're already signed in.",
+    "continueToDashboard": "Continue to dashboard",
+    "title": "Choose a new password",
+    "desc": "Must be at least {min} characters",
+    "newPasswordLabel": "New password",
+    "confirmPasswordLabel": "Confirm new password",
+    "updating": "Updating...",
+    "submit": "Update password"
+  },
+  "ColorMode": {
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "ThemeTagline": {
+    "ptmo": "The Minda Optima blue — the default for this deployment.",
+    "violet": "Confident, slightly playful.",
+    "emerald": "Growth-coded, nods at messaging without copying WhatsApp green.",
+    "cobalt": "Clean B2B-SaaS blue — calm and product-y.",
+    "amber": "Warm and friendly — feels good for SMB teams.",
+    "rose": "Bold and modern — D2C, creator-economy, lifestyle."
   }
 }

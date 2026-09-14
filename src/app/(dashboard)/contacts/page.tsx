@@ -57,6 +57,7 @@ import { CustomFieldsManager } from '@/components/contacts/custom-fields-manager
 import { useCan } from '@/hooks/use-can';
 import { GatedButton } from '@/components/ui/gated-button';
 import { useTranslations } from 'next-intl';
+import { Skeleton } from '@/components/dashboard/skeleton';
 
 const PAGE_SIZE = 25;
 
@@ -552,14 +553,25 @@ export default function ContactsPage() {
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow className="border-border">
-                <TableCell colSpan={8} className="text-center py-12">
-                  <div className="flex flex-col items-center gap-2">
-                    <Loader2 className="size-6 animate-spin text-primary" />
-                    <p className="text-sm text-muted-foreground">{t('loading')}</p>
-                  </div>
-                </TableCell>
-              </TableRow>
+              // Skeleton rows keep the header's column widths while the
+              // body fills in; the old single full-width spinner cell
+              // collapsed them and the table snapped back on arrival.
+              <>
+                {Array.from({ length: 6 }, (_, i) => (
+                  <TableRow
+                    key={i}
+                    className="border-border"
+                    aria-busy="true"
+                    aria-label={i === 0 ? t('loading') : undefined}
+                  >
+                    {Array.from({ length: 8 }, (_, c) => (
+                      <TableCell key={c}>
+                        <Skeleton className="h-4 w-full max-w-32" />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </>
             ) : contacts.length === 0 ? (
               <TableRow className="border-border">
                 <TableCell colSpan={8} className="text-center py-12">

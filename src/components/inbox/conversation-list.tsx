@@ -6,10 +6,22 @@ import {
   CONVERSATION_SELECT,
   matchesContactFilters,
   normalizeConversations,
+  statusLabelKey,
 } from "@/lib/inbox/conversations";
+import {
+  ASSIGNMENT_FILTERS,
+  assigneeBadge,
+  assignmentLabelKey,
+  matchesAssignment,
+  type AssignmentFilter,
+} from "@/lib/inbox/assignment";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import { Skeleton } from "@/components/dashboard/skeleton";
+import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
-import type { Conversation, ConversationStatus, Tag } from "@/types";
-import { Search, ChevronDown, X } from "lucide-react";
+import { configDisplayName } from "@/lib/whatsapp/resolve-config";
+import type { Conversation, ConversationStatus, Profile, Tag } from "@/types";
+import { Search, ChevronDown, X, Eye, MessageSquareDashed } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
@@ -21,6 +33,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { usePresence } from "@/hooks/use-presence";
 
 interface ConversationListProps {
   activeConversationId: string | null;
@@ -34,6 +47,12 @@ interface ConversationListProps {
    * or the tab was throttled. Optional so existing callers keep working.
    */
   resyncToken?: number;
+  /**
+   * Show each thread's branch. The parent passes true only when the
+   * account has more than one WhatsApp number — with a single branch
+   * the same chip on every row is noise, not information.
+   */
+  showBranch?: boolean;
 }
 
 const STATUS_COLORS: Record<ConversationStatus, string> = {
@@ -52,8 +71,19 @@ export function ConversationList({
   conversations,
   onConversationsLoaded,
   resyncToken = 0,
+  showBranch = false,
 }: ConversationListProps) {
   const t = useTranslations("Inbox.conversationList");
+  // Which threads a teammate already has open (migration 041). Marking
+  // the row is the earlier of the two guards: the thread banner stops a
+  // double reply, this stops the second agent opening it at all. One
+  // hook for the whole list — usePresence holds a realtime channel, so
+  // calling it per row would open one per conversation.
+  const { getCoViewers } = usePresence();
+  // Null until auth resolves — matchesAssignment/assigneeBadge both
+  // treat that window as "identity unknown" rather than guessing.
+  const { user } = useAuth();
+  const currentUserId = user?.id ?? null;
   
   const FILTER_OPTIONS: { label: string; value: InboxFilter }[] = useMemo(() => [
     { label: t("filterAll"), value: "all" },
@@ -66,10 +96,14 @@ export function ConversationList({
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<InboxFilter>("all");
   const [loading, setLoading] = useState(true);
+  // Ownership filter. Composes with the status filter above rather than
+  // replacing it — "my open threads" is the question staff actually ask.
+  const [assignment, setAssignment] = useState<AssignmentFilter>("all");
   // Contact-based filters (issue #272). Tags use OR logic (a conversation
   // matches if its contact carries any selected tag), consistent with
   // Broadcast audience filtering. Company is an exact match on the field.
   const [tags, setTags] = useState<Tag[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
 
@@ -126,6 +160,31 @@ export function ConversationList({
     // up on any events sent while the WS was disconnected or throttled.
   }, [resyncToken]);
 
+  // Account members, so an assigned row can name its owner. Loaded once
+  // and keyed by user_id below; the same fetch message-thread.tsx does
+  // for its assign dropdown. A row whose owner is missing here still
+  // renders a chip — see assigneeBadge.
+  useEffect(() => {
+    const supabase = createClient();
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .order("full_name");
+      if (cancelled) return;
+      if (error) {
+        // Non-fatal: the list still works, chips just fall back to "?".
+        console.error("Failed to fetch profiles:", error.message);
+        return;
+      }
+      setProfiles((data as Profile[]) ?? []);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Tag definitions for the filter picker — loaded once so labels/colours
   // stay stable regardless of which conversations happen to be loaded.
   useEffect(() => {
@@ -158,6 +217,12 @@ export function ConversationList({
     return m;
   }, [tags]);
 
+  const nameFor = useCallback(
+    (userId: string) =>
+      profiles.find((p) => p.user_id === userId)?.full_name ?? null,
+    [profiles],
+  );
+
   const filtered = useMemo(() => {
     let result = conversations;
 
@@ -165,6 +230,12 @@ export function ConversationList({
       result = result.filter((c) => c.unread_count > 0);
     } else if (filter !== "all") {
       result = result.filter((c) => c.status === filter);
+    }
+
+    if (assignment !== "all") {
+      result = result.filter((c) =>
+        matchesAssignment(c, assignment, currentUserId),
+      );
     }
 
     // Contact-based filters (tags via OR logic, exact company match).
@@ -188,7 +259,15 @@ export function ConversationList({
     }
 
     return result;
-  }, [conversations, filter, search, selectedTagIds, selectedCompany]);
+  }, [
+    conversations,
+    filter,
+    assignment,
+    currentUserId,
+    search,
+    selectedTagIds,
+    selectedCompany,
+  ]);
 
   const toggleTag = useCallback((id: string) => {
     setSelectedTagIds((prev) =>
@@ -238,7 +317,7 @@ export function ConversationList({
 
         <div className="flex flex-wrap items-center gap-1">
           <DropdownMenu>
-            <DropdownMenuTrigger className="inline-flex items-center justify-center h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground rounded-md hover:bg-muted">
+            <DropdownMenuTrigger className="inline-flex items-center justify-center h-8 gap-1 lg:h-7 px-2 text-xs text-muted-foreground hover:text-foreground rounded-md hover:bg-muted">
                 {activeFilter?.label ?? t("filterAll")}
                 <ChevronDown className="h-3 w-3" />
             </DropdownMenuTrigger>
@@ -263,11 +342,49 @@ export function ConversationList({
             </DropdownMenuContent>
           </DropdownMenu>
 
+          {/* Ownership. In a shared inbox this is the first question
+              staff ask of the queue, so it sits next to status rather
+              than behind the tag/company pickers. */}
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className={cn(
+                "inline-flex items-center justify-center h-8 gap-1 lg:h-7 px-2 text-xs rounded-md hover:bg-muted",
+                assignment !== "all"
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {assignment === "all"
+                ? t("assignment")
+                : t(assignmentLabelKey(assignment))}
+              <ChevronDown className="h-3 w-3 shrink-0" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              className="border-border bg-popover"
+            >
+              {ASSIGNMENT_FILTERS.map((value) => (
+                <DropdownMenuItem
+                  key={value}
+                  onClick={() => setAssignment(value)}
+                  className={cn(
+                    "text-sm",
+                    assignment === value
+                      ? "text-primary"
+                      : "text-popover-foreground",
+                  )}
+                >
+                  {t(assignmentLabelKey(value))}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           {tags.length > 0 && (
             <DropdownMenu>
               <DropdownMenuTrigger
                 className={cn(
-                  "inline-flex items-center justify-center h-7 gap-1 px-2 text-xs rounded-md hover:bg-muted",
+                  "inline-flex items-center justify-center h-8 gap-1 lg:h-7 px-2 text-xs rounded-md hover:bg-muted",
                   selectedTagIds.length > 0
                     ? "text-primary"
                     : "text-muted-foreground hover:text-foreground"
@@ -309,7 +426,7 @@ export function ConversationList({
             <DropdownMenu>
               <DropdownMenuTrigger
                 className={cn(
-                  "inline-flex max-w-40 items-center justify-center h-7 gap-1 px-2 text-xs rounded-md hover:bg-muted",
+                  "inline-flex max-w-40 items-center justify-center h-8 gap-1 lg:h-7 px-2 text-xs rounded-md hover:bg-muted",
                   selectedCompany
                     ? "text-primary"
                     : "text-muted-foreground hover:text-foreground"
@@ -398,13 +515,33 @@ export function ConversationList({
           parent's overflow-hidden with no scrollbar (issue #229). */}
       <ScrollArea className="min-h-0 flex-1">
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          // Skeleton rows rather than a lone spinner: they occupy the
+          // shape the list is about to take, so the pane doesn't jump
+          // when the rows land, and they match how the dashboard and
+          // the ops cards already signal "loading".
+          <div
+            className="flex flex-col"
+            aria-busy="true"
+            aria-label={t("loadingConversations")}
+          >
+            {Array.from({ length: 6 }, (_, i) => (
+              <div key={i} className="flex items-start gap-3 px-3 py-3">
+                <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
+                <div className="min-w-0 flex-1">
+                  <Skeleton className="h-3.5 w-32" />
+                  <Skeleton className="mt-2 h-3 w-full max-w-48" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="px-4 py-12 text-center">
-            <p className="text-sm text-muted-foreground">{t("noConversations")}</p>
-          </div>
+          // Same panel the dashboard's charts use, so an empty inbox
+          // reads as a deliberate state rather than a failed fetch.
+          <EmptyState
+            icon={MessageSquareDashed}
+            title={t("noConversations")}
+            className="m-3 min-h-48"
+          />
         ) : (
           <div className="flex flex-col">
             {filtered.map((conv) => (
@@ -412,6 +549,9 @@ export function ConversationList({
                 key={conv.id}
                 conversation={conv}
                 isActive={conv.id === activeConversationId}
+                showBranch={showBranch}
+                otherViewers={getCoViewers(conv.id).length}
+                assignee={assigneeBadge(conv, currentUserId, nameFor)}
                 onSelect={handleSelect}
                 t={t}
               />
@@ -423,11 +563,29 @@ export function ConversationList({
   );
 }
 
+/** Screen-reader / hover wording for an owner chip. */
+function assigneeLabel(
+  badge: NonNullable<ReturnType<typeof assigneeBadge>>,
+  t: ReturnType<typeof useTranslations>,
+): string {
+  if (badge.isMine) return t("assignedToYou");
+  if (badge.name) return t("assignedTo", { name: badge.name });
+  // Owned, but we never loaded who by — say that rather than inventing
+  // a name or implying the thread is free.
+  return t("assignedToUnknown");
+}
+
 interface ConversationItemProps {
   conversation: Conversation;
   isActive: boolean;
   onSelect: (conversation: Conversation) => void;
   t: ReturnType<typeof useTranslations>;
+  /** See ConversationListProps.showBranch. */
+  showBranch?: boolean;
+  /** How many OTHER members currently have this thread open. */
+  otherViewers?: number;
+  /** Owner chip, or null when nobody owns this thread. */
+  assignee?: ReturnType<typeof assigneeBadge>;
 }
 
 function ConversationItem({
@@ -435,6 +593,9 @@ function ConversationItem({
   isActive,
   onSelect,
   t,
+  showBranch = false,
+  otherViewers = 0,
+  assignee = null,
 }: ConversationItemProps) {
   const contact = conversation.contact;
   const displayName = contact?.name || contact?.phone || t("unknown");
@@ -479,22 +640,71 @@ function ConversationItem({
           </span>
           <span className="shrink-0 text-[10px] text-muted-foreground">{timeAgo}</span>
         </div>
+        {showBranch && conversation.whatsapp_config && (
+          <div className="mt-0.5">
+            <span className="inline-flex max-w-full items-center rounded-full border border-primary-soft-2 bg-primary-soft px-1.5 py-0.5 text-[10px] font-medium text-primary">
+              <span className="truncate">
+                {configDisplayName(conversation.whatsapp_config)}
+              </span>
+            </span>
+          </div>
+        )}
         <div className="mt-0.5 flex items-center justify-between gap-2">
           <p className="truncate text-xs text-muted-foreground">
             {conversation.last_message_text || t("noMessagesYet")}
           </p>
           <div className="flex shrink-0 items-center gap-1.5">
+            {/* Who owns this thread. An unowned thread shows nothing —
+                absence is the quietest way to say "nobody", and the
+                Unassigned filter exists for anyone hunting those. Mine
+                is tinted, a teammate's stays neutral, so "not mine,
+                leave it alone" reads at a glance without needing to
+                recognise the initial. */}
+            {assignee && (
+              <span
+                role="img"
+                title={assigneeLabel(assignee, t)}
+                aria-label={assigneeLabel(assignee, t)}
+                className={cn(
+                  "flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-semibold",
+                  assignee.isMine
+                    ? "bg-primary-soft text-primary"
+                    : "bg-muted text-muted-foreground",
+                )}
+              >
+                {assignee.initial}
+              </span>
+            )}
+            {/* Someone else is already in this thread. An icon, not a
+                colour, so it survives the row's active/hover states and
+                reads for anyone who can't tell them apart. */}
+            {otherViewers > 0 && (
+              <span
+                className="inline-flex items-center text-amber-600 dark:text-amber-400"
+                title={t("otherViewers", { count: otherViewers })}
+                aria-label={t("otherViewers", { count: otherViewers })}
+              >
+                <Eye className="h-3.5 w-3.5" />
+              </span>
+            )}
             {conversation.unread_count > 0 && (
               <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
                 {conversation.unread_count}
               </span>
             )}
+            {/* Status is otherwise carried by hue alone. `title` gave
+                sighted mouse users the raw English enum and gave screen
+                readers nothing; the label reuses the filter dropdown's
+                own wording so the dot and the filter that selects it
+                always agree. */}
             <span
               className={cn(
                 "h-2 w-2 rounded-full",
                 STATUS_COLORS[conversation.status]
               )}
-              title={conversation.status}
+              role="img"
+              title={t(statusLabelKey(conversation.status))}
+              aria-label={t(statusLabelKey(conversation.status))}
             />
           </div>
         </div>

@@ -91,22 +91,146 @@ interface NavItem {
   beta?: boolean;
 }
 
-const navItems: NavItem[] = [
-  { href: "/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
-  { href: "/inbox", labelKey: "inbox", icon: MessageSquare },
-  { href: "/ops/unanswered", labelKey: "ops", icon: MessageSquareWarning },
-  { href: "/notifications", labelKey: "notifications", icon: Bell },
-  { href: "/contacts", labelKey: "contacts", icon: Users },
-  { href: "/pipelines", labelKey: "pipelines", icon: GitBranch },
-  { href: "/broadcasts", labelKey: "broadcasts", icon: Radio },
-  { href: "/automations", labelKey: "automations", icon: Zap },
-  { href: "/flows", labelKey: "flows", icon: Workflow, beta: true },
-  { href: "/agents", labelKey: "aiAgents", icon: Bot },
+interface NavGroup {
+  /**
+   * i18n key in the `Sidebar` namespace for the group heading, or null
+   * for the opening cluster — "what needs me right now" already reads as
+   * the top of the list, so a heading there would only add noise.
+   */
+  labelKey: string | null;
+  items: NavItem[];
+}
+
+/**
+ * Grouped by what the operator is doing, not by what the feature is
+ * called. Ten flat rows meant re-scanning the whole list on every visit;
+ * these clusters mean scanning one of them.
+ *
+ * Notifications sits with Dashboard rather than with Inbox because it
+ * carries app notifications, not parent messages — the two badges look
+ * alike but answer different questions.
+ */
+const navGroups: NavGroup[] = [
+  {
+    labelKey: null,
+    items: [
+      { href: "/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
+      { href: "/notifications", labelKey: "notifications", icon: Bell },
+    ],
+  },
+  {
+    labelKey: "groupConversations",
+    items: [
+      { href: "/inbox", labelKey: "inbox", icon: MessageSquare },
+      { href: "/ops/unanswered", labelKey: "ops", icon: MessageSquareWarning },
+    ],
+  },
+  {
+    labelKey: "groupCustomers",
+    items: [
+      { href: "/contacts", labelKey: "contacts", icon: Users },
+      { href: "/pipelines", labelKey: "pipelines", icon: GitBranch },
+    ],
+  },
+  {
+    labelKey: "groupAutomation",
+    items: [
+      { href: "/broadcasts", labelKey: "broadcasts", icon: Radio },
+      { href: "/automations", labelKey: "automations", icon: Zap },
+      { href: "/flows", labelKey: "flows", icon: Workflow, beta: true },
+      { href: "/agents", labelKey: "aiAgents", icon: Bot },
+    ],
+  },
 ];
 
-const bottomNavItems = [
+const bottomNavItems: NavItem[] = [
   { href: "/settings", labelKey: "settings", icon: Settings },
 ];
+
+/**
+ * `/dashboard` is excluded from the prefix match because it is a prefix
+ * of nothing but would otherwise stay lit while `pathname` is any route
+ * that happens to start with it.
+ */
+function isRouteActive(pathname: string, href: string) {
+  return (
+    pathname === href || (href !== "/dashboard" && pathname.startsWith(href))
+  );
+}
+
+interface NavRowProps {
+  item: NavItem;
+  isActive: boolean;
+  totalUnread: number;
+  unreadNotifications: number;
+}
+
+/**
+ * One nav row. Shared by the grouped nav and the settings row below the
+ * divider so the two cannot drift apart again — before grouping they had
+ * already diverged on active-route detection.
+ */
+function NavRow({
+  item,
+  isActive,
+  totalUnread,
+  unreadNotifications,
+}: NavRowProps) {
+  const t = useTranslations("Sidebar");
+
+  const showUnreadDot = item.href === "/inbox" && totalUnread > 0 && !isActive;
+
+  // Unlike the inbox dot, the notifications count stays visible even
+  // while the page is active — it reflects unread state (cleared by
+  // marking notifications read), not "currently viewing this section".
+  const showNotificationBadge =
+    item.href === "/notifications" && unreadNotifications > 0;
+
+  return (
+    <Link
+      href={item.href}
+      // The active row is otherwise signalled by colour alone, which a
+      // screen reader never sees — this is how "you are here" reaches
+      // assistive tech.
+      aria-current={isActive ? "page" : undefined}
+      className={cn(
+        // Taller on mobile so fingers can hit the row reliably (≥44px).
+        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors lg:py-2",
+        isActive
+          ? "bg-primary-soft text-primary"
+          : "text-muted-foreground hover:bg-muted hover:text-foreground",
+      )}
+    >
+      <item.icon className="h-4 w-4" />
+      <span className="flex-1">{t(item.labelKey as string)}</span>
+      {item.beta && (
+        <span
+          aria-label={t("beta")}
+          className="rounded-full border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-amber-300"
+        >
+          {t("beta")}
+        </span>
+      )}
+      {showUnreadDot && (
+        <span
+          aria-label={t("unreadConversations", { count: totalUnread })}
+          className="relative flex h-2 w-2"
+        >
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+        </span>
+      )}
+      {showNotificationBadge && (
+        <span
+          aria-label={t("unreadNotifications", { count: unreadNotifications })}
+          className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground"
+        >
+          {unreadNotifications > 9 ? "9+" : unreadNotifications}
+        </span>
+      )}
+    </Link>
+  );
+}
 
 interface SidebarProps {
   /** Controlled on mobile by the Header's hamburger button. Ignored on lg+. */
@@ -209,89 +333,59 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
 
         {/* Main navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
-          <ul className="flex flex-col gap-1">
-            {navItems.map((item) => {
-              const isActive =
-                pathname === item.href ||
-                (item.href !== "/dashboard" && pathname.startsWith(item.href));
+          {navGroups.map((group, index) => {
+            // The heading labels its own list for assistive tech —
+            // without this the grouping is a purely visual cue and a
+            // screen reader still hears ten undifferentiated links.
+            const headingId = group.labelKey
+              ? `nav-group-${group.labelKey}`
+              : undefined;
 
-              const showUnreadDot =
-                item.href === "/inbox" && totalUnread > 0 && !isActive;
-
-              // Unlike the inbox dot, the notifications count stays visible
-              // even while the page is active — it reflects unread state
-              // (cleared by marking notifications read), not "currently
-              // viewing this section".
-              const showNotificationBadge =
-                item.href === "/notifications" && unreadNotifications > 0;
-
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className={cn(
-                      // Taller on mobile so fingers can hit the row reliably (≥44px).
-                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors lg:py-2",
-                      isActive
-                        ? "bg-primary-soft text-primary"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                    )}
+            return (
+              <div
+                key={group.labelKey ?? "primary"}
+                className={cn(index > 0 && "mt-5")}
+              >
+                {group.labelKey && (
+                  <h2
+                    id={headingId}
+                    className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
                   >
-                    <item.icon className="h-4 w-4" />
-                    <span className="flex-1">{t(item.labelKey as string)}</span>
-                    {item.beta && (
-                      <span
-                        aria-label={t("beta")}
-                        className="rounded-full border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-amber-300"
-                      >
-                        {t("beta")}
-                      </span>
-                    )}
-                    {showUnreadDot && (
-                      <span
-                        aria-label={t("unreadConversations", { count: totalUnread })}
-                        className="relative flex h-2 w-2"
-                      >
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
-                        <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
-                      </span>
-                    )}
-                    {showNotificationBadge && (
-                      <span
-                        aria-label={t("unreadNotifications", { count: unreadNotifications })}
-                        className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground"
-                      >
-                        {unreadNotifications > 9 ? "9+" : unreadNotifications}
-                      </span>
-                    )}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+                    {t(group.labelKey)}
+                  </h2>
+                )}
+                <ul
+                  aria-labelledby={headingId}
+                  className="flex flex-col gap-1"
+                >
+                  {group.items.map((item) => (
+                    <li key={item.href}>
+                      <NavRow
+                        item={item}
+                        isActive={isRouteActive(pathname, item.href)}
+                        totalUnread={totalUnread}
+                        unreadNotifications={unreadNotifications}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
 
           <div className="my-4 border-t border-border" />
 
           <ul className="flex flex-col gap-1">
-            {bottomNavItems.map((item) => {
-              const isActive = pathname.startsWith(item.href);
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors lg:py-2",
-                      isActive
-                        ? "bg-primary-soft text-primary"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                    )}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    {t(item.labelKey as string)}
-                  </Link>
-                </li>
-              );
-            })}
+            {bottomNavItems.map((item) => (
+              <li key={item.href}>
+                <NavRow
+                  item={item}
+                  isActive={isRouteActive(pathname, item.href)}
+                  totalUnread={totalUnread}
+                  unreadNotifications={unreadNotifications}
+                />
+              </li>
+            ))}
           </ul>
         </nav>
 

@@ -15,6 +15,7 @@ import {
   rateLimitResponse,
   RATE_LIMITS,
 } from '@/lib/rate-limit'
+import { resolveConfig, resolveFailureMessage } from '@/lib/whatsapp/resolve-config'
 
 interface BroadcastResult {
   phone: string
@@ -89,6 +90,10 @@ export async function POST(request: Request) {
       template_name,
       template_language,
       template_params,
+      // Which connected number the campaign goes out on — for Minda
+      // Optima, which branch (migration 040). Optional while an account
+      // holds a single number; required once it holds several.
+      whatsapp_config_id,
     } = body
 
     // Normalize to a list of {phone, params} regardless of shape.
@@ -120,21 +125,22 @@ export async function POST(request: Request) {
       )
     }
 
-    const { data: config, error: configError } = await supabase
-      .from('whatsapp_config')
-      .select('*')
-      .eq('account_id', accountId)
-      .single()
-
-    if (configError || !config) {
+    // No `allowPrimary` — see broadcast-core.ts for why a broadcast
+    // never guesses which number it goes out on. The caller names one
+    // instead; without a name this resolves only while the account has
+    // exactly one number, and otherwise stops and asks.
+    const resolvedConfig = await resolveConfig(supabase, accountId, {
+      configId:
+        typeof whatsapp_config_id === 'string' ? whatsapp_config_id : undefined,
+      columns: '*',
+    })
+    if (!resolvedConfig.ok) {
       return NextResponse.json(
-        {
-          error:
-            'WhatsApp not configured. Please set up your WhatsApp integration first.',
-        },
+        { error: resolveFailureMessage(resolvedConfig.reason) },
         { status: 400 }
       )
     }
+    const config = resolvedConfig.config
 
     const accessToken = decrypt(config.access_token)
 
@@ -233,6 +239,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
+      // Which number this actually went out on. The caller freezes it
+      // onto the broadcast row (migration 048) so a resume days later
+      // sends from the same branch instead of re-deriving one.
+      whatsapp_config_id: config.id,
       total: recipients.length,
       sent: sentCount,
       failed: failedCount,

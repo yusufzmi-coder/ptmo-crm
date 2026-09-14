@@ -41,6 +41,11 @@ import {
   getRecipientStatus,
 } from '@/lib/broadcast-status';
 import { useTranslations } from 'next-intl';
+import {
+  PageSkeleton,
+  StatRowSkeleton,
+  RowListSkeleton,
+} from '../../page-skeletons';
 
 interface StatCardProps {
   label: string;
@@ -300,9 +305,10 @@ export default function BroadcastDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      </div>
+      <PageSkeleton label={t('loading')}>
+        <StatRowSkeleton count={4} />
+        <RowListSkeleton count={4} />
+      </PageSkeleton>
     );
   }
 

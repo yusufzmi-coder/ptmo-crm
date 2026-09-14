@@ -1,4 +1,24 @@
-import type { Conversation, Contact, Tag } from "@/types";
+import type { Conversation, ConversationStatus, Contact, Tag } from "@/types";
+
+/**
+ * Translation key under `Inbox.conversationList` that names a status in
+ * the reader's language.
+ *
+ * The status dot on a conversation row used to expose the raw enum
+ * (`"pending"`) through `title=`, which is English-only and is not
+ * announced by screen readers at all. These are the same keys the
+ * filter dropdown already uses, so the dot and the filter that selects
+ * it always read identically — and no new message keys are needed.
+ */
+const STATUS_LABEL_KEY: Record<ConversationStatus, string> = {
+  open: "filterOpen",
+  pending: "filterPending",
+  closed: "filterClosed",
+};
+
+export function statusLabelKey(status: ConversationStatus): string {
+  return STATUS_LABEL_KEY[status];
+}
 
 /**
  * Conversation select that embeds the contact plus its tags, so the Inbox
@@ -7,7 +27,7 @@ import type { Conversation, Contact, Tag } from "@/types";
  * flattens them onto `contact.tags`.
  */
 export const CONVERSATION_SELECT =
-  "*, contact:contacts(*, contact_tags(tags(*)))";
+  "*, contact:contacts(*, contact_tags(tags(*))), whatsapp_config(id, label, phone_number_id)";
 
 /** Raw shape returned by {@link CONVERSATION_SELECT} before flattening. */
 type RawContact = Contact & { contact_tags?: { tags: Tag | null }[] };

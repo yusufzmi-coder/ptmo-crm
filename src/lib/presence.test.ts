@@ -1,11 +1,17 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  AWAY_AFTER_MS,
   OFFLINE_AFTER_MS,
+  type CoViewerRow,
+  coViewers,
   derivePresence,
+  deriveReportedStatus,
   formatLastSeen,
+  pickUserRow,
   presenceLabel,
   summarize,
+  type PresenceRow,
 } from "./presence";
 
 // Fixed reference clock so every case is deterministic.
@@ -83,5 +89,213 @@ describe("summarize", () => {
 
   it("returns zeroes for an empty roster", () => {
     expect(summarize([])).toEqual({ online: 0, away: 0, offline: 0 });
+  });
+});
+
+// ---- coViewers -------------------------------------------------
+// The double-reply guard: who ELSE has this thread open right now.
+
+const CONV = "11111111-1111-1111-1111-111111111111";
+const OTHER_CONV = "22222222-2222-2222-2222-222222222222";
+const ME = "me-user-id";
+
+const viewer = (
+  user_id: string,
+  overrides: Partial<CoViewerRow> = {},
+): CoViewerRow => ({
+  user_id,
+  status: "online",
+  last_seen_at: ago(5_000),
+  viewing_conversation_id: CONV,
+  ...overrides,
+});
+
+describe("coViewers", () => {
+  it("lists other members viewing the same conversation", () => {
+    expect(
+      coViewers([viewer("amal"), viewer("faizam")], CONV, ME, NOW),
+    ).toEqual(["amal", "faizam"]);
+  });
+
+  it("never includes the caller", () => {
+    expect(coViewers([viewer(ME), viewer("amal")], CONV, ME, NOW)).toEqual([
+      "amal",
+    ]);
+  });
+
+  it("ignores members viewing a different conversation", () => {
+    expect(
+      coViewers(
+        [viewer("amal", { viewing_conversation_id: OTHER_CONV })],
+        CONV,
+        ME,
+        NOW,
+      ),
+    ).toEqual([]);
+  });
+
+  it("ignores members viewing nothing", () => {
+    expect(
+      coViewers(
+        [
+          viewer("amal", { viewing_conversation_id: null }),
+          viewer("mus", { viewing_conversation_id: undefined }),
+        ],
+        CONV,
+        ME,
+        NOW,
+      ),
+    ).toEqual([]);
+  });
+
+  it("drops a stale heartbeat so a crashed tab leaves no ghost", () => {
+    expect(
+      coViewers(
+        [viewer("amal", { last_seen_at: ago(OFFLINE_AFTER_MS + 1_000) })],
+        CONV,
+        ME,
+        NOW,
+      ),
+    ).toEqual([]);
+  });
+
+  it("drops an away member — a left-open tab is not about to type", () => {
+    expect(coViewers([viewer("amal", { status: "away" })], CONV, ME, NOW)).toEqual(
+      [],
+    );
+  });
+
+  it("returns nothing when no conversation is selected", () => {
+    expect(coViewers([viewer("amal")], null, ME, NOW)).toEqual([]);
+    expect(coViewers([viewer("amal")], undefined, ME, NOW)).toEqual([]);
+  });
+
+  it("sorts so the rendered list does not reshuffle on each tick", () => {
+    expect(
+      coViewers([viewer("zara"), viewer("amal"), viewer("mus")], CONV, ME, NOW),
+    ).toEqual(["amal", "mus", "zara"]);
+  });
+
+  it("still works when the caller is unknown", () => {
+    expect(coViewers([viewer("amal")], CONV, null, NOW)).toEqual(["amal"]);
+  });
+});
+
+// ---- pickUserRow ----------------------------------------------
+// Since migration 045 a member has one row per open dashboard tab, and
+// those rows disagree on purpose. This is what collapses them.
+
+describe("pickUserRow", () => {
+  const row = (over: Partial<PresenceRow> = {}): PresenceRow => ({
+    status: "online",
+    last_seen_at: ago(5_000),
+    viewing_conversation_id: null,
+    ...over,
+  });
+
+  it("prefers an online tab over an away one, even if the away one is fresher", () => {
+    // The exact bug 045 fixes, now guarded on the client side: a
+    // backgrounded /dashboard tab beating 'away' must not make someone
+    // who is actively reading the inbox look idle.
+    const picked = pickUserRow([
+      row({ status: "away", last_seen_at: ago(1_000) }),
+      row({ status: "online", last_seen_at: ago(20_000), viewing_conversation_id: CONV }),
+    ]);
+    expect(picked?.status).toBe("online");
+    expect(picked?.viewing_conversation_id).toBe(CONV);
+  });
+
+  it("takes the freshest within the same status", () => {
+    const picked = pickUserRow([
+      row({ status: "away", last_seen_at: ago(90_000) }),
+      row({ status: "away", last_seen_at: ago(2_000) }),
+    ]);
+    expect(picked?.last_seen_at).toBe(ago(2_000));
+  });
+
+  it("returns undefined for a member with no rows", () => {
+    expect(pickUserRow([])).toBeUndefined();
+  });
+
+  it("survives a malformed timestamp instead of throwing", () => {
+    const picked = pickUserRow([
+      row({ status: "away", last_seen_at: "not-a-date" }),
+      row({ status: "away", last_seen_at: ago(3_000) }),
+    ]);
+    expect(picked?.last_seen_at).toBe(ago(3_000));
+  });
+
+  it("still returns a row when every timestamp is malformed", () => {
+    expect(pickUserRow([row({ last_seen_at: "nonsense" })])).toBeDefined();
+  });
+});
+
+// ---- coViewers, multi-tab ------------------------------------
+
+describe("coViewers with per-tab rows (045)", () => {
+  it("names a member once even when two of their tabs are in the thread", () => {
+    // Without the dedupe the banner reads "Amal, Amal are also in this
+    // chat right now", and the eye icon counts two people.
+    expect(
+      coViewers([viewer("amal"), viewer("amal")], CONV, ME, NOW),
+    ).toEqual(["amal"]);
+  });
+
+  it("counts a member whose OTHER tab is elsewhere", () => {
+    // One tab on /dashboard reporting nothing must not hide the tab that
+    // genuinely has this thread open.
+    expect(
+      coViewers(
+        [
+          viewer("amal", { viewing_conversation_id: null, status: "away" }),
+          viewer("amal", { viewing_conversation_id: CONV }),
+        ],
+        CONV,
+        ME,
+        NOW,
+      ),
+    ).toEqual(["amal"]);
+  });
+
+  it("still excludes the caller across all their tabs", () => {
+    expect(
+      coViewers([viewer(ME), viewer(ME), viewer("amal")], CONV, ME, NOW),
+    ).toEqual(["amal"]);
+  });
+});
+
+// ---- deriveReportedStatus -------------------------------------
+// What a tab reports about itself. One clock: how long since it last
+// saw its human. Replaces the old pair of rules, where a hidden tab
+// reported 'away' the instant it was hidden.
+
+describe("deriveReportedStatus", () => {
+  const since = (ms: number) => NOW - ms;
+
+  it("stays online through a short switch to another window", () => {
+    // The regression that motivated the single clock: alt-tabbing to a
+    // spreadsheet for thirty seconds used to drop the agent out of
+    // 'online' immediately, taking their eye icon off a thread they
+    // were halfway through answering.
+    expect(deriveReportedStatus(since(30_000), NOW)).toBe("online");
+  });
+
+  it("stays online across a toilet break", () => {
+    expect(deriveReportedStatus(since(5 * 60_000), NOW)).toBe("online");
+    expect(deriveReportedStatus(since(10 * 60_000), NOW)).toBe("online");
+  });
+
+  it("goes away once the tab has genuinely been left", () => {
+    expect(deriveReportedStatus(since(AWAY_AFTER_MS + 1_000), NOW)).toBe("away");
+    expect(deriveReportedStatus(since(60 * 60_000), NOW)).toBe("away");
+  });
+
+  it("holds online exactly at the threshold and flips just past it", () => {
+    expect(deriveReportedStatus(since(AWAY_AFTER_MS), NOW)).toBe("online");
+    expect(deriveReportedStatus(since(AWAY_AFTER_MS + 1), NOW)).toBe("away");
+  });
+
+  it("treats a just-mounted tab as online", () => {
+    expect(deriveReportedStatus(NOW, NOW)).toBe("online");
   });
 });

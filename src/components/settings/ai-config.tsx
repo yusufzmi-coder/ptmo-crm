@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Loader2, Sparkles, CheckCircle2, Trash2, Eye, EyeOff } from 'lucide-react';
+import { SettingsPanelSkeleton } from './settings-panel-skeleton';
 import { useAuth } from '@/hooks/use-auth';
 import { canEditSettings } from '@/lib/auth/roles';
 import { Button } from '@/components/ui/button';
@@ -231,12 +232,12 @@ export function AiConfig() {
   };
 
   if (loading || profileLoading) {
-    return (
-      <div className="flex items-center justify-center py-16 text-muted-foreground">
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t('loadFailed')} {/* Re-using label or a global one, wait, loading is better. Let's use useTranslations from overview or just hardcode Loading... actually I should add loading to aiConfig */}
-        {/* Wait, I didn't add loading to aiConfig. I'll just use loading. */}
-      </div>
-    );
+    // This used to render t('loadFailed') — "Failed to load AI
+    // configuration" — while the panel was merely still loading, next
+    // to a spinner. The panel announced an error on every open. Uses
+    // the new `loading` key, which is what the leftover comment here
+    // said was needed.
+    return <SettingsPanelSkeleton rows={3} action={false} label={t('loading')} />;
   }
 
   const disabled = !canEdit || saving;

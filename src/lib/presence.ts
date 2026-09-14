@@ -22,8 +22,40 @@ export const HEARTBEAT_MS = 30_000;
  */
 export const OFFLINE_AFTER_MS = 75_000;
 
-/** No input / hidden tab for this long flips the client to 'away'. */
-export const IDLE_AFTER_MS = 5 * 60_000;
+/**
+ * How long a tab must go without any sign of its human before it reports
+ * 'away'.
+ *
+ * One clock, not two. The previous rule had a second trigger — a hidden
+ * tab reported 'away' immediately — and that turned out to be the
+ * sharper edge of the two. An agent alt-tabbing to a spreadsheet for
+ * thirty seconds dropped straight out of 'online', which took their eye
+ * icon off the thread they were in the middle of answering. Switching
+ * away for half a minute is not the same as leaving, and the guard
+ * cannot tell the difference from the status alone.
+ *
+ * So both cases now measure the same thing: how long since this tab last
+ * saw its human. Input events say so, and so does the tab becoming
+ * visible again. Fifteen minutes is deliberately generous — it has to
+ * cover stepping out to the toilet, fetching a drink, or turning to talk
+ * to someone at the next desk, because during all of those the agent is
+ * still the person handling that parent. Past it they have genuinely
+ * left the work, and the thread should look free to a colleague.
+ */
+export const AWAY_AFTER_MS = 15 * 60_000;
+
+/**
+ * What this tab should report right now, given when it last saw its
+ * human. Pure so the threshold is testable without a DOM — the caller
+ * (PresenceHeartbeat) owns the event listeners that keep `lastActiveAt`
+ * current.
+ */
+export function deriveReportedStatus(
+  lastActiveAt: number,
+  now: number,
+): StoredPresence {
+  return now - lastActiveAt > AWAY_AFTER_MS ? "away" : "online";
+}
 
 /** What the active client reports (and what the DB stores). */
 export type StoredPresence = "online" | "away";
@@ -35,6 +67,54 @@ export type PresenceStatus = "online" | "away" | "offline";
 export interface PresenceRow {
   status: StoredPresence;
   last_seen_at: string;
+  /**
+   * The conversation this member currently has open, or null
+   * (migration 041). Optional so callers that never select the column
+   * keep type-checking unchanged.
+   */
+  viewing_conversation_id?: string | null;
+}
+
+/** A presence row together with the member it belongs to. */
+export interface CoViewerRow extends PresenceRow {
+  user_id: string;
+}
+
+/**
+ * Collapse one member's per-tab rows (migration 045) into the single row
+ * that should represent them.
+ *
+ * Since 045 a member has one row per open dashboard tab, and those rows
+ * disagree on purpose: the inbox tab reports 'online' on thread X while
+ * a backgrounded /dashboard tab in the same browser reports 'away' on
+ * nothing. Anything asking "is this person here?" wants the most present
+ * of those, not an arbitrary one — picking arbitrarily is precisely the
+ * bug 045 fixes, just moved from the database into the client.
+ *
+ * Order: 'online' beats 'away', and within a tier the freshest heartbeat
+ * wins. An unparseable timestamp sorts oldest rather than throwing — a
+ * malformed row must not decide who is present.
+ */
+export function pickUserRow(
+  rows: Iterable<PresenceRow>,
+): PresenceRow | undefined {
+  let best: PresenceRow | undefined;
+  let bestRank = -1;
+  let bestSeen = -Infinity;
+
+  for (const row of rows) {
+    const rank = row.status === "online" ? 1 : 0;
+    const seen = new Date(row.last_seen_at).getTime();
+    const seenSafe = Number.isNaN(seen) ? -Infinity : seen;
+
+    if (rank > bestRank || (rank === bestRank && seenSafe > bestSeen)) {
+      best = row;
+      bestRank = rank;
+      bestSeen = seenSafe;
+    }
+  }
+
+  return best;
 }
 
 /**
@@ -118,4 +198,42 @@ export function summarize(statuses: PresenceStatus[]): {
   const counts = { online: 0, away: 0, offline: 0 };
   for (const s of statuses) counts[s] += 1;
   return counts;
+}
+
+/**
+ * Who ELSE currently has `conversationId` open — the guard against two
+ * agents answering the same parent (migration 041).
+ *
+ * Only members deriving to "online" count, and since AWAY_AFTER_MS
+ * became a single generous clock that is the right line to draw: a tab
+ * reporting 'online' has seen its human within the last fifteen minutes,
+ * which covers stepping out briefly. "away" now means a quarter of an
+ * hour with no sign of anyone — someone who left a thread open, not
+ * someone about to type, and warning about them would train the team to
+ * ignore the warning. "offline" is a stale heartbeat, i.e. a crashed or
+ * closed tab, whose pointer must never linger.
+ *
+ * Returns user ids sorted, so the rendered list doesn't reshuffle on
+ * every re-derive tick.
+ *
+ * Deduplicated by user since migration 045: one member can now supply
+ * several rows — one per open tab — and two of an agent's own tabs both
+ * pointing at this thread is one person to warn about, not two. Without
+ * the Set the banner would read "Amal, Amal are also in this chat".
+ */
+export function coViewers(
+  rows: Iterable<CoViewerRow>,
+  conversationId: string | null | undefined,
+  selfUserId: string | null | undefined,
+  now: number,
+): string[] {
+  if (!conversationId) return [];
+  const out = new Set<string>();
+  for (const row of rows) {
+    if (!row.user_id || row.user_id === selfUserId) continue;
+    if (row.viewing_conversation_id !== conversationId) continue;
+    if (derivePresence(row.status, row.last_seen_at, now) !== "online") continue;
+    out.add(row.user_id);
+  }
+  return [...out].sort();
 }

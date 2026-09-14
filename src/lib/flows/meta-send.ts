@@ -9,6 +9,7 @@ import {
 } from '@/lib/whatsapp/meta-api'
 import type { InteractiveMessagePayload } from '@/lib/whatsapp/interactive'
 import { decrypt } from '@/lib/whatsapp/encryption'
+import { metaFetchableLink } from '@/lib/media/outbound-link'
 import {
   sanitizePhoneForMeta,
   isValidE164,
@@ -16,6 +17,7 @@ import {
   isRecipientNotAllowedError,
 } from '@/lib/whatsapp/phone-utils'
 import { supabaseAdmin } from './admin-client'
+import { resolveConfig, resolveFailureMessage } from '@/lib/whatsapp/resolve-config'
 
 // ------------------------------------------------------------
 // Flows-side Meta sender (interactive variants).
@@ -82,14 +84,15 @@ export async function engineSendText(
     throw new Error(`contact phone invalid: ${contact.phone}`)
   }
 
-  const { data: config, error: configErr } = await db
-    .from('whatsapp_config')
-    .select('*')
-    .eq('account_id', args.accountId)
-    .single()
-  if (configErr || !config) {
-    throw new Error('WhatsApp not configured for this account')
+  // The thread's own number (migration 040).
+  const resolved = await resolveConfig(db, args.accountId, {
+    conversationId: args.conversationId,
+    columns: '*',
+  })
+  if (!resolved.ok) {
+    throw new Error(resolveFailureMessage(resolved.reason))
   }
+  const config = resolved.config
 
   const accessToken = decrypt(config.access_token)
 
@@ -192,16 +195,25 @@ export async function engineSendMedia(
     throw new Error(`contact phone invalid: ${contact.phone}`)
   }
 
-  const { data: config, error: configErr } = await db
-    .from('whatsapp_config')
-    .select('*')
-    .eq('account_id', args.accountId)
-    .single()
-  if (configErr || !config) {
-    throw new Error('WhatsApp not configured for this account')
+  // The thread's own number (migration 040).
+  const resolved = await resolveConfig(db, args.accountId, {
+    conversationId: args.conversationId,
+    columns: '*',
+  })
+  if (!resolved.ok) {
+    throw new Error(resolveFailureMessage(resolved.reason))
   }
+  const config = resolved.config
 
   const accessToken = decrypt(config.access_token)
+
+  // `flow-media` is private as of migration 047, so a flow node's stored
+  // `media_url` is a pointer at our authenticated route. Meta fetches the
+  // link itself and cannot authenticate, so mint a short-lived signed URL
+  // for the send. Resolved once, outside `attempt`, because the retry loop
+  // below re-sends to phone-number variants and should not re-sign each
+  // time. A link that is not one of our pointers passes through unchanged.
+  const link = await metaFetchableLink(db, args.link)
 
   const attempt = async (phone: string): Promise<string> => {
     const r = await sendMediaMessage({
@@ -209,7 +221,7 @@ export async function engineSendMedia(
       accessToken,
       to: phone,
       kind: args.kind,
-      link: args.link,
+      link,
       caption: args.caption,
       filename: args.filename,
     })
@@ -344,14 +356,15 @@ async function sendInteractiveViaMeta(
     throw new Error(`contact phone invalid: ${contact.phone}`)
   }
 
-  const { data: config, error: configErr } = await db
-    .from('whatsapp_config')
-    .select('*')
-    .eq('account_id', input.accountId)
-    .single()
-  if (configErr || !config) {
-    throw new Error('WhatsApp not configured for this account')
+  // The thread's own number (migration 040).
+  const resolved = await resolveConfig(db, input.accountId, {
+    conversationId: input.conversationId,
+    columns: '*',
+  })
+  if (!resolved.ok) {
+    throw new Error(resolveFailureMessage(resolved.reason))
   }
+  const config = resolved.config
 
   const accessToken = decrypt(config.access_token)
 
