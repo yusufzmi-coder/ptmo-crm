@@ -105,11 +105,23 @@ POKOK FAIL, bukan tema, supaya tiada dua terminal menulis fail sama.
 | 2 Builder | create-worktree-gitignore | `.worktrees/f1-t2-mu0nanxd` | `src/components/inbox/**`, `src/lib/inbox/**` | `Inbox.*` |
 | 3 Builder | create-worktree-audit-workflow | `~/Projects/ptmo-crm-issues-ui` | `src/components/settings/**` (contacts/broadcasts siap) | `Settings.*` |
 | 4 Builder | notifications-page-i18n | worktree sendiri | `src/app/(dashboard)/notifications/**` | `Notifications.*` (baharu) |
-| ? | uat-crm-phase-1-qa | - | belum disahkan | - |
-| - | **TIADA PEMILIK** | - | `src/components/layout/**` (nav) — menunggu jawapan `uat-crm-phase-1-qa` | `Sidebar.*`, `Header.*` |
+| 5 QA | uat-crm-phase-1-qa | `~/Projects/ptmo-crm-f1-t3-nav` | `src/components/layout/**` (nav siap) | `Sidebar.*`, `Header.*` |
 
-**Pengesahan visual masih tiada pemilik.** Empat batch UI sudah masuk dan
-lulus 1160 ujian; tiada seorang pun pernah melihatnya berjalan.
+**Pengesahan visual:** dipegang `uat-crm-phase-1-qa`, bermula pada `b21bbeb`
+selepas enam batch UI diintegrasi — satu pusingan meliputi kesemuanya.
+
+**Konvensyen worktree:** adik-beradik di luar repo. `.worktrees/` bersarang
+menyebabkan eslint dan tsc mengimbas salinan projek penuh (15 error lint,
+145 error TS, tiada satu pun dari `src/`), jadi gate terpaksa dijalankan
+atas arkib bersih. Arahan coordinator awal yang menetapkan `.worktrees/`
+adalah silap dan sudah ditarik balik.
+
+**Kerja berasingan yang direkod, belum ditugaskan:**
+`header.tsx` `pageTitles` dan `sidebar.tsx` `navGroups` ialah dua senarai nav
+yang akan terus terpesong — satu sumber kebenaran ialah pembetulan sebenar.
+~110 spinner dalam tiga bentuk berbeza di seluruh repo tanpa
+`src/components/ui/spinner.tsx` wujud; penyatuan menyentuh `ui/` dan puluhan
+fail merentas pemilikan.
 
 `messages/en.json` + `ko.json` ialah satu-satunya fail yang dikongsi. Peraturan:
 tambah kunci baharu sahaja, dalam namespace sendiri sahaja. Kunci dalam objek
@@ -154,6 +166,7 @@ kongsi: guna, jangan ubah.
 | 2026-09-14 | UI batch 3: skeleton senarai inbox + sasaran sentuh mobile lebih besar | `838412c` | Coordinator |
 | 2026-09-14 | UI batch 4: drag-drop dan paste lampiran dalam composer; konflik i18n diselesaikan sebagai kesatuan; 1160 ujian lulus | `843795d` | Coordinator |
 | 2026-09-14 | UI batch 5: 9 spinner contacts/broadcasts jadi skeleton, 12 dikekalkan dengan sebab (animate-spin 21 -> 12) | `6bef51f` | Coordinator |
+| 2026-09-14 | UI batch 6: nav 10 baris rata jadi 4 kluster, setiap tajuk melabel `<ul>` sendiri via aria-labelledby | `b21bbeb` | Coordinator |
 
 ---
 
