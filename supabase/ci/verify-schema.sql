@@ -147,6 +147,28 @@ BEGIN
     RAISE EXCEPTION 'authenticated can UPDATE a profiles privilege column (migration 046 regressed)';
   END IF;
 
+  -- profiles.account_role is NOT NULL, and has been since 017 — not 044.
+  --
+  --   017:122  ADD COLUMN account_role account_role_enum   (nullable)
+  --   017:275  ALTER COLUMN account_role SET NOT NULL      (same file)
+  --
+  -- This assertion exists because null_role_backfill_test.sql was parked:
+  -- it seeded a NULL role to test 044's backfill, and that row cannot be
+  -- written. Parking it without this would have dropped the coverage
+  -- along with the wrong premise.
+  --
+  -- It bites on the way the state could actually come back — a
+  -- DROP NOT NULL in some later migration — which is what that test was
+  -- reaching for and could not express.
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+     WHERE table_schema = 'public' AND table_name = 'profiles'
+       AND column_name = 'account_role' AND is_nullable = 'YES'
+  ) THEN
+    RAISE EXCEPTION
+      'profiles.account_role is nullable — 017:275 was undone, and a profile with no role is locked out of every RLS policy at once';
+  END IF;
+
   -- 027:50-51 narrows notifications the same way 046 narrows profiles,
   -- and had no check here — so a blanket grant would have re-opened it
   -- silently while the profiles check above caught its twin. Added after
