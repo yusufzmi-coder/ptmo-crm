@@ -102,19 +102,32 @@ jobs:
   # Production is not empty. It sits at 041 with real rows in it, and
   # five of the migrations in this release read those rows:
   #
-  #   042  runs merge_duplicate_conversations(), which DELETEs
-  #   044  backfills one account_members row per profile — miss one and
-  #        that user is refused by all ~119 RLS policies
   #   045  swaps a primary key on a populated table
-  #   048  backfills broadcasts.whatsapp_config_id
+  #   047  flips storage.buckets.public on buckets holding real objects
   #
-  # Against a blank database all four are no-ops that pass. So this job
+  # Against a blank database both are no-ops that pass. So this job
   # builds the shape production actually has — including the two rows a
   # clean replay can never produce, a profile with a NULL account_role
   # and messages holding pre-047 public bucket URLs — and only then
   # applies the release on top.
   #
-  # It also asserts the negative: no migration in 042-049 may touch
+  # ------------------------------------------------------------
+  # Files this job deliberately never applies: 042, 043, 044, 048
+  #
+  # They are in the repo and they are not in this release. Replaying
+  # them here would prove that a database nobody will ever have works.
+  #
+  # The reason they cannot simply be applied anyway is that the CLI
+  # applies in filename order, so leaving them in place would put them
+  # in front of 045 and this job would silently test a schema three
+  # migrations ahead of production. Parking them is what keeps the run
+  # honest, and it is also what makes the divergence visible: the repo
+  # now holds migrations that no database has run, and the gap widens
+  # every time someone writes 050 on top of a tree whose 042-048 were
+  # never applied. That is a decision to revisit, not a fact to accept.
+  # ------------------------------------------------------------
+  #
+  # It also asserts the negative: no migration in the release may touch
   # messages.media_url. A media backfill was written and withdrawn
   # because SQL cannot validate the storage host; the mapping lives in
   # resolveStoredMediaUrl() instead. verify-upgrade.sql fails if one
@@ -135,15 +148,25 @@ jobs:
       # are moved rather than skipped by flag because the CLI has no
       # "apply up to N" for a reset — the migrations directory IS the
       # instruction.
-      - name: Hold back the unapplied migrations
+      # Three groups, not two. The baseline is everything production
+      # already has, which is 001-041 AND 049 — 049 was applied by hand
+      # and the ledger recorded it wrongly until a read-only probe
+      # settled it. The release is 045, 046, 047. Everything else in the
+      # 042-048 range is in the repo and is going nowhere; see
+      # "Files this job deliberately never applies" above.
+      - name: Split the tree into baseline, release, and not-in-release
         run: |
-          mkdir -p /tmp/held
-          mv supabase/migrations/0[45][0-9]_*.sql /tmp/held/
-          # 040 and 041 are live in production, so they belong in the
-          # baseline, not in the release. Put them back.
-          mv /tmp/held/040_*.sql /tmp/held/041_*.sql supabase/migrations/
-          echo "baseline:"; ls supabase/migrations | tail -3
-          echo "held:";     ls /tmp/held
+          mkdir -p /tmp/release /tmp/parked
+          mv supabase/migrations/045_*.sql \
+             supabase/migrations/046_*.sql \
+             supabase/migrations/047_*.sql /tmp/release/
+          mv supabase/migrations/042_*.sql \
+             supabase/migrations/043_*.sql \
+             supabase/migrations/044_*.sql \
+             supabase/migrations/048_*.sql /tmp/parked/
+          echo "baseline (ends at 049):"; ls supabase/migrations | tail -3
+          echo "release:";               ls /tmp/release
+          echo "parked, never applied:"; ls /tmp/parked
 
       - name: Start Postgres
         run: supabase db start
@@ -155,12 +178,12 @@ jobs:
         run: supabase db query --local --file supabase/ci/seed-legacy-state.sql
 
       - name: Restore the release
-        run: mv /tmp/held/*.sql supabase/migrations/
+        run: mv /tmp/release/*.sql supabase/migrations/
 
       # `migration up` applies only what the baseline has not seen, which
       # is exactly the upgrade production will perform. A reset here
       # would throw the seeded rows away and prove nothing.
-      - name: Apply 042-049 on top
+      - name: Apply 045, 046, 047 on top
         run: supabase migration up --local
 
       - name: Verify the resulting schema

@@ -1,6 +1,11 @@
 # UAT Fasa 1
 
-Senarai semak penerimaan untuk release **045 · 046 · 049 · 047**.
+Senarai semak penerimaan untuk release **045 · 046 · 047**.
+
+> **Dibetulkan 14 Sep 2026.** Dokumen ini menamakan `049` sebagai
+> sebahagian daripada release. Ia bukan — `049` sudah diapply pada
+> production dengan tangan, disahkan oleh probe baca-sahaja. Ia ada
+> dalam **baseline**, bukan dalam set yang akan dijalankan.
 
 Ia bukan ringkasan `docs/release-phase1-migrations.md` — runbook itu
 memiliki urutan, rollback dan preflight. Dokumen ini memiliki satu perkara
@@ -11,9 +16,9 @@ sahaja: **bukti bahawa ia berfungsi untuk staf sebenar selepas ia mendarat.**
 
 | | |
 |---|---|
-| Sasaran | `__________________` ← lihat Blocker B1 |
+| Sasaran | `crm.ptmostaff.com` — hidup, 200, menyajikan build semasa |
 | Environment | production / staging |
-| Skema selepas apply | 049 (asas 041 + 045, 046, 049, 047) |
+| Skema selepas apply | asas 041 + 049, kemudian 045, 046, 047 |
 | Build/commit diuji | `____________` |
 | Penguji | `____________` |
 | Tarikh | `____________` |
@@ -29,20 +34,20 @@ Tiada satu pun daripada ini kerja QA. Kesemuanya menghalang UAT.
 
 | # | Prasyarat | Pemilik | Status |
 |---|---|---|---|
-| P1 | Job *upgrade path* dalam `.github/workflows/migrations.yml` main semula set yang **sebenarnya** dijalankan — 045, 046, 049, 047 — bukan kesemua lapan 042–049 | coordinator | [ ] |
-| P2 | `supabase/migrations/README.md` dikemas kini dalam commit yang sama dengan P1 | coordinator | [ ] |
+| P1 | Job *upgrade path* main semula set yang **sebenarnya** dijalankan | coordinator | [x] **SIAP** — baseline kini 001–041 + 049; release 045, 046, 047; 042/043/044/048 diparkir dan tidak pernah diapply |
+| P2 | `supabase/migrations/README.md` dikemas kini dalam commit yang sama dengan P1 | coordinator | [x] **SIAP** |
 | P3 | Kedua-dua job migration hijau | coordinator | [ ] |
 | P4 | Preflight akaun **Seksyen 1** — baseline benar-benar di 041 | Boss | [ ] |
 | P5 | Preflight storage **Seksyen 1** — tiada bucket public di seluruh projek | Boss | [ ] |
 | P6 | Preflight storage **Seksyen 5** — senarai baris yang **ditolak** semakan host direkod (lihat kes 5.9) | Boss | [ ] |
-| P7 | Apply mengikut urutan `045 → 046 → 049 → deploy kod → 047` | Boss | [ ] |
+| P7 | Apply mengikut urutan `045 → 046 → deploy kod → 047` | Boss | [ ] |
 
 Nota P4: Seksyen 3 preflight akaun (role NULL) **tidak lagi menghalang** —
 ia ditulis untuk 044, yang dikeluarkan. Seksyen 1 kekal wajib.
 
-Nota P7: 049 mesti **sebelum** deploy kerana kod yang di-deploy membaca
-jadualnya. 047 mesti **selepas** deploy kerana ia memecahkan setiap URL
-lampiran tersimpan dan hanya kod yang menampungnya.
+Nota P7: 049 tiada dalam urutan kerana ia **sudah diapply**. 047 mesti
+**selepas** deploy kerana ia memecahkan setiap URL lampiran tersimpan dan
+hanya kod yang menampungnya.
 
 ---
 
@@ -50,10 +55,16 @@ lampiran tersimpan dan hanya kod yang menampungnya.
 
 | # | Blocker | Status |
 |---|---|---|
-| B1 | Hostname sasaran tiada konfigurasi dalam repo — `grep -rn "ptmostaff"` pulangkan padanan naratif sahaja, tiada entri dalam `next.config`, workflow atau fail deployment. Sahkan dengan Boss secara bertulis sebelum satu langkah dijalankan. | [ ] |
+| B1 | ~~Hostname sasaran tiada konfigurasi dalam repo~~ | [x] **DITUTUP** |
 
-B2 (Centres) **ditutup**: 049 dimasukkan semula, jadi CRUD Centre wujud
-untuk diuji. Lihat Bahagian 3.
+B1 ditutup dengan bukti dan bukan dengan pengesahan: `crm.ptmostaff.com`
+memulangkan 200 dan menyajikan build semasa. Ketiadaan hostname dalam
+repo ialah fakta yang betul dan kesimpulan yang salah — domain itu
+dikonfigurasi dalam Vercel, bukan dalam kod, jadi tiada carian repo akan
+pernah menemuinya. **Sasaran ialah `crm.ptmostaff.com`.**
+
+B2 (Centres) **ditutup**: 049 sudah live, jadi CRUD Centre wujud untuk
+diuji. Lihat Bahagian 3.
 
 ---
 

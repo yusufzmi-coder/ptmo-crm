@@ -22,8 +22,8 @@ import { cn } from "@/lib/utils";
 import { configDisplayName } from "@/lib/whatsapp/resolve-config";
 import type { Conversation, ConversationStatus, Profile, Tag } from "@/types";
 import { Search, ChevronDown, X, Eye, MessageSquareDashed } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { relativeTime } from "@/lib/time/relative";
 import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
@@ -597,6 +597,8 @@ function ConversationItem({
   otherViewers = 0,
   assignee = null,
 }: ConversationItemProps) {
+  const tRel = useTranslations("RelativeTime");
+  const locale = useLocale();
   const contact = conversation.contact;
   const displayName = contact?.name || contact?.phone || t("unknown");
   const initials = displayName.charAt(0).toUpperCase();
@@ -606,8 +608,9 @@ function ConversationItem({
   }, [onSelect, conversation]);
 
   const timeAgo = conversation.last_message_at
-    ? formatDistanceToNow(new Date(conversation.last_message_at), {
-        addSuffix: false,
+    ? relativeTime(conversation.last_message_at, tRel, {
+        style: "terse",
+        locale,
       })
     : "";
 

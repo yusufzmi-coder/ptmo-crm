@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { relativeTime } from "@/lib/time/relative";
 import { Spinner } from "@/components/ui/spinner";
 import {
   AlertTriangle,
@@ -391,6 +392,8 @@ function BoardRow({
   now: Date;
 }) {
   const t = useTranslations("Ops.unanswered");
+  const tRel = useTranslations("RelativeTime");
+  const locale = useLocale();
   const meta = STATE_META[item.state];
   const Icon = meta.icon;
   const title = item.contactName ?? item.contactPhone ?? t("unknownContact");
@@ -399,7 +402,12 @@ function BoardRow({
   // Wall-clock "since" next to the covered wait — a parent who wrote
   // Thursday night has waited days on their own clock even if the SLA
   // clock only counts minutes.
-  const sinceLabel = relativeSince(new Date(item.waitingSince), now, t);
+  // The verb lives in this board's own key, not in the shared helper:
+  // "sent" is a fact about what happened, and the inbox shows the same
+  // instant without it. See src/lib/time/relative.ts.
+  const sinceLabel = t("sentAt", {
+    time: relativeTime(item.waitingSince, tRel, { now, locale }),
+  });
 
   return (
     <li className={cn("rounded-xl border border-border bg-card", meta.rule)}>
@@ -456,19 +464,6 @@ function tierLabel(
   if (tier === "office") return t("tierOffice");
   if (tier === "class") return t("tierClass");
   return t("tierOffDuty");
-}
-
-function relativeSince(
-  at: Date,
-  now: Date,
-  t: ReturnType<typeof useTranslations>,
-): string {
-  const mins = Math.max(0, Math.round((now.getTime() - at.getTime()) / 60_000));
-  if (mins < 1) return t("sentJustNow");
-  if (mins < 60) return t("sentMinutesAgo", { count: mins });
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return t("sentHoursAgo", { count: hours });
-  return t("sentDaysAgo", { count: Math.floor(hours / 24) });
 }
 
 function BoardSkeleton() {
