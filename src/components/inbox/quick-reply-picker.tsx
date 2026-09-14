@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { BranchedQuickReply, QuickReply } from "@/types";
-import { interactivePayloadPreviewText } from "@/lib/whatsapp/interactive";
+import { interactivePreviewText } from "@/lib/inbox/interactive-preview";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/dashboard/skeleton";
 
@@ -43,6 +43,9 @@ export function QuickReplyPicker({
   onPick,
 }: QuickReplyPickerProps) {
   const t = useTranslations("Inbox.composer");
+  // Placeholder wording for a payload with no body. Separate namespace
+  // because Settings and Automations render the same preview.
+  const tInteractive = useTranslations("Interactive");
   const searchParams = useSearchParams();
   const conversationId = searchParams.get("c");
 
@@ -161,7 +164,7 @@ export function QuickReplyPicker({
                         </span>
                         <span className="block truncate text-xs text-muted-foreground">
                           {qr.kind === "interactive" && qr.interactive_payload
-                            ? interactivePayloadPreviewText(qr.interactive_payload)
+                            ? interactivePreviewText(qr.interactive_payload, tInteractive)
                             : qr.content_text}
                         </span>
                         {/* The snippet names a centre that is not this

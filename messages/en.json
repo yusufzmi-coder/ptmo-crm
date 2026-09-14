@@ -1076,7 +1076,9 @@
         "matchWordHint": "Matches the keyword only as a standalone word, so \"k\" no longer fires on \"thanks\". Best for short keywords in space-separated languages; use Contains for languages written without spaces.",
         "matchExact": "Exact",
         "closeConversationHint": "Sets the conversation status to \"closed\". No configuration needed."
-      }
+      },
+      "previewNoBody": "No message text yet",
+      "previewNoTemplate": "Pick a template"
     }
   },
   "Flows": {
@@ -1943,5 +1945,9 @@
     "retry": "Retry",
     "toastMarkReadFailed": "Failed to mark notification as read",
     "toastMarkAllFailed": "Failed to mark all as read"
+  },
+  "Interactive": {
+    "emptyButtons": "Buttons, no message text",
+    "emptyList": "List, no message text"
   }
 }

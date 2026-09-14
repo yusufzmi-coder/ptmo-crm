@@ -60,7 +60,7 @@ import {
   blankButtonsPayload,
   blankListPayload,
 } from "@/components/interactive/interactive-builder"
-import { interactivePayloadPreviewText } from "@/lib/whatsapp/interactive"
+import { interactivePreviewText } from "@/lib/inbox/interactive-preview"
 import { createClient } from "@/lib/supabase/client"
 import {
   childPath,
@@ -1089,6 +1089,7 @@ function StepRenderer({
   basePath: StepPath
 } & Omit<StepListProps, "steps" | "basePath" | "scope">) {
   const t = useTranslations("Automations.builder")
+  const tInteractive = useTranslations("Interactive")
   const path = childPath(basePath, scope, index)
   const meta = STEP_META[step.step_type]
   const Icon = meta.icon
@@ -1136,7 +1137,7 @@ function StepRenderer({
                 {isCondition ? "Condition" : step.step_type === "wait" ? "Wait" : "Action"}
               </div>
               <div className="truncate text-sm font-medium text-foreground">{t(`steps.${meta.label}`)}</div>
-              <div className="truncate text-[11px] text-muted-foreground">{previewFor(step)}</div>
+              <div className="truncate text-[11px] text-muted-foreground">{previewFor(step, t, tInteractive)}</div>
             </div>
             <ChevronDown
               className={cn("h-4 w-4 text-muted-foreground transition-transform", expanded && "rotate-180")}
@@ -1528,15 +1529,31 @@ function FieldBlock({
   )
 }
 
-function previewFor(step: BuilderStep): string {
+/**
+ * One-line summary under a step's title in the builder tree.
+ *
+ * Takes both translators because the two namespaces are not
+ * interchangeable: the placeholders for an empty interactive payload are
+ * shared with the inbox and settings panels that render the same
+ * preview, so they live under `Interactive`, while the builder's own
+ * wording stays under `Automations.builder`.
+ */
+function previewFor(
+  step: BuilderStep,
+  t: (key: string) => string,
+  tInteractive: (key: string) => string,
+): string {
   switch (step.step_type) {
     case "send_message":
       return (step.step_config.text as string) || "no text yet"
     case "send_buttons":
     case "send_list":
-      return interactivePayloadPreviewText(asInteractive(step.step_config)) || "no body yet"
+      return (
+        interactivePreviewText(asInteractive(step.step_config), tInteractive) ||
+        t("previewNoBody")
+      )
     case "send_template":
-      return (step.step_config.template_name as string) || "pick a template"
+      return (step.step_config.template_name as string) || t("previewNoTemplate")
     case "wait":
       return `${step.step_config.amount ?? "?"} ${step.step_config.unit ?? ""}`
     case "condition":
