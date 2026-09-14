@@ -185,6 +185,9 @@ kongsi: guna, jangan ubah.
 | 2026-09-14 | UI batch 14-16: `dashboard-shell` i18n, pratonton langkah automation siap (unit wait dulu baca "5 hours" dalam SETIAP bahasa) | `521ea2e`, `92fc1e5` | Coordinator |
 | 2026-09-14 | **`messages/ms.json` diintegrasi — 1679 kunci, pariti en/ko/ms sempurna, 1170 ujian lulus. BELUM DIAKTIFKAN**: `request.ts` dan `NEXT_PUBLIC_APP_LOCALE` tidak disentuh | `2949ab7`, `d0487da`, `0dd39b9` | Coordinator |
 | 2026-09-14 | Lebar sidebar Melayu diukur dengan fon sebenar: lega 17px (9%) -> 56px (29%). Kaedah kiraan aksara dibuktikan tidak selamat | QA harness | Coordinator |
+| 2026-09-14 | **Katalog Melayu dipandang buat kali pertama.** `/login` render sempurna dalam `ms` pada 500px dan 1280px — tiada limpahan, tiada pengeratan | screenshot, `NEXT_PUBLIC_APP_LOCALE=ms` inline | Coordinator |
+| 2026-09-14 | Penemuan: `signup`, `forgot-password`, `reset-password` tiada `useTranslations` langsung — staf jatuh dari skrin Melayu terus ke Inggeris | `docs/open-findings.md` | Coordinator |
+| 2026-09-14 | Ujian ICU tiga-locale: 1679 kunci x 3 locale x 4 semakan, disahkan dengan suntikan kerosakan bukan dengan lulus | `5dd2d38` | Coordinator |
 
 ---
 
