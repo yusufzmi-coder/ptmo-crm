@@ -569,7 +569,7 @@ export function ImportModal({
               <p className="text-sm font-medium text-popover-foreground">{t('importComplete')}</p>
               <div className="mt-3 flex flex-wrap gap-3">
                 {result.imported > 0 && (
-                  <div className="text-primary flex items-center gap-1.5 text-sm">
+                  <div className="text-success flex items-center gap-1.5 text-sm">
                     <CheckCircle className="size-4 shrink-0" />
                     {t('resultImported', { count: result.imported })}
                   </div>
