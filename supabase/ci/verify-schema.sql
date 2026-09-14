@@ -12,6 +12,16 @@
 -- build the schema", not a spec of it — asserting every column here
 -- would just be the migrations restated in a second place, drifting.
 DO $$
+DECLARE
+  -- Which migrations this database actually received. The "upgrade path"
+  -- job parks 042, 043, 044 and 048, so this file runs against two
+  -- different intended schemas and cannot assume the union of both.
+  -- Asserting 044's objects unconditionally made the upgrade job fail on
+  -- a correct tree — and the failure read "migration 044 did not apply",
+  -- which is true, deliberate, and not a fault.
+  v_has_044 BOOLEAN := EXISTS (
+    SELECT 1 FROM supabase_migrations.schema_migrations WHERE version = '044'
+  );
 BEGIN
   -- The core tables, from 001.
   IF to_regclass('public.messages') IS NULL THEN
@@ -69,53 +79,58 @@ BEGIN
     RAISE EXCEPTION 'member_presence.viewing_conversation_id is missing — migration 041 did not apply';
   END IF;
 
-  -- Multi-zone membership (044).
-  IF to_regclass('public.account_members') IS NULL THEN
-    RAISE EXCEPTION 'public.account_members is missing — migration 044 did not apply';
-  END IF;
+  -- ==========================================================
+  -- 044 — only where 044 is part of the release being tested
+  -- ==========================================================
+  IF v_has_044 THEN
+    -- Multi-zone membership (044).
+    IF to_regclass('public.account_members') IS NULL THEN
+      RAISE EXCEPTION 'public.account_members is missing — migration 044 did not apply';
+    END IF;
 
-  -- The backfill is the whole reason 044 is safe to land on a live
-  -- database: without it every existing user loses access the moment
-  -- is_account_member starts reading memberships.
-  IF EXISTS (
-    SELECT 1 FROM profiles p
-    WHERE p.account_id IS NOT NULL
-      AND NOT EXISTS (
-        SELECT 1 FROM account_members m
-        WHERE m.user_id = p.user_id AND m.account_id = p.account_id
-      )
-  ) THEN
-    RAISE EXCEPTION 'a profile has no matching account_members row — the 044 backfill did not run';
-  END IF;
+    -- The backfill is the whole reason 044 is safe to land on a live
+    -- database: without it every existing user loses access the moment
+    -- is_account_member starts reading memberships.
+    IF EXISTS (
+      SELECT 1 FROM profiles p
+      WHERE p.account_id IS NOT NULL
+        AND NOT EXISTS (
+          SELECT 1 FROM account_members m
+          WHERE m.user_id = p.user_id AND m.account_id = p.account_id
+        )
+    ) THEN
+      RAISE EXCEPTION 'a profile has no matching account_members row — the 044 backfill did not run';
+    END IF;
 
-  -- Dropping this index is what lets one person own several zones.
-  -- Re-creating it (an upstream merge, a re-run of 017) would break
-  -- multi-zone ownership quietly, so assert it is gone.
-  IF to_regclass('public.idx_accounts_one_per_owner') IS NOT NULL THEN
-    RAISE EXCEPTION 'idx_accounts_one_per_owner still exists — one-account-per-owner would block multi-zone ownership';
-  END IF;
+    -- Dropping this index is what lets one person own several zones.
+    -- Re-creating it (an upstream merge, a re-run of 017) would break
+    -- multi-zone ownership quietly, so assert it is gone.
+    IF to_regclass('public.idx_accounts_one_per_owner') IS NOT NULL THEN
+      RAISE EXCEPTION 'idx_accounts_one_per_owner still exists — one-account-per-owner would block multi-zone ownership';
+    END IF;
 
-  -- The zone switcher and the cross-zone helper. Checked by name AND
-  -- arity: a signature change would leave the old function in place
-  -- and the new call sites failing at runtime.
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
-    WHERE n.nspname = 'public' AND p.proname = 'set_active_account'
-      AND pg_get_function_identity_arguments(p.oid) = 'p_account_id uuid'
-  ) THEN
-    RAISE EXCEPTION 'set_active_account(uuid) is missing — migration 044 did not apply';
-  END IF;
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
-    WHERE n.nspname = 'public' AND p.proname = 'is_account_member_any'
-  ) THEN
-    RAISE EXCEPTION 'is_account_member_any is missing — migration 044 did not apply';
-  END IF;
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
-    WHERE n.nspname = 'public' AND p.proname = 'my_accounts'
-  ) THEN
-    RAISE EXCEPTION 'my_accounts is missing — migration 044 did not apply';
+    -- The zone switcher and the cross-zone helper. Checked by name AND
+    -- arity: a signature change would leave the old function in place
+    -- and the new call sites failing at runtime.
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+      WHERE n.nspname = 'public' AND p.proname = 'set_active_account'
+        AND pg_get_function_identity_arguments(p.oid) = 'p_account_id uuid'
+    ) THEN
+      RAISE EXCEPTION 'set_active_account(uuid) is missing — migration 044 did not apply';
+    END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+      WHERE n.nspname = 'public' AND p.proname = 'is_account_member_any'
+    ) THEN
+      RAISE EXCEPTION 'is_account_member_any is missing — migration 044 did not apply';
+    END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+      WHERE n.nspname = 'public' AND p.proname = 'my_accounts'
+    ) THEN
+      RAISE EXCEPTION 'my_accounts is missing — migration 044 did not apply';
+    END IF;
   END IF;
 
   -- SECURITY DEFINER hardening (046).
