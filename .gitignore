@@ -51,3 +51,6 @@ brand/MindaOptima-logo.ai
 
 # skrip ujian sementara — jangan commit
 _scratch/
+
+# git worktree untuk sesi terminal serentak — jangan commit
+.worktrees/
