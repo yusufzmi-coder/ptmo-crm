@@ -26,7 +26,19 @@ export const ROLE_META: Record<
     icon: Crown,
     label: 'owner',
     variant: 'owner',
-    className: 'border-amber-500/40 bg-amber-500/10 text-amber-300',
+    // amber-300 alone measured 1.33:1 on a light card — the owner chip
+    // was effectively invisible in the default mode. Identity hue kept (a
+    // role is not a status, so it stays off the semantic tokens); only a
+    // light-mode value is added, matching SettingsChip's own `owner`.
+    //
+    // The dark: half does not currently take effect. globals.css declares
+    // `@custom-variant dark (&:is(.dark *))`, and nothing in the app ever
+    // adds a `.dark` class — the mode lives on `html[data-mode]`. Verified
+    // in the browser: flipping data-mode leaves this colour unchanged, and
+    // only adding `.dark` by hand switches it. It is written the correct
+    // way so it starts working the moment that variant is fixed; until
+    // then dark mode gets amber-700, which is legible but not ideal.
+    className: 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300',
   },
   admin: {
     icon: Shield,

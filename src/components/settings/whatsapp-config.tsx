@@ -571,7 +571,7 @@ export function WhatsAppConfig() {
             {connectionStatus === 'connected' ? (
               <CheckCircle2 className="size-4 text-primary" />
             ) : (
-              <XCircle className="size-4 text-red-500" />
+              <XCircle className="size-4 text-destructive" />
             )}
             <AlertTitle className="text-foreground mb-0">
               {connectionStatus === 'connected' ? t('credentialsValid') : t('notConnected')}
@@ -707,9 +707,9 @@ export function WhatsAppConfig() {
                   {Object.entries(registrationProbe.checks).map(([k, v]) => (
                     <li key={k} className="flex items-center gap-1.5">
                       {v === true ? (
-                        <CheckCircle2 className="size-3 text-emerald-400 shrink-0" />
+                        <CheckCircle2 className="size-3 text-success shrink-0" />
                       ) : v === false ? (
-                        <XCircle className="size-3 text-red-400 shrink-0" />
+                        <XCircle className="size-3 text-destructive shrink-0" />
                       ) : (
                         <span className="size-3 rounded-full border border-border shrink-0" />
                       )}
@@ -718,7 +718,7 @@ export function WhatsAppConfig() {
                   ))}
                 </ul>
                 {(registrationProbe.errors ?? []).length > 0 && (
-                  <ul className="pt-1 space-y-0.5 text-red-300">
+                  <ul className="pt-1 space-y-0.5 text-destructive">
                     {registrationProbe.errors?.map((e, i) => (
                       <li key={i}>• {e}</li>
                     ))}
@@ -811,14 +811,14 @@ export function WhatsAppConfig() {
                       <span
                         className={
                           n.status === 'connected'
-                            ? 'inline-flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400'
+                            ? 'inline-flex items-center gap-1.5 text-xs text-success'
                             : 'inline-flex items-center gap-1.5 text-xs text-muted-foreground'
                         }
                       >
                         <span
                           className={
                             n.status === 'connected'
-                              ? 'inline-block h-1.5 w-1.5 rounded-full bg-emerald-500'
+                              ? 'inline-block h-1.5 w-1.5 rounded-full bg-success'
                               : 'inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/50'
                           }
                           aria-hidden
@@ -1036,7 +1036,7 @@ export function WhatsAppConfig() {
                     {t('mirrorInboundDesc')}
                   </p>
                   {!mirrorMedia && (
-                    <p className="mt-1 text-xs text-amber-600 dark:text-amber-500">
+                    <p className="mt-1 text-xs text-warning">
                       {t('mirrorInboundOffWarning')}
                     </p>
                   )}

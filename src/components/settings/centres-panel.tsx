@@ -741,7 +741,7 @@ function BranchWiring({
 
   if (blocker === 'no-number') {
     return (
-      <p className="mt-2 pl-7 text-xs text-amber-700 dark:text-amber-400">
+      <p className="mt-2 pl-7 text-xs text-warning">
         {t('noNumberYet')}
       </p>
     );
@@ -768,7 +768,7 @@ function BranchWiring({
       </div>
       <div className="flex flex-wrap items-center gap-2">
         {wired ? (
-          <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+          <span className="inline-flex items-center gap-1.5 rounded-md border border-success/70 bg-success/10 px-2 py-1 text-xs font-medium text-success">
             <Check className="size-3.5" aria-hidden />
             {t('setupReady')}
           </span>

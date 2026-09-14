@@ -825,3 +825,54 @@ terhadap latarnya dalam mod terang.
 Ia dalam `src/components/layout/**`, bukan pokok settings, jadi ia tidak
 disentuh. Diletakkan di sini supaya ia masuk ke dalam inventori Kelas A/B/C
 dan bukan ditemui semula dari awal.
+
+---
+
+## P0 — varian `dark:` tidak pernah aktif, 41 tapak dalam 12 fail
+
+`src/app/globals.css:5` mengisytiharkan:
+
+```css
+@custom-variant dark (&:is(.dark *));
+```
+
+Varian itu memerlukan kelas `.dark` pada leluhur. Aplikasi **tidak pernah
+menambahnya**. Mod hidup pada `html[data-mode="dark"]`, ditetapkan oleh
+`layout.tsx:78` dan `themes.ts`. Carian merentas `src/` tidak menemui satu
+pun tempat `.dark` ditambah kepada mana-mana elemen.
+
+**Disahkan dalam pelayar**, bukan dibaca daripada kod. Warna dikira bagi
+chip peranan Pemilik, yang ditulis `text-amber-700 dark:text-amber-300`:
+
+```
+data-mode=light (lalai)       lab(47.2709 42.9082 69.2966)
+data-mode=dark                lab(47.2709 42.9082 69.2966)   <- sama
+data-mode=dark + kelas .dark  lab(86.4156  6.13147 78.3961)  <- baru berubah
+```
+
+Menukar `data-mode` tidak mengubah apa-apa. Hanya menambah `.dark` dengan
+tangan yang mencetuskannya.
+
+**Skala:** 41 penggunaan `dark:` merentas 12 fail. Kesemuanya mati.
+
+**Kenapa ia penting melebihi kosmetik.** Setiap tapak yang ditulis
+`text-x-700 dark:text-x-300` sedang menghantar nilai mod-terang kepada
+pengguna mod gelap. Ia juga menjelaskan sebab inventori warna mendapati
+varian `dark:` "tidak konsisten" — ia bukan tidak konsisten, ia tiada
+kesan, jadi tiada siapa pernah melihatnya berfungsi atau gagal.
+
+**Pembetulannya satu baris:**
+
+```css
+@custom-variant dark (&:is([data-mode="dark"] *));
+```
+
+**Tetapi jangan hantar ia sendirian.** Ia menghidupkan 41 tapak serentak,
+dan tiada satu pun daripadanya pernah dirender dalam mod gelap — ia ditulis
+dengan andaian ia berfungsi dan tidak pernah disemak. Pembetulan itu
+memerlukan pusingan kontras mod gelap dalam larian yang sama, bukan
+selepasnya.
+
+Ditemui semasa menukar chip peranan Pemilik daripada 1.33:1 dalam mod
+terang. Pembetulan chip itu dihantar dengan separuh `dark:` ditulis dengan
+betul, supaya ia mula berfungsi sebaik varian itu dibetulkan.
