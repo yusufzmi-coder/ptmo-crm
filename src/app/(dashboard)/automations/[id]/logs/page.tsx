@@ -169,7 +169,7 @@ export default function AutomationLogsPage({
 function StatusBadge({ status, t }: { status: AutomationLog["status"], t: ReturnType<typeof useTranslations> }) {
   const classes =
     status === "success"
-      ? "border-primary/30 bg-primary/10 text-primary"
+      ? "border-primary/30 bg-primary/10 text-primary-on-soft"
       : status === "partial"
       ? "border-warning/70 bg-warning/10 text-warning"
       : "border-destructive/70 bg-destructive/10 text-destructive"
@@ -192,7 +192,7 @@ function StepRow({ result }: { result: AutomationLogStepResult }) {
       <span
         className={cn(
           "mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full",
-          ok ? "bg-primary/20 text-primary" : "bg-destructive/10 text-destructive",
+          ok ? "bg-primary/20 text-primary-on-soft" : "bg-destructive/10 text-destructive",
         )}
         aria-hidden
       >

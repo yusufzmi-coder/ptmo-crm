@@ -233,7 +233,7 @@ export function SettingsOverview({
           {profile?.avatar_url ? (
             <AvatarImage src={profile.avatar_url} alt={displayName} />
           ) : null}
-          <AvatarFallback className="bg-primary/10 text-xl text-primary">
+          <AvatarFallback className="bg-primary/10 text-xl text-primary-on-soft">
             {initial}
           </AvatarFallback>
         </Avatar>
