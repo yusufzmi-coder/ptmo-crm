@@ -20,13 +20,38 @@
 -- the rows — in particular the two shapes that production is known or
 -- suspected to hold and that a blank database never will:
 --
---   * a profile with an account but a NULL account_role (locked out of
---     everything by an unhardened 044);
+--   * a profile at the floor of the role hierarchy (`viewer`), so the
+--     assertions about existing roles have something that is not an
+--     owner or an agent to check against. This row previously carried a
+--     NULL account_role; see the note beside it for why that was
+--     impossible;
 --   * messages carrying absolute public-bucket URLs, which 047 turns
 --     into dead links and which NO migration in this release repairs —
---     `resolveStoredMediaUrl()` does it at render time instead. The
---     rows are seeded so verify-upgrade.sql can prove the database
---     leaves them exactly as they were.
+--     `resolveStoredMediaUrl()` does it at render time instead.
+--
+--     NOTE: nothing asserts against these four rows any more. The only
+--     block that read them was the 042 block in verify-upgrade.sql,
+--     removed because it proved nothing. They are a cost with no
+--     benefit until either an assertion comes back or they go. See
+--     docs/open-findings.md, "Job \"upgrade path\" tidak pernah lulus".
+--
+-- WARNING — THIS FILE DOES NOT RUN AS WRITTEN
+-- -------------------------------------------
+-- Two faults, both reached before any row is written, both documented
+-- in docs/open-findings.md:
+--
+--   1. migrations.yml:195 calls `db query --file`, which sends the file
+--      as ONE prepared statement and rejects the eight INSERTs below.
+--      verify-schema.sql and grant-platform-privileges.sql are single
+--      `DO $$` blocks for exactly this reason; this file is not.
+--   2. `on_auth_user_created` -> `handle_new_user` already provisions an
+--      account and a profile for every auth.users row. The accounts
+--      INSERT below then trips `idx_accounts_one_per_owner`, because
+--      `ON CONFLICT (id)` does not catch a clash on `owner_user_id`.
+--      zone_isolation_test.sql:45 works WITH that trigger; this does not.
+--
+-- Fixing either changes more than this file, so both are left for a
+-- scoped decision rather than patched in passing.
 --
 -- Everything here is fixture data with fixed UUIDs so that
 -- verify-upgrade.sql can assert against it by name. It is never run
@@ -46,7 +71,7 @@ VALUES
    'authenticated', 'authenticated', 'agent@example.test', NOW(), NOW()),
   -- THE CASE THIS FILE EXISTS FOR: a real member whose role was never set.
   ('aaaaaaaa-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000000',
-   'authenticated', 'authenticated', 'noroleuser@example.test', NOW(), NOW())
+   'authenticated', 'authenticated', 'viewer@example.test', NOW(), NOW())
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO accounts (id, name, owner_user_id)
@@ -62,11 +87,22 @@ VALUES
   ('cccccccc-0000-0000-0000-000000000002', 'aaaaaaaa-0000-0000-0000-000000000002',
    'Kakitangan Cawangan', 'agent@example.test',
    'bbbbbbbb-0000-0000-0000-000000000001', 'agent'),
-  -- account_id set, account_role deliberately absent. 017 made the
-  -- column nullable with no default, so this row is legal today.
+  -- Was NULL, on the belief that "017 made the column nullable with no
+  -- default, so this row is legal today". It is not: 017 adds the column
+  -- nullable at :122 and then makes it NOT NULL at :275, in the same
+  -- file. The INSERT failed, and took the upgrade job down with it.
+  --
+  -- A NULL-role profile cannot exist at all. SET NOT NULL fails if any
+  -- row is NULL, so 017 succeeding on production proves none existed
+  -- then, and the constraint has forbidden one since. The invariant is
+  -- asserted directly in verify-schema.sql now.
+  --
+  -- `viewer` instead: the real floor of the hierarchy, and the shape
+  -- this row was reaching for — an account member with the least
+  -- privilege the schema allows.
   ('cccccccc-0000-0000-0000-000000000003', 'aaaaaaaa-0000-0000-0000-000000000003',
-   'Tiada Peranan', 'noroleuser@example.test',
-   'bbbbbbbb-0000-0000-0000-000000000001', NULL)
+   'Peranan Paling Rendah', 'viewer@example.test',
+   'bbbbbbbb-0000-0000-0000-000000000001', 'viewer')
 ON CONFLICT (id) DO NOTHING;
 
 -- ---- one connected number (the production shape today) -------
