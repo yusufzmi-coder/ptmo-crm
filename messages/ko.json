@@ -27,7 +27,7 @@
     "automations": "자동화",
     "flows": "플로우",
     "aiAgents": "AI 에이전트",
-    "ops": "Belum Dibalas",
+    "ops": "미답변",
     "settings": "설정",
     "groupConversations": "대화",
     "groupCustomers": "고객",
@@ -56,7 +56,7 @@
     "automations": "자동화",
     "flows": "플로우",
     "aiAgents": "AI 에이전트",
-    "ops": "Belum Dibalas",
+    "ops": "미답변",
     "settings": "설정",
     "openMenu": "메뉴 열기",
     "openAccountMenu": "계정 메뉴 열기",
@@ -2054,7 +2054,7 @@
   },
   "Ops": {
     "unanswered": {
-      "title": "Belum Dibalas",
+      "title": "미답변",
       "description": "Reply speed, failed sends, and every parent still waiting — most urgent first. The clock only runs during shift hours.",
       "stateBreached": "Late",
       "stateWarning": "Past target",
