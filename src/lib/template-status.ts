@@ -40,7 +40,7 @@ export const templateStatusConfig: Record<
   },
   APPROVED: {
     label: 'Approved',
-    classes: 'bg-primary/10 text-primary border-primary/70',
+    classes: 'bg-primary/10 text-primary-readable border-primary/70',
   },
   REJECTED: {
     label: 'Rejected',
