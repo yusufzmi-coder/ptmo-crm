@@ -349,7 +349,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                 {group.labelKey && (
                   <h2
                     id={headingId}
-                    className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70"
+                    className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
                   >
                     {t(group.labelKey)}
                   </h2>
