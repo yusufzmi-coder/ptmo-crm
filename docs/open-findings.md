@@ -1662,3 +1662,65 @@ Ini bukan blocker: setiap gate boleh dicetuskan dengan
 `gh workflow run "<nama>" --ref main`, dan itu yang telah dilakukan
 sepanjang hari. Kosnya ialah tiada siapa akan perasan gate merah tanpa
 seseorang mencetuskannya dengan tangan.
+
+## Lampiran gagal lantang, avatar gagal senyap — dan itu tidak simetri
+
+Selepas 047 menjadikan bucket peribadi, dua jenis media boleh gagal, dan
+mereka gagal dengan cara yang sangat berbeza.
+
+**Lampiran gagal lantang.** `message-media.tsx:152` memasang
+`onError={() => setBroken(true)}`, dan baris 130 merender
+`t("unavailable", { label })`. Imej yang gagal menjadi **mesej yang
+kelihatan**, bukan ikon imej rosak. Staf akan melihatnya dan
+melaporkannya.
+
+**Avatar gagal senyap.** `ui/avatar.tsx` tiada pengendali ralat langsung.
+`AvatarImage` base-ui jatuh ke `AvatarFallback` secara automatik, jadi
+avatar yang rosak merender **inisial** — identik dengan pengguna yang
+tidak pernah memuat naik gambar.
+
+Akibatnya: kalau 047 memecahkan media, aduan tentang **lampiran** akan
+tiba dalam beberapa minit, dan aduan tentang **avatar** mungkin **tidak
+pernah tiba**.
+
+**Maka "tiada aduan" bukan bukti avatar berfungsi.** Ia mesti disemak
+secara eksplisit oleh seseorang yang mempunyai akaun dengan gambar
+profil. Sandaran automatik itu ialah tingkah laku yang betul untuk
+avatar yang tiada; ia hanya bermasalah kerana ia **tidak boleh dibezakan**
+daripada avatar yang pecah.
+
+Tidak diubah. Menambah pengendali ralat kepada avatar akan menukar rupa
+setiap baris inbox untuk memburukkan satu kes, dan pertukaran itu bukan
+jelas. Direkod supaya ketiadaan aduan tidak dibaca sebagai kesihatan.
+
+## Akaun ujian tidak boleh menjawab soalan selepas-047
+
+Akaun ujian mempunyai **sifar perbualan**, jadi sifar lampiran, dan
+pengguna ujiannya tiada `avatar_url`. Satu-satunya imej pada halaman
+inbox ialah `/brand/minda-optima-mark.png` daripada `/public` — bukan
+bucket Supabase langsung.
+
+Jadi soalan *"adakah lampiran pra-047 masih render"* **tidak boleh
+diperhatikan** di sana, tidak kira berapa teliti seseorang melihat.
+
+Yang **boleh** disahkan, dan telah:
+
+```
+tanpa sesi   401 pada kelima-lima laluan proksi
+dengan sesi  404 {"error":"Not found"}            objek tiada
+             404 {"error":"Unknown media bucket"} bucket tak dikenali
+```
+
+Tiada 500, tiada throw, dan bucket tidak dikenali mendapat mesejnya
+sendiri — jadi laluan itu membezakan *"bukan bucket kita"* daripada
+*"tiada objek"*. Mesin itu berfungsi.
+
+`proxy-url.test.ts` meliputi tepat laluan legasi, termasuk semakan hos
+yang menjadi sebab backfill ditarik balik. Tetapi itu ujian unit
+terhadap **rentetan** — bukan baris sebenar dalam `messages.media_url`
+menyelesai kepada objek sebenar dalam bucket peribadi.
+
+**Soalan yang menjawab semuanya** ialah seksyen 4 preflight storage:
+berapa baris `messages` memegang URL bucket awam pra-047. Kalau
+jawapannya sifar, laluan legasi tidak pernah dilalui dalam production dan
+risiko ini tidak wujud.
