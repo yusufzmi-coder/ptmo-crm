@@ -1,19 +1,29 @@
 -- ============================================================
--- release-preflight-accounts — run BEFORE migration 044
+-- release-preflight-accounts — run BEFORE the release
+--
+-- CORRECTED 14 Sep 2026. This file was written for migration 044, and
+-- 044 IS NOT IN THIS RELEASE. The set that ships is 045, 046, 047.
+--
+-- READ SECTIONS 1, 2, 9 AND 10. Sections 3-8 govern 044, 042 and 048,
+-- all of which are parked; they are kept because they will matter if
+-- those migrations are ever revived, and each now says so in its own
+-- header. Nothing in 3-8 can block this release.
 --
 -- READ ONLY. Every statement in this file is a SELECT. It creates
 -- nothing, changes nothing, and can be run against production at any
 -- time, including during business hours.
 --
--- What it is for
--- --------------
--- 044 changes the body of is_account_member(), the one function behind
--- roughly 119 RLS policies. After it, a user's access comes from a row
--- in account_members. The backfill creates those rows — and its
--- correctness depends entirely on what profiles currently look like.
+-- What it is for, now
+-- -------------------
+-- 046 REVOKEs four SECURITY DEFINER functions by EXACT SIGNATURE and
+-- narrows UPDATE on profiles to two columns. A REVOKE that names a
+-- signature no function has is a no-op that reports success, so the
+-- function stays open and nothing says so.
 --
--- Run this, read the output, and only then decide whether to proceed.
--- Section 3 is the one that can stop the release.
+-- Section 9 is the one that can stop this release: an unexpected
+-- overload means 046 revokes the wrong one.
+--
+-- Run this, read sections 1, 2, 9 and 10, and only then proceed.
 --
 -- How to run
 -- ----------
@@ -28,12 +38,18 @@
 -- ============================================================
 
 
--- === 1. Is this database actually at 041? ===================
--- If any of these disagree with expectations, STOP: the baseline is not
--- what the release plan assumes and every risk assessment is void.
+-- === 1. Is this database actually at 041 + 049? =============
+-- If any of these disagree, STOP: the baseline is not what the release
+-- plan assumes and every risk assessment is void.
+--
+-- NOTE the 049 row. An earlier version of this file expected 049 to be
+-- ABSENT. That was wrong: 049 was applied to production by hand, the
+-- ledger recorded it incorrectly, and a read-only probe settled it on
+-- 14 Sep. Production sits at 041 PLUS 049. If the centres row comes
+-- back false here, something has removed a live table — stop and ask.
 SELECT
-  to_regclass('public.account_members')            IS NULL  AS "044 not yet applied (expect t)",
-  to_regclass('public.centres')                    IS NULL  AS "049 not yet applied (expect t)",
+  to_regclass('public.account_members')            IS NULL  AS "044 not applied (expect t)",
+  to_regclass('public.centres')                IS NOT NULL  AS "049 IS applied (expect t)",
   EXISTS (SELECT 1 FROM information_schema.columns
            WHERE table_name = 'conversations'
              AND column_name = 'whatsapp_config_id')        AS "040 applied (expect t)",
@@ -62,6 +78,9 @@ ORDER BY
 
 
 -- === 3. BLOCKER CHECK: profiles with an account but no role =
+-- NOT IN THIS RELEASE: 044 only — PARKED. Also note profiles.account_role has been NOT NULL
+-- since 017:275, so this section cannot return rows on any database
+-- where 017 succeeded. It is kept for the record, not as a gate.
 -- These are the users 044 has to decide about.
 --
 -- The hardened backfill grants each of them the VIEWER role — the floor
@@ -96,6 +115,7 @@ ORDER BY p.created_at;
 
 
 -- === 4. Profiles with a role but no account =================
+-- NOT IN THIS RELEASE: 044 only — PARKED.
 -- The mirror case. These are ignored by the backfill and unaffected by
 -- 044, because there is no account to be a member of. Listed so the
 -- number is not a surprise later.
@@ -104,6 +124,7 @@ FROM profiles WHERE account_id IS NULL AND account_role IS NOT NULL;
 
 
 -- === 5. Owners per account ==================================
+-- NOT IN THIS RELEASE: 044 only — PARKED.
 -- 044 drops UNIQUE(owner_user_id) so one person can own several zones.
 -- An account with NO owner is the case to watch: recovery depends on
 -- the owner, and nothing in the migration creates one.
@@ -121,6 +142,7 @@ ORDER BY a.created_at;
 
 
 -- === 6. What the backfill will insert =======================
+-- NOT IN THIS RELEASE: 044 only — PARKED.
 -- A dry run of 044's INSERT, as a count. This is the number of rows
 -- account_members should hold immediately after the migration.
 SELECT
@@ -131,6 +153,7 @@ WHERE p.account_id IS NOT NULL;
 
 
 -- === 7. Duplicate conversations under 042 new key ===========
+-- NOT IN THIS RELEASE: 042 only — PARKED.
 -- 042 runs merge_duplicate_conversations(), which DELETEs. On a
 -- single-number account this must find nothing. Any row here is a
 -- thread that WILL be merged away — inspect it before proceeding.
@@ -146,6 +169,7 @@ ORDER BY 4 DESC;
 
 
 -- === 8. Broadcasts 048 can and cannot backfill ==============
+-- NOT IN THIS RELEASE: 048 only — PARKED.
 -- An account holding exactly one number gets its broadcasts filled in.
 -- An account already holding several is left NULL by design, and those
 -- campaigns can never be resumed.
@@ -165,6 +189,8 @@ ORDER BY a.name;
 
 
 -- === 9. Duplicate function overloads 046 will refuse ========
+-- IN THIS RELEASE. 046 REVOKEs by exact signature; an unexpected
+-- overload means the REVOKE misses and the function stays open.
 -- 046 asserts there is exactly one recompute_broadcast_counts. Because
 -- 040 and 041 were applied by hand, a stray overload from an ad-hoc SQL
 -- session is possible, and it aborts the migration.
@@ -185,6 +211,7 @@ ORDER BY p.proname;
 
 
 -- === 10. Who can write profiles today =======================
+-- IN THIS RELEASE. 046 narrows UPDATE on profiles to two columns.
 -- 046 revokes table-wide UPDATE from `authenticated` and grants back
 -- only full_name and avatar_url. Recorded here so the before-state is
 -- on file if anything is later blamed on the change.
