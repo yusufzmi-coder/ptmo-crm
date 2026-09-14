@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState, type ReactNode } from 'react';
-import { ChevronRight, Loader2 } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
+import { Skeleton } from '@/components/dashboard/skeleton';
 import { useTranslations } from 'next-intl';
 
 import { createClient } from '@/lib/supabase/client';
@@ -277,9 +278,13 @@ export function SettingsOverview({
                 </span>
                 <span className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
                   {loading ? (
-                    <>
-                      <Loader2 className="size-3 animate-spin" /> {t('loading')}
-                    </>
+                    // One spinner per section row meant six of them
+                    // spinning at once down the page. A single quiet bar
+                    // the width of the subtitle it replaces reads calmer
+                    // and reserves the same line.
+                    <span aria-busy="true" aria-label={t('loading')}>
+                      <Skeleton className="block h-3 w-40 max-w-full" />
+                    </span>
                   ) : (
                     subtitle
                   )}

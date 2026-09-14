@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   RotateCcw,
 } from 'lucide-react';
+import { Skeleton } from '@/components/dashboard/skeleton';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { useTranslations } from 'next-intl';
@@ -475,8 +476,23 @@ export function WhatsAppConfig() {
           title={t("title")}
           description={t("description")}
         />
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="size-6 animate-spin text-primary" />
+        {/* This panel already renders its real heading while loading,
+            so only the body below it stands in. */}
+        <div className="space-y-3" aria-busy="true" aria-label={t('loading')}>
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="rounded-xl border border-border bg-card/50 p-4"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0 flex-1 space-y-2">
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-3 w-56 max-w-full" />
+                </div>
+                <Skeleton className="h-8 w-20 shrink-0" />
+              </div>
+            </div>
+          ))}
         </div>
       </section>
     );

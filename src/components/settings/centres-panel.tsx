@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Building2, Loader2, MapPin, Phone, Plus, Trash2 } from 'lucide-react';
+import { SettingsPanelSkeleton } from './settings-panel-skeleton';
 import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
@@ -197,11 +198,8 @@ export function CentresPanel() {
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <Loader2 className="size-5 animate-spin text-primary" />
-      </div>
-    );
+    // No action button beside this panel's heading.
+    return <SettingsPanelSkeleton rows={3} action={false} label={t('loading')} />;
   }
 
   return (

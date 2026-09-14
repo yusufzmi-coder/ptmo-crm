@@ -1341,7 +1341,8 @@
       "removeDialogDesc": "Remove <bold>{name}</bold> from the account? They'll be signed out of this account and given a fresh personal account on their next sign-in. Their login isn't deleted.",
       "cancel": "Cancel",
       "removing": "Removing...",
-      "removeBtn": "Remove member"
+      "removeBtn": "Remove member",
+      "loading": "Loading members"
     },
     "invite": {
       "inviteCreated": "Invite created",
@@ -1404,7 +1405,8 @@
         "blue": "Blue",
         "violet": "Violet",
         "pink": "Pink"
-      }
+      },
+      "loading": "Loading tags"
     },
     "templates": {
       "title": "Message templates",
@@ -1500,7 +1502,8 @@
       "toastInvalidImage": "Header image must be a JPEG or PNG.",
       "toastImageTooLarge": "Image is {size} MB — Meta's limit is 5 MB.",
       "toastUploadSuccess": "Image uploaded.",
-      "toastUploadFailed": "Upload failed."
+      "toastUploadFailed": "Upload failed.",
+      "loading": "Loading templates"
     },
     "roles": {
       "admin": "Admin",
@@ -1596,7 +1599,8 @@
       "branchRenameHint": "Click to name this branch",
       "branchRenameSave": "Save",
       "branchRenameCancel": "Cancel",
-      "branchRenameFailed": "Could not save the branch name."
+      "branchRenameFailed": "Could not save the branch name.",
+      "loading": "Loading WhatsApp numbers"
     },
     "sections": {
       "overview": "Overview",
@@ -1716,7 +1720,8 @@
       "newKeyTitle": "New API key",
       "newKeyDesc": "Name it after the integration that will use it, and grant only the scopes it needs.",
       "done": "Done",
-      "networkError": "Could not reach the server"
+      "networkError": "Could not reach the server",
+      "loading": "Loading API keys"
     },
     "deals": {
       "title": "Deals & currency",
@@ -1768,7 +1773,8 @@
       "saveSuccess": "AI assistant saved.",
       "saveFailed": "Failed to save.",
       "removeSuccess": "AI configuration removed.",
-      "removeFailed": "Failed to remove."
+      "removeFailed": "Failed to remove.",
+      "loading": "Loading AI configuration"
     },
     "aiKnowledge": {
       "loadFailed": "Failed to load knowledge base",
@@ -1833,7 +1839,8 @@
       "deleteZoneTitle": "Delete this zone?",
       "deleteZoneDesc": "Centres in it are kept -- they just stop belonging to a zone.",
       "deleteCentreTitle": "Delete this centre?",
-      "deleteCentreDesc": "Parents linked to it are kept, but stop being linked to any centre."
+      "deleteCentreDesc": "Parents linked to it are kept, but stop being linked to any centre.",
+      "loading": "Loading centres"
     }
   },
   "Ops": {

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Loader2, MessageSquare, Pencil, Plus, Trash2, Zap } from "lucide-react";
+import { Skeleton } from '@/components/dashboard/skeleton';
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -137,9 +138,28 @@ export function QuickRepliesManager() {
       />
 
       {loading ? (
-        <div className="flex justify-center py-10">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        </div>
+        <ul
+          className="flex flex-col gap-2"
+          aria-busy="true"
+          // This whole component is still hard-coded English — its
+          // heading, empty state and toasts all are. A lone translated
+          // aria-label here would be the odd one out; it goes in when
+          // the panel is translated as a unit.
+          aria-label="Loading quick replies"
+        >
+          {[0, 1, 2].map((i) => (
+            <li
+              key={i}
+              className="flex items-start gap-3 rounded-lg border border-border bg-card p-3"
+            >
+              <Skeleton className="mt-0.5 size-4 shrink-0" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-3 w-full max-w-64" />
+              </div>
+            </li>
+          ))}
+        </ul>
       ) : items.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border py-10 text-center text-sm text-muted-foreground">
           No quick replies yet. Create one to reuse it across conversations.

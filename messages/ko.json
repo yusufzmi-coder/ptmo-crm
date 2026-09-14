@@ -1341,7 +1341,8 @@
       "removeDialogDesc": "<bold>{name}</bold>을(를) 이 계정에서 제거하시겠습니까? 이 계정에서 로그아웃되며 다음 로그인 시 새로운 개인 계정이 발급됩니다. 로그인 정보 자체는 삭제되지 않습니다.",
       "cancel": "취소",
       "removing": "제거 중...",
-      "removeBtn": "멤버 제거"
+      "removeBtn": "멤버 제거",
+      "loading": "구성원 불러오는 중"
     },
     "invite": {
       "inviteCreated": "초대가 생성되었습니다",
@@ -1404,7 +1405,8 @@
         "blue": "파랑",
         "violet": "보라",
         "pink": "분홍"
-      }
+      },
+      "loading": "태그 불러오는 중"
     },
     "templates": {
       "title": "메시지 템플릿",
@@ -1500,7 +1502,8 @@
       "toastInvalidImage": "헤더 이미지는 JPEG 또는 PNG여야 합니다.",
       "toastImageTooLarge": "이미지 크기가 {size}MB입니다 — Meta 제한은 5MB입니다.",
       "toastUploadSuccess": "이미지가 업로드되었습니다.",
-      "toastUploadFailed": "업로드에 실패했습니다."
+      "toastUploadFailed": "업로드에 실패했습니다.",
+      "loading": "템플릿 불러오는 중"
     },
     "roles": {
       "admin": "관리자",
@@ -1596,7 +1599,8 @@
       "branchRenameHint": "Click to name this branch",
       "branchRenameSave": "Save",
       "branchRenameCancel": "Cancel",
-      "branchRenameFailed": "Could not save the branch name."
+      "branchRenameFailed": "Could not save the branch name.",
+      "loading": "WhatsApp 번호 불러오는 중"
     },
     "sections": {
       "overview": "개요",
@@ -1716,7 +1720,8 @@
       "newKeyTitle": "새 API 키",
       "newKeyDesc": "이 키를 사용할 연동 서비스의 이름을 붙이고, 필요한 권한 범위만 부여하세요.",
       "done": "완료",
-      "networkError": "서버에 연결할 수 없습니다"
+      "networkError": "서버에 연결할 수 없습니다",
+      "loading": "API 키 불러오는 중"
     },
     "deals": {
       "title": "딜 & 통화",
@@ -1768,7 +1773,8 @@
       "saveSuccess": "AI 어시스턴트가 저장되었습니다.",
       "saveFailed": "저장하지 못했습니다.",
       "removeSuccess": "AI 설정이 제거되었습니다.",
-      "removeFailed": "제거하지 못했습니다."
+      "removeFailed": "제거하지 못했습니다.",
+      "loading": "AI 설정 불러오는 중"
     },
     "aiKnowledge": {
       "loadFailed": "지식베이스를 불러오지 못했습니다",
@@ -1833,7 +1839,8 @@
       "deleteZoneTitle": "Delete this zone?",
       "deleteZoneDesc": "Centres in it are kept -- they just stop belonging to a zone.",
       "deleteCentreTitle": "Delete this centre?",
-      "deleteCentreDesc": "Parents linked to it are kept, but stop being linked to any centre."
+      "deleteCentreDesc": "Parents linked to it are kept, but stop being linked to any centre.",
+      "loading": "센터 불러오는 중"
     }
   },
   "Ops": {
