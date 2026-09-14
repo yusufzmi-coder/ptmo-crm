@@ -762,3 +762,87 @@ export interface Centre {
   created_at: string;
   updated_at: string;
 }
+
+// ============================================================
+// Issues & actions (migration 050)
+//
+// A parent's complaint as a tracked thing rather than a message
+// somebody has to remember to tag: it has an owner, a status and a
+// trail of who moved it.
+// ============================================================
+
+/**
+ * Mirrors the CHECK on `issues.category`. Malay, because these are the
+ * words the branch staff use and the board named them; they are stored
+ * values, so they stay as written whatever locale the UI renders in.
+ */
+export type IssueCategory =
+  | 'progress'
+  | 'keselamatan'
+  | 'staf'
+  | 'servis'
+  | 'yuran'
+  | 'jadual'
+  | 'pendaftaran'
+  | 'fasiliti'
+  | 'lain';
+
+export type IssueSeverity = 'biasa' | 'penting' | 'kritikal';
+
+/**
+ * Mirrors the CHECK on `issues.status`. Which moves are legal between
+ * these lives in `src/lib/issues/status.ts` — not here, because a type
+ * cannot express that `new` may not jump straight to `resolved`.
+ */
+export type IssueStatus =
+  | 'new'
+  | 'acknowledged'
+  | 'investigating'
+  | 'waiting'
+  | 'resolution_proposed'
+  | 'resolved'
+  | 'reopened';
+
+export interface Issue {
+  id: string;
+  account_id: string;
+  centre_id: string | null;
+  contact_id: string | null;
+  conversation_id: string | null;
+  category: IssueCategory;
+  severity: IssueSeverity;
+  status: IssueStatus;
+  /** Profile of the staff member who owns it, null while unassigned. */
+  assigned_to: string | null;
+  opened_by: string | null;
+  summary: string;
+  /** What was done about it. Written when the status reaches resolved. */
+  resolution: string | null;
+  opened_at: string;
+  /**
+   * Set when the status becomes `resolved` and CLEARED on reopen — an
+   * issue that carries a stale resolved_at reports a time-to-close that
+   * never happened.
+   */
+  resolved_at: string | null;
+  due_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * One movement of an issue. Written in the same request as the status
+ * change it records, so the trail cannot drift from the issue.
+ *
+ * `from_status` is null for the row that opens the issue.
+ */
+export interface IssueEvent {
+  id: string;
+  issue_id: string;
+  account_id: string;
+  actor_user_id: string | null;
+  from_status: IssueStatus | null;
+  to_status: IssueStatus;
+  note: string | null;
+  created_at: string;
+}
