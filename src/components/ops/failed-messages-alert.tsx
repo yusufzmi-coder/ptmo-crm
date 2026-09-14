@@ -27,7 +27,7 @@ export function FailedMessagesAlert({
   if (failed.length === 0) {
     return (
       <Alert>
-        <CheckCircle2 className="text-emerald-600 dark:text-emerald-400" />
+        <CheckCircle2 className="text-success" />
         <AlertTitle>{t("noneTitle")}</AlertTitle>
         <AlertDescription>{t("noneDesc")}</AlertDescription>
       </Alert>

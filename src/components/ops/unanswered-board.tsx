@@ -81,21 +81,21 @@ const STATE_META: Record<
     icon: AlertTriangle,
     rule: "border-l-2 border-l-red-500",
     badge:
-      "border-red-500/40 bg-red-500/10 text-red-700 dark:text-red-300",
+      "border-destructive/70 bg-destructive/10 text-destructive",
   },
   warning: {
     labelKey: "stateWarning",
     icon: Clock,
     rule: "border-l-2 border-l-amber-500",
     badge:
-      "border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-300",
+      "border-warning/70 bg-warning/10 text-warning",
   },
   ok: {
     labelKey: "stateOk",
     icon: CheckCircle2,
     rule: "border-l-2 border-l-emerald-500",
     badge:
-      "border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300",
+      "border-success/70 bg-success/10 text-success",
   },
 };
 
@@ -267,7 +267,7 @@ export function UnansweredBoard() {
               <span
                 className={cn(
                   "inline-block h-2 w-2 rounded-full",
-                  isConnected ? "bg-emerald-500" : "bg-muted-foreground/50",
+                  isConnected ? "bg-success" : "bg-muted-foreground/50",
                 )}
                 aria-hidden
               />
@@ -328,7 +328,7 @@ export function UnansweredBoard() {
         {error && (
           <div
             role="alert"
-            className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-700 dark:text-red-300"
+            className="rounded-lg border border-destructive/70 bg-destructive/10 px-4 py-3 text-sm text-destructive"
           >
             {t("loadError")} <span className="font-mono text-xs">{error}</span>
           </div>
@@ -487,7 +487,7 @@ function BoardSkeleton() {
 function EmptyState({ label, hint }: { label: string; hint: string }) {
   return (
     <div className="rounded-xl border border-dashed border-border bg-card px-6 py-12 text-center">
-      <CheckCircle2 className="mx-auto h-8 w-8 text-emerald-500" aria-hidden />
+      <CheckCircle2 className="mx-auto h-8 w-8 text-success" aria-hidden />
       <p className="mt-3 text-sm font-semibold text-foreground">{label}</p>
       <p className="mt-1 text-sm text-muted-foreground">{hint}</p>
     </div>
