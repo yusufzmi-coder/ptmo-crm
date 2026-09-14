@@ -323,7 +323,16 @@ dan 375px **diterbitkan** daripada pemalar chrome 176px, bukan diperhatikan.
 Terbitan itu kukuh kerana chrome tetap tidak berubah di bawah `sm`, tetapi
 ia bukan pemerhatian. Emulasi peranti melalui CDP diperlukan untuk menutupnya.
 
-### Tiga daripada empat halaman auth tiada i18n langsung
+### ~~Tiga daripada empat halaman auth tiada i18n langsung~~ — DIBAIKI dalam `9218ba7`
+
+Dikekalkan supaya tiada siapa melaporkannya semula. 47 rentetan dipindahkan
+ke tiga namespace baharu; `signup` dan `forgot-password` disahkan render
+bersih dalam Melayu dengan screenshot selepas hidrasi. Skrin "semak e-mel"
+pada signup dan skrin luput/berjaya pada reset-password hanya muncul selepas
+interaksi dan **belum dilihat** — kedua-duanya tepat di mana `t.rich` dengan
+`<strong>` duduk, jadi ia baki paling berbaloi diuji.
+
+Asal:
 
 Diperhatikan dengan menjalankan app pada `NEXT_PUBLIC_APP_LOCALE=ms`, bukan
 dibaca daripada kod.

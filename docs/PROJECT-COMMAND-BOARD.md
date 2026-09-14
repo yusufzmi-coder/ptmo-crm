@@ -188,6 +188,8 @@ kongsi: guna, jangan ubah.
 | 2026-09-14 | **Katalog Melayu dipandang buat kali pertama.** `/login` render sempurna dalam `ms` pada 500px dan 1280px — tiada limpahan, tiada pengeratan | screenshot, `NEXT_PUBLIC_APP_LOCALE=ms` inline | Coordinator |
 | 2026-09-14 | Penemuan: `signup`, `forgot-password`, `reset-password` tiada `useTranslations` langsung — staf jatuh dari skrin Melayu terus ke Inggeris | `docs/open-findings.md` | Coordinator |
 | 2026-09-14 | Ujian ICU tiga-locale: 1679 kunci x 3 locale x 4 semakan, disahkan dengan suntikan kerosakan bukan dengan lulus | `5dd2d38` | Coordinator |
+| 2026-09-14 | Keempat-empat halaman auth kini diterjemah — 47 rentetan, 3 namespace baharu. `signup` dan `forgot-password` disahkan render bersih dalam Melayu dengan screenshot | `9218ba7` | Coordinator |
+| 2026-09-14 | Katalog: 1726 kunci x 3 locale, pariti bersih | `2d34b04` | Coordinator |
 
 ---
 
