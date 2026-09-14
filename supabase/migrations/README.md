@@ -6,7 +6,25 @@ here, because two migrations were applied by hand through the SQL editor
 rather than by the CLI. This file is the ledger. **Update it in the same
 commit that adds or applies a migration.**
 
-## State as of 2026-09-14 (probed, not assumed)
+## State as of 2026-09-15 (probed, not assumed)
+
+**The release landed.** `045`, `046` and `047` were applied to production
+on 15 Sep in a single transaction, pasted into the SQL Editor from
+`supabase/release/APPLY-045-046-047.sql`. The three assertions at the end
+of that file all returned true, and a separate read-only probe confirmed
+it from outside:
+
+```
+member_presence?select=tab_id        200   045 applied
+storage public/chat-media            400   047 applied
+storage public/avatars               400   047 applied
+storage public/flow-media            400   047 applied
+crm.ptmostaff.com/login              200   app still serving
+```
+
+`046` is not probeable over REST — it is a set of `REVOKE`s — but the
+in-transaction assertion checked `has_function_privilege('anon', …)`
+directly, which is the stronger test.
 
 | Range | In `main` | In `feat/multi-number` | Applied to production |
 | --- | --- | --- | --- |
@@ -14,15 +32,18 @@ commit that adds or applies a migration.**
 | `040`, `041` | **no** | yes | **yes, by hand** |
 | `042`, `043` | no | yes | no |
 | `044` | no | yes | no |
-| `045` | no | yes | no |
-| `046`, `047` | no | yes | unknown — not probeable over REST |
+| `045` | **yes** | yes | **YES, 15 Sep** |
+| `046`, `047` | **yes** | yes | **YES, 15 Sep** |
 | `048` | no | yes | no |
 | `049` | no | yes | **YES, by hand** |
 
-Production schema is therefore at **041 plus 049**. Production *code* is at
-`main`, which contains no migration past 039 — the schema is ahead of
-the code, which is the safe direction, because 040 and 041 are additive
-and the older code ignores the columns they add.
+Production schema is therefore at **041 + 045 + 046 + 047 + 049**, and
+`main` now carries every one of those files. The schema and the code
+finally describe the same database.
+
+`042`, `043`, `044` and `048` remain in this repository and **no database
+has ever run them**. That gap is the thing to look at before anyone
+writes `050` — see "The unapplied set" below.
 
 ### 049 was applied by hand too — this ledger said otherwise and was wrong
 
@@ -54,8 +75,10 @@ has now run. **The outside note was right; this file was wrong.**
 shows through PostgREST with an anon key. Their state is unknown and must
 come from the preflight queries.
 
-**Consequence for the release:** the remaining set is `045`, `046`, `047`.
-049 is done. See `docs/release-phase1-migrations.md`.
+**Consequence for the release:** the remaining set was `045`, `046`,
+`047`, and all three are now applied. See
+`docs/release-phase1-migrations.md` for what they do and
+`supabase/release/APPLY-045-046-047.sql` for exactly what was run.
 
 **Consequence for process:** a ledger maintained by hand drifts from the
 database silently, and the drift is invisible until something probes.
@@ -103,9 +126,9 @@ CI replay cannot, because CI only ever builds from an empty database.
 | `042` | One conversation thread per (account, contact, number) | data-changing — executes a merge that deletes rows |
 | `043` | Quick replies can be pinned to a branch | additive |
 | `044` | Multi-zone membership; redefines `is_account_member()` | security-critical + data-changing |
-| `045` | Presence keyed per browser tab | additive |
-| `046` | Locks four `SECURITY DEFINER` functions to `service_role` | security-critical |
-| `047` | Makes the three storage buckets private | security-critical |
+| ~~`045`~~ | ~~Presence keyed per browser tab~~ | **APPLIED 15 Sep** |
+| ~~`046`~~ | ~~Locks four `SECURITY DEFINER` functions to `service_role`~~ | **APPLIED 15 Sep** |
+| ~~`047`~~ | ~~Makes the three storage buckets private~~ | **APPLIED 15 Sep** |
 | `048` | Broadcasts remember their number; RPC gains a parameter | data-changing |
 | ~~`049`~~ | ~~Centres and regions become real tables~~ | **ALREADY APPLIED — see the correction above** |
 
@@ -155,11 +178,16 @@ given a host check of its own.
 
 Both must be green before anything is applied to production.
 
-**Neither has ever run.** GitHub Actions reports `total_count: 0` for this
-repository — both workflows are registered and `active`, and their files
-are present on `main`, but no run has ever been recorded. So the sentence
-above states a requirement that has never once been met. Investigate
-before treating CI as a gate.
+**Both are now green**, as of 14 Sep — the first time either ran to
+completion in this repository's life. It took seven consecutive blockers
+to get there, and each one hid the next: a job failing at step 1 looks
+identical to a job that clears 1-6 and fails at 7.
+
+They still do not run on their own. Every run in this repository's
+history is a `workflow_dispatch`; nine pushes to `main` have produced
+zero runs, while the events API shows those pushes landing. See
+`docs/open-findings.md` — the button for a fork's suppressed workflows is
+on the Actions tab, not in Settings.
 
 The upgrade-path job replayed `042`–`049` as one set until 14 Sep 2026,
 which was never the set that would be applied. It now builds the baseline
