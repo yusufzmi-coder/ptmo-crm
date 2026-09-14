@@ -36,7 +36,7 @@ Tiada satu pun daripada ini kerja QA. Kesemuanya menghalang UAT.
 |---|---|---|---|
 | P1 | Job *upgrade path* main semula set yang **sebenarnya** dijalankan | coordinator | [x] **SIAP** — baseline kini 001–041 + 049; release 045, 046, 047; 042/043/044/048 diparkir dan tidak pernah diapply |
 | P2 | `supabase/migrations/README.md` dikemas kini dalam commit yang sama dengan P1 | coordinator | [x] **SIAP** |
-| P3 | Kedua-dua job migration hijau | coordinator | [ ] |
+| P3 | Kedua-dua job migration hijau | coordinator | [x] **SIAP 14 Sep** — `Apply to a clean database` **success**, `Apply to a database that is already at 041` **success**. Kali pertama kedua-duanya berjalan sepenuhnya dalam hayat repo ini. |
 | P4 | Preflight akaun **Seksyen 1** — baseline benar-benar di 041 | Boss | [ ] |
 | P5 | Preflight storage **Seksyen 1** — tiada bucket public di seluruh projek | Boss | [ ] |
 | P6 | Preflight storage **Seksyen 5** — senarai baris yang **ditolak** semakan host direkod (lihat kes 5.9) | Boss | [ ] |
