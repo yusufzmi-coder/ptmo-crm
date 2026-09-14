@@ -504,3 +504,82 @@ Ia juga menyekat kerja coordinator: preflight dan migration memerlukan
 akses DB yang naik taraf, dan tiada satu pun tersedia di sini — tiada
 `supabase` CLI, tiada `psql`, tiada `DATABASE_URL`, dan `pooler-url`
 tidak membawa kata laluan.
+
+### P1 — `my_accounts` akan 404 selama-lamanya jika 044 kekal dikeluarkan
+
+`src/lib/auth/zones.ts:125` memanggil RPC `my_accounts`. Hanya
+`044_account_memberships.sql` menciptanya, dan 044 dikeluarkan daripada
+release.
+
+Laluan runtime, disahkan: header → `zone-switcher.tsx:37` → `useZones()`
+→ `use-zones.ts:79` → `fetchZones()` → `db.rpc("my_accounts")`. Zone
+switcher dirender pada setiap halaman dashboard, jadi ia menembak pada
+setiap page load.
+
+Probe REST terhadap production mengesahkan `/rest/v1/rpc/my_accounts`
+memulangkan **404**.
+
+Merosot dengan elok: `fetchZones` menangkap ralat, memulangkan
+`{ok:false,reason:'failed'}`, dan `shouldShowSwitcher()` memerlukan
+`zones.length > 1`, jadi switcher tidak render. Tiada skrin pecah.
+**Bukan blocker deploy** — tetapi konsol dipenuhi ralat berulang yang akan
+menyembunyikan ralat sebenar kemudian.
+
+Bentuk **sama persis** dengan blocker 049, dan ia terlepas atas sebab yang
+boleh dinamakan: semakan menyemak jadual yang migration cipta, bukan
+fungsi. Peraturan baharu: semak `.rpc(` dan `.from(` dalam `src/`
+terhadap setiap FUNGSI dan JADUAL yang migration cipta.
+
+### P1 — baris nav gagal kontras WCAG AA dalam mod gelap
+
+Diukur dalam aplikasi hidup, sRGB melalui canvas:
+
+| Mod | Tajuk kumpulan | Baris nav |
+| --- | --- | --- |
+| Gelap | 5.79:1 | **3.91:1** — gagal |
+| Terang | 5.52:1 | 4.81:1 — lulus, nipis |
+
+Ambang teks kecil 4.5:1.
+
+Kesan sampingan yang patut disebut: selepas tajuk kumpulan dinaikkan ke
+AA, tajuk kini **lebih kuat** daripada baris nav di bawahnya. Hierarki
+visual terbalik — tajuk seksyen sepatutnya lebih senyap daripada item
+yang boleh diklik. Warna baris nav tidak disentuh oleh kerja itu; ia
+sudah begitu sebelumnya, cuma tidak kelihatan sehingga jirannya dibaiki.
+
+### GitHub Actions tidak pernah berjalan pada repo ini
+
+`actions/runs` memulangkan `total_count: 0`. Kedua-dua workflow (`CI`,
+`Migrations`) berstatus `active`, failnya ada pada `main` dan pada branch,
+dan Actions dihidupkan pada peringkat repo. Namun tiada satu run pernah
+direkod.
+
+Ini bermakna setiap angka gate yang dilaporkan sepanjang fasa ini
+dijalankan **secara tempatan sahaja**. Angka-angka itu dijalankan berkali
+atas arkib bersih dan boleh dipercayai, tetapi ia bukan CI.
+
+Ia juga bermakna prasyarat dalam runbook — job *upgrade path* mesti hijau
+sebelum apa-apa diapply — menyatakan sesuatu yang belum pernah dipenuhi.
+
+### `crm.ptmostaff.com` sudah hidup — board menyatakan sebaliknya
+
+Domain menjawab `307 -> /dashboard` dan menyajikan
+`<title>CRM PTMO OPERATION DEPT</title>` dengan borang log masuk Inggeris.
+DNS menunjuk ke Vercel.
+
+Board merekod "Branch batch belum di-merge dan deploy ke `main`/domain
+`crm.ptmostaff.com`" seolah-olah domain itu belum wujud. Ia wujud, dan ia
+menyajikan `4b04cff` — iaitu `main` semasa, dari 11 Sep.
+
+**Maka merge ke `main` bukan operasi git semata-mata; ia auto-deploy ke
+laman hidup.** Itu mengubah profil risiko merge sepenuhnya.
+
+Dua projek Vercel tersambung pada repo ini:
+
+| Projek | Production | Keadaan |
+| --- | --- | --- |
+| `crmfinal_ptmo` | 2 deploy, kedua-dua **berjaya** | menyajikan domain |
+| `ptmo-crm` | 2 deploy, kedua-dua **GAGAL** | preview sahaja, duplikat |
+
+`ptmo-crm` tidak pernah berjaya deploy ke production. Ia menambah satu
+check yang gagal pada setiap PR dan patut dicabut.

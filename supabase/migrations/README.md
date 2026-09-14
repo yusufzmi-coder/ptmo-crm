@@ -6,18 +6,60 @@ here, because two migrations were applied by hand through the SQL editor
 rather than by the CLI. This file is the ledger. **Update it in the same
 commit that adds or applies a migration.**
 
-## State as of 2026-09-13
+## State as of 2026-09-14 (probed, not assumed)
 
 | Range | In `main` | In `feat/multi-number` | Applied to production |
 | --- | --- | --- | --- |
 | `001` – `039` | yes | yes | yes, by CLI |
 | `040`, `041` | **no** | yes | **yes, by hand** |
-| `042` – `049` | no | yes | no |
+| `042`, `043` | no | yes | no |
+| `044` | no | yes | no |
+| `045` | no | yes | no |
+| `046`, `047` | no | yes | unknown — not probeable over REST |
+| `048` | no | yes | no |
+| `049` | no | yes | **YES, by hand** |
 
-Production schema is therefore at **041**. Production *code* is at
+Production schema is therefore at **041 plus 049**. Production *code* is at
 `main`, which contains no migration past 039 — the schema is ahead of
 the code, which is the safe direction, because 040 and 041 are additive
 and the older code ignores the columns they add.
+
+### 049 was applied by hand too — this ledger said otherwise and was wrong
+
+**Corrected 14 Sep 2026.** Until now this file recorded `042`–`049` as
+unapplied. That was wrong about `049`, and the error survived because
+nobody probed production — the ledger was trusted as the source of truth
+about a database it cannot actually see.
+
+Observed over the REST API against production, read-only:
+
+```
+/rest/v1/centres                    200   table exists
+/rest/v1/regions                    200   table exists
+contacts.centre_id                        column exists
+/rest/v1/account_members            404   044 not applied
+/rest/v1/rpc/my_accounts            404   044 not applied
+quick_replies.whatsapp_config_id          column absent — 043 not applied
+member_presence.tab_id                    column absent — 045 not applied
+broadcasts.whatsapp_config_id             column absent — 048 not applied
+```
+
+The board had already flagged the contradiction and set the right rule:
+an outside note claimed 049 was live, the ledger disagreed, and the board
+said not to believe either until a read-only probe settled it. The probe
+has now run. **The outside note was right; this file was wrong.**
+
+`046` and `047` cannot be distinguished this way — one is a set of
+`REVOKE`s and the other flips `storage.buckets.public`, neither of which
+shows through PostgREST with an anon key. Their state is unknown and must
+come from the preflight queries.
+
+**Consequence for the release:** the remaining set is `045`, `046`, `047`.
+049 is done. See `docs/release-phase1-migrations.md`.
+
+**Consequence for process:** a ledger maintained by hand drifts from the
+database silently, and the drift is invisible until something probes.
+Run the preflight before trusting any row of the table above.
 
 ### Why 040 and 041 are missing from `main`
 
@@ -47,7 +89,7 @@ supabase/migrations/041_presence_viewing_conversation.sql
 
 They reach `main` when this branch merges. That merge is what makes
 `main` able to rebuild production's schema from scratch again, and it
-must land **before** 042–049 are applied anywhere, so that the file
+must land **before** the remaining migrations are applied anywhere, so that the file
 order in source control matches the order of application.
 
 ## The unapplied set
@@ -65,7 +107,7 @@ CI replay cannot, because CI only ever builds from an empty database.
 | `046` | Locks four `SECURITY DEFINER` functions to `service_role` | security-critical |
 | `047` | Makes the three storage buckets private | security-critical |
 | `048` | Broadcasts remember their number; RPC gains a parameter | data-changing |
-| `049` | Centres and regions become real tables | additive |
+| ~~`049`~~ | ~~Centres and regions become real tables~~ | **ALREADY APPLIED — see the correction above** |
 
 ### Code coupling
 
@@ -112,6 +154,16 @@ given a host check of its own.
   to backfill.
 
 Both must be green before anything is applied to production.
+
+**Neither has ever run.** GitHub Actions reports `total_count: 0` for this
+repository — both workflows are registered and `active`, and their files
+are present on `main`, but no run has ever been recorded. So the sentence
+above states a requirement that has never once been met. Investigate
+before treating CI as a gate.
+
+The upgrade-path job also still replays `042`–`049` as one set, which is
+no longer the set that will actually be applied. It needs changing to
+`045`, `046`, `047` before its result means anything.
 
 ## 049 is not pilot-ready, and must not be counted as such
 

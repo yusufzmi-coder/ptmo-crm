@@ -1,9 +1,12 @@
-# Release Fasa 1 — 045, 046, 047, 049
+# Release Fasa 1 — 045, 046, 047
 
-> **Pembetulan 14 Sep 2026.** Versi pertama dokumen ini mengeluarkan 049
-> dan ia SALAH. Lihat "049 dimasukkan semula" di bawah. Fail dinamakan
-> semula daripada `release-security-045-047.md` kerana set ini bukan lagi
-> keselamatan semata-mata.
+> **Pembetulan kedua, 14 Sep 2026.** 049 **sudah diapply pada production**
+> — disahkan dengan probe REST read-only, bukan dengan membaca ledger.
+> Set yang tinggal ialah **045, 046, 047**. Lihat "049 sudah live" di bawah.
+>
+> Pembetulan pertama (mengeluarkan 049, kemudian memasukkannya semula)
+> kekal direkod di bawah kerana sebabnya masih sah: kod yang dihantar
+> membaca jadual yang 049 cipta. Perbezaannya ialah jadual itu sudah ada.
 
 Release Fasa 1 diskop semula. Dokumen ini menggantikan
 `docs/release-042-049.md` sebagai pelan aktif; runbook lapan-migration itu
@@ -120,7 +123,58 @@ banyak zon benar-benar berlaku.
 
 ---
 
-## 049 dimasukkan semula — pembetulan
+## 049 sudah live — pembetulan kedua
+
+Probe REST read-only terhadap production, 14 Sep:
+
+```
+/rest/v1/centres        200        /rest/v1/account_members   404
+/rest/v1/regions        200        /rest/v1/rpc/my_accounts   404
+contacts.centre_id      ada        quick_replies…config_id    tiada
+                                   member_presence.tab_id     tiada
+                                   broadcasts…config_id       tiada
+```
+
+Jadi production ialah **041 + 049**, dan ledger yang menyatakan 042–049
+semuanya belum diapply adalah salah. Board sudah menandakan percanggahan
+ini dan menetapkan peraturan yang betul — jangan percaya mana-mana pihak
+sehingga probe read-only menjawab. Probe sudah jalan; nota luar betul.
+
+046 dan 047 **tidak boleh dibezakan begini** — satu set `REVOKE`, satu
+lagi menukar `storage.buckets.public`, dan kedua-duanya tidak menampakkan
+diri melalui PostgREST dengan kunci anon. Keadaannya kekal tidak diketahui
+sehingga preflight dijalankan.
+
+### Masalah yang sama bentuk, masih terbuka: `my_accounts`
+
+`src/lib/auth/zones.ts:125` memanggil RPC `my_accounts`, dan **hanya 044**
+menciptanya. 044 dikeluarkan daripada release.
+
+Laluannya hidup: header → `zone-switcher.tsx` → `useZones()` →
+`fetchZones()` → 404, pada setiap page load, selama-lamanya.
+
+Ia merosot dengan elok — `fetchZones` menangkap ralat dan memulangkan
+`{ok:false,reason:'failed'}`, switcher tidak render, tiada skrin pecah.
+Jadi **bukan blocker deploy**. Tetapi kod zon dihantar dalam keadaan mati
+dan konsol dipenuhi ralat berulang yang akan menyembunyikan ralat sebenar
+kemudian.
+
+Ini bentuk yang **sama persis** dengan blocker 049, dan ia terlepas atas
+sebab yang boleh dinamakan: semakan menyemak **jadual** yang setiap
+migration cipta, bukan **fungsi**.
+
+**Peraturan untuk semakan seterusnya:** semak setiap FUNGSI dan setiap
+JADUAL yang migration cipta terhadap `.rpc(` dan `.from(` dalam `src/`.
+Jadual sahaja tidak mencukupi.
+
+Dua pilihan, kedua-duanya keputusan Boss: masukkan semula 044, atau pagar
+panggilan itu supaya ia tidak dibuat bila ciri zon tiada. 044 membawa
+risiko tertinggi dalam set asal dan tiada nilai pilot, jadi memagarnya
+lebih murah.
+
+---
+
+## 049 dimasukkan semula — pembetulan pertama (kekal untuk rekod)
 
 Versi pertama dokumen ini mengeluarkan 049 atas alasan ia "additive dan
 selamat, tetapi tiada penulis, jadi ia akan masuk tanpa membuat apa-apa".
@@ -182,10 +236,10 @@ Jadi 045, 046 dan 047 tidak memerlukan 042, 044 atau 049.
 ## Susunan dan kopling kod
 
 ```
-merge ke main  ->  045  ->  046  ->  049  ->  deploy kod  ->  047
+merge ke main  ->  045  ->  046  ->  deploy kod  ->  047
 ```
 
-049 sebelum deploy, kerana kod yang di-deploy membaca jadualnya.
+049 tiada dalam urutan kerana ia sudah diapply.
 
 **045 — susunan bebas.** Ia menggugurkan tandatangan lama
 `touch_presence(TEXT)` dan `touch_presence(TEXT, UUID)`, dan mencipta
