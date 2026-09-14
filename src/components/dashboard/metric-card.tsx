@@ -45,7 +45,7 @@ function DeltaRow({ sign, label }: { sign: number; label: string }) {
     sign > 0
       ? 'text-primary'
       : sign < 0
-      ? 'text-red-400'
+      ? 'text-destructive'
       : 'text-muted-foreground'
   const Arrow = sign > 0 ? ArrowUp : sign < 0 ? ArrowDown : Minus
   return (
