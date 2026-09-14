@@ -21,9 +21,9 @@ import {
   blankButtonsPayload,
 } from "@/components/interactive/interactive-builder";
 import {
-  interactivePayloadPreviewText,
   type InteractiveMessagePayload,
 } from "@/lib/whatsapp/interactive";
+import { interactivePreviewText } from "@/lib/inbox/interactive-preview";
 import type { QuickReply, QuickReplyKind } from "@/types";
 import { useTranslations } from "next-intl";
 
@@ -46,6 +46,7 @@ function emptyDraft(): DraftState {
 
 export function QuickRepliesManager() {
   const t = useTranslations("Settings.quickReplies");
+  const tInteractive = useTranslations("Interactive");
   const [items, setItems] = useState<QuickReply[]>([]);
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState<DraftState | null>(null);
@@ -178,7 +179,7 @@ export function QuickRepliesManager() {
                 <p className="truncate text-sm font-medium text-foreground">{qr.title}</p>
                 <p className="truncate text-xs text-muted-foreground">
                   {qr.kind === "interactive" && qr.interactive_payload
-                    ? interactivePayloadPreviewText(qr.interactive_payload)
+                    ? interactivePreviewText(qr.interactive_payload, tInteractive)
                     : qr.content_text}
                 </p>
               </div>

@@ -1072,7 +1072,9 @@
         "matchWordHint": "키워드가 독립된 단어일 때만 일치하므로 \"k\"가 \"thanks\"에서 실행되지 않습니다. 공백으로 단어를 구분하는 언어의 짧은 키워드에 적합하며, 공백 없이 표기하는 언어에는 \"포함\"을 사용하세요.",
         "matchExact": "정확히 일치",
         "closeConversationHint": "대화 상태를 \"닫힘\"으로 설정합니다. 추가 설정이 필요 없습니다."
-      }
+      },
+      "previewNoBody": "\uba54\uc2dc\uc9c0 \ub0b4\uc6a9 \uc5c6\uc74c",
+      "previewNoTemplate": "\ud15c\ud50c\ub9bf \uc120\ud0dd"
     }
   },
   "Flows": {
@@ -1936,5 +1938,9 @@
     "retry": "\ub2e4\uc2dc \uc2dc\ub3c4",
     "toastMarkReadFailed": "\uc54c\ub9bc\uc744 \uc77d\uc74c\uc73c\ub85c \ud45c\uc2dc\ud558\uc9c0 \ubabb\ud588\uc2b5\ub2c8\ub2e4",
     "toastMarkAllFailed": "\ubaa8\ub450 \uc77d\uc74c\uc73c\ub85c \ud45c\uc2dc\ud558\uc9c0 \ubabb\ud588\uc2b5\ub2c8\ub2e4"
+  },
+  "Interactive": {
+    "emptyButtons": "\ubc84\ud2bc, \uba54\uc2dc\uc9c0 \ub0b4\uc6a9 \uc5c6\uc74c",
+    "emptyList": "\ubaa9\ub85d, \uba54\uc2dc\uc9c0 \ub0b4\uc6a9 \uc5c6\uc74c"
   }
 }
