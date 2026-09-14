@@ -876,3 +876,55 @@ selepasnya.
 Ditemui semasa menukar chip peranan Pemilik daripada 1.33:1 dalam mod
 terang. Pembetulan chip itu dihantar dengan separuh `dark:` ditulis dengan
 betul, supaya ia mula berfungsi sebaik varian itu dibetulkan.
+
+---
+
+## Selepas pembalikan varian `dark:` — apa yang berubah, untuk UAT
+
+Varian dibalikkan kepada `&:is([data-mode="dark"] *)`, menghidupkan 41
+utiliti `dark:` dalam 12 fail yang sebelum ini tidak berkesan.
+
+**Diukur, sebelum dan selepas, 14 halaman × 2 mod (1363 elemen teks):**
+
+```
+sebelum   67 gagal / 1363
+selepas   65 gagal / 1370
+```
+
+**Sifar regresi di bawah ambang.** Lapan tapak turun sedikit — butang
+outline yang kini menerima `dark:bg-input/30`, jadi latarnya sedikit lebih
+cerah — tetapi kesemuanya kekal lulus dengan lebar (19.31 -> 17.05,
+6.22 -> 5.87). Dua tapak dibetulkan: chip peranan Pemilik, 3.24 -> 11.26
+dalam mod gelap, yang memang sebab pembalikan ini dibuat.
+
+**Ke mana UAT patut melihat.** Perubahan visual yang nyata, semuanya dalam
+mod gelap sahaja:
+
+- **Medan input, textarea, select** kini mempunyai permukaannya sendiri
+  (`bg-input/30`) dan bukan warna kad. Ini yang paling luas — ia menyentuh
+  setiap borang dalam aplikasi. Ia betul mengikut reka bentuk shadcn dan
+  menjadikan medan boleh disunting lebih jelas, tetapi ia berbeza daripada
+  apa yang sesiapa pernah lihat.
+- **Butang outline dan ghost** mendapat latar dan sempadan mod gelap.
+- **Tab** — tab aktif mendapat permukaan dan sempadan sendiri; tab tidak
+  aktif kekal muted. Disahkan pada `/agents`, satu-satunya halaman dengan
+  tab yang boleh dirender tanpa data.
+- **Chip peranan Pemilik** kini amber terang dan bukan amber gelap.
+- **Avatar** — `dark:after:mix-blend-lighten` kini berkuat kuasa pada
+  penunjuk kehadiran.
+
+**Keadaan yang TIDAK diuji, kerana ia memerlukan interaksi:** setiap
+`dark:aria-invalid:*` (11 utiliti — keadaan ralat borang),
+`dark:hover:*` (7), `dark:focus-visible:*` (2), `dark:disabled:*` (2).
+Kesemuanya berasal daripada shadcn, jadi ia ditulis dan diuji di hulu
+dalam mod gelap, tetapi tiada satu pun pernah dirender di sini.
+Ia perlukan mata manusia pada borang sebenar.
+
+**Kegagalan yang masih ada dan BUKAN daripada perubahan ini** — identik
+sebelum dan selepas:
+- 62 daripada 65 ialah huruf fallback avatar (`avatar.tsx`), 3.60-4.19
+- `sasaran 5m` pada dashboard, 1.66 dalam mod terang
+- dua pautan `text-xs` pada 3.91 dalam mod gelap
+
+`radio-group.tsx` membawa 4 utiliti `dark:` dan **tiada pengguna** dalam
+`src/`. Ia tidak boleh diuji kerana ia tidak dirender di mana-mana.

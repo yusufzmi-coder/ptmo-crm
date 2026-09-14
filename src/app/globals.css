@@ -2,7 +2,13 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+/* The mode lives on `html[data-mode]` (set by layout.tsx before hydration
+   and by themes.ts thereafter). This variant previously keyed off a `.dark`
+   class that nothing in the app ever adds, so every `dark:` utility in the
+   codebase was inert and dark-mode users were served light-mode values.
+   Verified in the browser: flipping data-mode changed nothing; only adding
+   `.dark` by hand did. */
+@custom-variant dark (&:is([data-mode="dark"] *));
 
 @theme inline {
   --color-background: var(--background);
