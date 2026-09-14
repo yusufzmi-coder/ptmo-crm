@@ -409,7 +409,8 @@
       "toastFailedDelete": "Gagal memadam kenalan",
       "toastDeleted": "Kenalan dipadam",
       "toastBulkFailedDelete": "Gagal memadam kenalan",
-      "toastBulkDeleted": "{count} kenalan dipadam"
+      "toastBulkDeleted": "{count} kenalan dipadam",
+      "selectAllOnPage": "Pilih semua kenalan pada halaman ini"
     },
     "form": {
       "addTitle": "Tambah Kenalan",
@@ -703,7 +704,8 @@
       },
       "errorLoad": "Gagal memuat broadcast",
       "retry": "Cuba lagi",
-      "loading": "Memuat senarai Broadcast"
+      "loading": "Memuat senarai Broadcast",
+      "inProgress": "Siaran sedang dihantar"
     },
     "status": {
       "draft": "Draf",
@@ -922,7 +924,8 @@
         "duplicateError": "Gagal menyalin",
         "deleteError": "Gagal memadam"
       },
-      "loading": "Memuat automasi"
+      "loading": "Memuat automasi",
+      "openMenu": "Buka menu"
     },
     "edit": {
       "loading": "Memuat...",
@@ -2140,5 +2143,12 @@
     "cobalt": "Biru B2B-SaaS yang bersih — tenang dan kemas.",
     "amber": "Hangat dan mesra — sesuai untuk pasukan PKS.",
     "rose": "Berani dan moden — D2C, ekonomi kreator, gaya hidup."
+  },
+  "JoinPage": {
+    "welcome": "Selamat datang ke pasukan",
+    "networkError": "Tidak dapat menghubungi pelayan",
+    "signOutError": "Tidak dapat log keluar. Cuba muat semula halaman.",
+    "verifying": "Mengesahkan jemputan…",
+    "acceptFailed": "Gagal menerima jemputan"
   }
 }

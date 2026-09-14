@@ -409,7 +409,8 @@
       "toastFailedDelete": "Failed to delete contact",
       "toastDeleted": "Contact deleted",
       "toastBulkFailedDelete": "Failed to delete contacts",
-      "toastBulkDeleted": "{count} contacts deleted"
+      "toastBulkDeleted": "{count} contacts deleted",
+      "selectAllOnPage": "Select all contacts on this page"
     },
     "form": {
       "addTitle": "Add Contact",
@@ -703,7 +704,8 @@
       },
       "errorLoad": "Failed to load broadcasts",
       "retry": "Retry",
-      "loading": "Loading broadcasts"
+      "loading": "Loading broadcasts",
+      "inProgress": "Broadcast in progress"
     },
     "status": {
       "draft": "Draft",
@@ -922,7 +924,8 @@
         "duplicateError": "Failed to duplicate",
         "deleteError": "Failed to delete"
       },
-      "loading": "Loading automations"
+      "loading": "Loading automations",
+      "openMenu": "Open menu"
     },
     "edit": {
       "loading": "Loading...",
@@ -2140,5 +2143,12 @@
     "cobalt": "Clean B2B-SaaS blue — calm and product-y.",
     "amber": "Warm and friendly — feels good for SMB teams.",
     "rose": "Bold and modern — D2C, creator-economy, lifestyle."
+  },
+  "JoinPage": {
+    "welcome": "Welcome to the team",
+    "networkError": "Could not reach the server",
+    "signOutError": "Could not sign out. Try refreshing the page.",
+    "verifying": "Verifying invitation…",
+    "acceptFailed": "Failed to accept invitation"
   }
 }
