@@ -1,6 +1,13 @@
 name: CI
 
 on:
+  # Manual trigger. This repository is a FORK, and GitHub disables
+  # Actions on forks until a human enables them once in the Actions tab —
+  # which is why `total_count` was 0 here while both workflows reported
+  # `state: active`. A dispatch trigger gives us a way to prove the
+  # runner works without pushing a throwaway commit.
+  workflow_dispatch:
+
   pull_request:
     branches: [main]
   push:
