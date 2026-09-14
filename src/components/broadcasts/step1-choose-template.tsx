@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { MessageTemplate } from '@/types';
 import { Button } from '@/components/ui/button';
-import { Loader2, FileText, ArrowRight } from 'lucide-react';
+import { FileText, ArrowRight } from 'lucide-react';
+import { Skeleton } from '@/components/dashboard/skeleton';
 import { useTranslations } from 'next-intl';
 
 const categoryColors: Record<string, string> = {
@@ -52,9 +53,32 @@ export function Step1ChooseTemplate({ selectedTemplate, onSelect, onNext, onBack
   }, []);
 
   if (loading) {
+    // Card skeletons on the same grid the templates land on, so the
+    // wizard step keeps its height and the Next button below it doesn't
+    // jump once the fetch resolves.
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      <div
+        className="space-y-6"
+        aria-busy="true"
+        aria-label={t('chooseTemplate.loading')}
+      >
+        <div>
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="mt-2 h-4 w-72 max-w-full" />
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }, (_, i) => (
+            <div
+              key={i}
+              className="flex flex-col gap-3 rounded-xl border border-border bg-card/50 p-4"
+            >
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-3 w-full" />
+              <Skeleton className="h-3 w-4/5" />
+              <Skeleton className="h-5 w-20 rounded-full" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

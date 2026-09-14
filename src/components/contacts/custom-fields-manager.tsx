@@ -15,6 +15,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, Plus, Trash2 } from 'lucide-react';
+import { Skeleton } from '@/components/dashboard/skeleton';
 import { useTranslations } from 'next-intl';
 
 interface CustomFieldsManagerProps {
@@ -205,10 +206,21 @@ export function CustomFieldsPanel() {
       {/* List */}
       <div className="max-h-72 overflow-y-auto rounded-md border border-border">
         {loading ? (
-          <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" />
-            {t('loading')}
-          </div>
+          // Skeleton rows rather than a lone spinner: they occupy the
+          // shape the list is about to take, so the dialog doesn't jump
+          // when the rows land. Same pattern as the inbox list.
+          <ul
+            className="divide-y divide-border"
+            aria-busy="true"
+            aria-label={t('loading')}
+          >
+            {Array.from({ length: 4 }, (_, i) => (
+              <li key={i} className="flex items-center gap-2 px-3 py-2">
+                <Skeleton className="h-8 flex-1" />
+                <Skeleton className="size-8 shrink-0" />
+              </li>
+            ))}
+          </ul>
         ) : fields.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
             {t('empty')}

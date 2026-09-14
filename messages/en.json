@@ -483,7 +483,11 @@
       "toastCustomFieldsSaved": "Custom fields saved",
       "toastCustomFieldsFailed": "Failed to save custom fields",
       "toastTemplateSent": "Template \"{name}\" sent",
-      "toastTemplateFailed": "Failed to send template: {reason}"
+      "toastTemplateFailed": "Failed to send template: {reason}",
+      "loadingContact": "Loading contact",
+      "loadingNotes": "Loading notes",
+      "loadingCustomFields": "Loading custom fields",
+      "loadingDeals": "Loading deals"
     },
     "importModal": {
       "title": "Import Contacts",
@@ -763,7 +767,8 @@
         "subtitle": "Select an approved message template for your broadcast.",
         "noTemplates": "No templates available.",
         "createFirst": "Create a template in Settings first.",
-        "errorLoad": "Failed to load templates"
+        "errorLoad": "Failed to load templates",
+        "loading": "Loading templates"
       },
       "selectAudience": {
         "title": "Select Audience",
@@ -798,7 +803,9 @@
         "errorLoadTags": "Failed to load tags",
         "errorLoadFields": "Failed to load custom fields",
         "errorCsvParse": "Could not parse CSV file.",
-        "errorCsvMissingPhone": "CSV must have a 'phone' column."
+        "errorCsvMissingPhone": "CSV must have a 'phone' column.",
+        "loadingTags": "Loading tags",
+        "loadingFields": "Loading custom fields"
       },
       "personalize": {
         "title": "Personalize Variables",
