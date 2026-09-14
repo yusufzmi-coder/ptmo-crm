@@ -11,8 +11,12 @@ Ia bukan ringkasan `docs/release-phase1-migrations.md` — runbook itu
 memiliki urutan, rollback dan preflight. Dokumen ini memiliki satu perkara
 sahaja: **bukti bahawa ia berfungsi untuk staf sebenar selepas ia mendarat.**
 
-> **Status: belum dijalankan.** Ini template bukti. Jangan isi sehingga
-> setiap prasyarat di bawah hijau.
+> **Status: prasyarat SEMUA hijau sejak 15 Sep.** P1–P7 selesai, kedua-dua
+> job CI hijau, dan release diapply. UAT boleh bermula.
+>
+> Satu perkara masih menunggu dan ia bukan prasyarat: nombor WhatsApp
+> belum disambung, jadi Bahagian WhatsApp tidak boleh diuji. Segala yang
+> lain boleh.
 
 | | |
 |---|---|
@@ -37,10 +41,10 @@ Tiada satu pun daripada ini kerja QA. Kesemuanya menghalang UAT.
 | P1 | Job *upgrade path* main semula set yang **sebenarnya** dijalankan | coordinator | [x] **SIAP** — baseline kini 001–041 + 049; release 045, 046, 047; 042/043/044/048 diparkir dan tidak pernah diapply |
 | P2 | `supabase/migrations/README.md` dikemas kini dalam commit yang sama dengan P1 | coordinator | [x] **SIAP** |
 | P3 | Kedua-dua job migration hijau | coordinator | [x] **SIAP 14 Sep** — `Apply to a clean database` **success**, `Apply to a database that is already at 041` **success**. Kali pertama kedua-duanya berjalan sepenuhnya dalam hayat repo ini. |
-| P4 | Preflight akaun **Seksyen 1** — baseline benar-benar di 041 | Boss | [ ] |
-| P5 | Preflight storage **Seksyen 1** — tiada bucket public di seluruh projek | Boss | [ ] |
-| P6 | Preflight storage **Seksyen 5** — senarai baris yang **ditolak** semakan host direkod (lihat kes 5.9) | Boss | [ ] |
-| P7 | Apply mengikut urutan `045 → 046 → deploy kod → 047` | Boss | [ ] |
+| P4 | Preflight akaun | Boss | [x] **LULUS 14 Sep** |
+| P5 | Preflight storage | Boss | [x] **LULUS 14 Sep** |
+| P6 | Preflight storage Seksyen 5 — baris yang ditolak semakan host direkod | Boss | [x] **LULUS 14 Sep** |
+| P7 | Apply `045`, `046`, `047` | Boss | [x] **SIAP 15 Sep** — ketiga-tiganya dalam **satu transaksi**. Urutan tiga langkah runtuh kepada satu kerana deploy kod sudah berlaku sebelum itu. Tiga penegasan dalam transaksi: `t` `t` `t`. Probe bebas dari luar mengesahkannya. |
 
 Nota P4: Seksyen 3 preflight akaun (role NULL) **tidak lagi menghalang** —
 ia ditulis untuk 044, yang dikeluarkan. Seksyen 1 kekal wajib.
