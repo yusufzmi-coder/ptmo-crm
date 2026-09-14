@@ -322,3 +322,37 @@ Had: Chrome headless mengapit lebar tetingkap pada 500px, jadi angka 320px
 dan 375px **diterbitkan** daripada pemalar chrome 176px, bukan diperhatikan.
 Terbitan itu kukuh kerana chrome tetap tidak berubah di bawah `sm`, tetapi
 ia bukan pemerhatian. Emulasi peranti melalui CDP diperlukan untuk menutupnya.
+
+### Tiga daripada empat halaman auth tiada i18n langsung
+
+Diperhatikan dengan menjalankan app pada `NEXT_PUBLIC_APP_LOCALE=ms`, bukan
+dibaca daripada kod.
+
+| Halaman | `useTranslations` |
+| --- | --- |
+| `(auth)/login` | ada |
+| `(auth)/signup` | **tiada** |
+| `(auth)/forgot-password` | **tiada** |
+| `(auth)/reset-password` | **tiada** |
+
+Jadi selepas katalog Melayu diaktifkan, seorang staf yang mendaftar atau
+menetapkan semula kata laluan mendapat skrin Inggeris penuh, betul-betul
+selepas skrin log masuk yang berbahasa Melayu. Termasuk mesej ralat
+(`"Passwords do not match"`, `"Password must be at least 6 characters"`)
+dan label butang.
+
+Ini kelas kecacatan yang sama dengan halaman Notifications — halaman yang
+terlepas semasa i18n asal dipasang, dan tidak kelihatan sehingga locale
+bukan-Inggeris dihidupkan.
+
+`login` sudah diterjemah dan dirender dengan betul dalam Melayu, disahkan
+pada 500px dan 1280px: tiada limpahan, tiada pengeratan, susun atur
+identik dengan Inggeris.
+
+**Nota kaedah — satu amaran palsu yang hampir dilaporkan:** screenshot pada
+`--window-size=390` menunjukkan kad terpotong di sebelah kanan pada
+`signup` DAN `login`. Itu bukan kecacatan halaman. Chrome headless mengapit
+lebar tetingkap pada ~500px, jadi meminta 390 menangkap 390px daripada
+susun atur 500px dan memotong bakinya. Pada 500px sebenar, kad `max-w-md`
+(448px) muat dengan lega. Jangan laporkan pengeratan daripada screenshot di
+bawah 500px tanpa emulasi peranti melalui CDP.
