@@ -737,3 +737,68 @@ Lihat juga `src/i18n/request.ts` — `.env.local` tempatan memegang
 menyajikan `en.json` secara senyap. Itu sudah dibaiki; nilai yang tidak
 sah kini memberi amaran dan jatuh ke `en` dengan nyata. Jadi kalau nilai
 Vercel ditetapkan salah, log build akan menyebutnya.
+
+## Teks lalai nod flow ikut locale pencipta — bocor ke dalam mesej pelanggan
+
+**Tapak:** `flow-editor-state.tsx:151` (`button_label: "View options"`),
+`flow-editor-state.tsx:156` (`title: "Option 1"`),
+`node-config-form.tsx:257` (`title: "Option"`)
+
+Ini nilai lalai yang ditulis ke dalam config nod bila pengguna menambah
+langkah. Ia bukan kromium UI — ia menjadi kandungan tersimpan yang
+dihantar kepada ibu bapa melalui WhatsApp.
+
+Cadangan asal ialah menterjemahnya mengikut locale pencipta. **Jangan.**
+Locale pencipta ialah pembolehubah yang salah.
+
+PTMO ada 16 cawangan pada satu akaun. Butang yang staf cawangan A cipta
+dihantar kepada ibu bapa yang sama seperti butang yang staf cawangan B
+cipta. Kalau lalai mengikut locale pencipta, kandungan WhatsApp yang ibu
+bapa terima bergantung pada **tetapan pelayar** orang yang kebetulan
+menambah langkah itu.
+
+Ibu bapa tidak pernah melihat UI. Mereka melihat mesej. Locale pencipta
+ialah fakta tentang **staf** dan ia bocor ke dalam mesej **pelanggan**.
+
+**Pembetulan sebenar:** lalai peringkat akaun — satu bahasa untuk segala
+yang keluar melalui WhatsApp, tidak kira siapa menaipnya. Itu ciri, bukan
+kemasan i18n. Menunggu keputusan Boss.
+
+Sehingga itu, biarkan Inggeris. Satu bahasa yang salah lebih baik
+daripada dua bahasa yang tidak boleh diramal.
+
+## Peraturan: apa-apa yang DISIMPAN atau DIBANDINGKAN tidak melalui katalog
+
+Dua kali dalam fasa ini rentetan hampir diterjemah yang bukan teks
+paparan:
+
+- `NODE_META.label` — `flow-editor-state.tsx:478` melakukan
+  `slugify(meta.label, type)` untuk menyemai **kunci nod**. Kunci itu
+  disimpan dan dibandingkan. Menterjemahnya bermakna dua pengguna dalam
+  akaun yang sama menjana kunci berbeza untuk nod yang sama, dan
+  perbandingan gagal secara senyap pada data yang kelihatan betul.
+- Nilai lalai nod, di atas.
+
+Bentuknya sama: **pengecam mengikut locale pengguna**. Ia lulus setiap
+gate — tsc bersih, ujian lulus, pariti locale sempurna — dan gagal hanya
+apabila dua locale bertemu dalam data yang sama.
+
+`NODE_META.label` kini didokumenkan dalam **jenisnya**, bukan dalam komen
+bebas. Komen dibaca oleh orang yang sudah curiga; jenis dibaca oleh orang
+yang tidak.
+
+## Peraturan: satukan bila kedua-duanya mesti BERSETUJU, bukan bila sepadan
+
+`Flows.list.status*` dan `Flows.header.status*` disatukan menjadi
+`Flows.status.*`. Tetapi `Flows.logs.statusActive` (status **larian**) dan
+`Flows.editorState.statusArchived` (teks **toast**) sengaja dibiarkan
+berasingan, walaupun ketiga-tiganya mengandungi perkataan yang sama.
+
+Ujiannya bukan sama ada dua rentetan sepadan hari ini. Ia sama ada dua
+rentetan mesti sentiasa bersetuju — biasanya kerana ia muncul bersebelahan
+untuk keadaan yang sama.
+
+Mengulang `"Delete"` merentas namespace selamat. Mengulang label status
+ialah bahaya hanyut. Menyatukan atas dasar perkataan yang sama ialah
+kesilapan yang sama seperti tidak menyatukan langsung, cuma arah
+bertentangan.
