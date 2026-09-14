@@ -410,7 +410,8 @@
       "toastFailedDelete": "연락처를 삭제하지 못했습니다",
       "toastDeleted": "연락처가 삭제되었습니다",
       "toastBulkFailedDelete": "연락처를 삭제하지 못했습니다",
-      "toastBulkDeleted": "연락처 {count}개가 삭제되었습니다"
+      "toastBulkDeleted": "연락처 {count}개가 삭제되었습니다",
+      "selectAllOnPage": "이 페이지의 모든 연락처 선택"
     },
     "form": {
       "addTitle": "연락처 추가",
@@ -705,7 +706,8 @@
       },
       "errorLoad": "브로드캐스트를 불러오지 못했습니다",
       "retry": "다시 시도",
-      "loading": "브로드캐스트 불러오는 중"
+      "loading": "브로드캐스트 불러오는 중",
+      "inProgress": "브로드캐스트 전송 중"
     },
     "status": {
       "draft": "초안",
@@ -924,7 +926,8 @@
         "duplicateError": "복제하지 못했습니다",
         "deleteError": "삭제하지 못했습니다"
       },
-      "loading": "자동화 불러오는 중"
+      "loading": "자동화 불러오는 중",
+      "openMenu": "메뉴 열기"
     },
     "edit": {
       "loading": "불러오는 중...",
@@ -2142,5 +2145,12 @@
     "cobalt": "깔끔한 B2B SaaS 블루 — 차분하고 제품다운 느낌.",
     "amber": "따뜻하고 친근한 색 — 중소기업 팀에 잘 어울립니다.",
     "rose": "과감하고 현대적인 색 — D2C, 크리에이터 이코노미, 라이프스타일."
+  },
+  "JoinPage": {
+    "welcome": "팀에 오신 것을 환영합니다",
+    "networkError": "서버에 연결할 수 없습니다",
+    "signOutError": "로그아웃할 수 없습니다. 페이지를 새로고침해 보세요.",
+    "verifying": "초대를 확인하는 중…",
+    "acceptFailed": "초대를 수락하지 못했습니다"
   }
 }
