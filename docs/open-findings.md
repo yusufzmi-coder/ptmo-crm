@@ -1619,3 +1619,46 @@ kepala imej. Templat teks tidak menyentuhnya.
 
 Gagal lantang dengan arahan ialah tingkah laku yang betul; direkod supaya
 tiada siapa menganggapnya pembolehubah wajib.
+
+## Actions masih tidak tercetus oleh `push` — dan arahan saya salah tempat
+
+Saya memberitahu Boss untuk membetulkannya di **Settings → Actions**.
+Selepas itu dibetulkan, keadaannya tidak berubah.
+
+Bukti, dikumpul selepas sembilan merge ke `main`:
+
+```
+events API        PushEvent refs/heads/main   ✓ sampai ke GitHub
+                  PullRequestEvent            ✓ sampai
+actions/permissions  enabled: true, allowed_actions: all
+workflows            CI active, Migrations active
+larian sebenar       9 daripada 9 ialah workflow_dispatch
+                     0 daripada push, 0 daripada pull_request
+```
+
+Jadi peristiwa **sampai**, workflow **aktif**, kebenaran **didayakan**,
+dan tiada satu pun peristiwa memulakan larian. Hanya dispatch manual.
+
+**Asimetri itu sendiri ialah petunjuknya.** Kalau workflow dimatikan,
+dispatch akan gagal juga. Kalau pencetus salah, YAML akan menunjukkannya
+— ia tidak; `push: branches: [main]` ada pada `main` tanpa penapis
+laluan.
+
+Corak "dispatch berfungsi, peristiwa tidak" ialah keadaan **fork yang
+belum didayakan**. Repo ini fork bagi `ArnasDon/wacrm`.
+
+**Butang untuk itu bukan dalam Settings.** Ia sepanduk pada **tab
+Actions** sendiri — *"Workflows aren't being run on this forked
+repository"* dengan butang untuk mendayakannya. Tetapan kebenaran dalam
+Settings ialah skrin yang berbeza, dan membetulkannya tidak menjelaskan
+sepanduk itu.
+
+**Cara mengetahui tanpa meneka:** buka tab Actions. Kalau sepanduk itu
+ada, itu jawapannya. Kalau tiada, punca sebenar masih tidak diketahui
+dan perlu disiasat semula — jangan anggap hipotesis ini betul kerana ia
+munasabah.
+
+Ini bukan blocker: setiap gate boleh dicetuskan dengan
+`gh workflow run "<nama>" --ref main`, dan itu yang telah dilakukan
+sepanjang hari. Kosnya ialah tiada siapa akan perasan gate merah tanpa
+seseorang mencetuskannya dengan tangan.
