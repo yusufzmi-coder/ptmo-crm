@@ -144,7 +144,7 @@ function groupMessagesByDate(messages: Message[]) {
 
 const STATUS_OPTIONS: { label: string; value: ConversationStatus; color: string }[] = [
   { label: "Open", value: "open", color: "text-primary" },
-  { label: "Pending", value: "pending", color: "text-amber-400" },
+  { label: "Pending", value: "pending", color: "text-warning" },
   { label: "Closed", value: "closed", color: "text-muted-foreground" },
 ];
 
@@ -992,7 +992,7 @@ export function MessageThread({
             variant="outline"
             className={cn(
               "ml-1 hidden gap-1 border-border text-[10px] sm:inline-flex sm:ml-2",
-              sessionInfo.expired ? "text-red-400" : "text-primary"
+              sessionInfo.expired ? "text-destructive" : "text-primary"
             )}
           >
             <Clock className="h-3 w-3" />
@@ -1152,7 +1152,7 @@ export function MessageThread({
       {coViewerNames.length > 0 && (
         <div
           role="status"
-          className="flex items-start gap-2 border-b border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 sm:px-4 dark:text-amber-300"
+          className="flex items-start gap-2 border-b border-warning/70 bg-warning/10 px-3 py-2 text-xs text-warning sm:px-4"
         >
           <Eye className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" aria-hidden />
           <span>

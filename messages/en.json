@@ -2026,7 +2026,8 @@
       "sentMinutesAgo": "sent {count} min ago",
       "sentHoursAgo": "sent {count, plural, =1 {1 hour} other {# hours}} ago",
       "sentDaysAgo": "sent {count, plural, =1 {1 day} other {# days}} ago",
-      "boardHeading": "Waiting for a reply"
+      "boardHeading": "Waiting for a reply",
+      "loadingBoard": "Loading the board"
     },
     "responseTime": {
       "withinTargetToday": "Within target today",
