@@ -2159,5 +2159,15 @@
     "signOutError": "로그아웃할 수 없습니다. 페이지를 새로고침해 보세요.",
     "verifying": "초대를 확인하는 중…",
     "acceptFailed": "초대를 수락하지 못했습니다"
+  },
+  "Gated": {
+    "createPipelines": "읽기 전용 — 파이프라인을 만들 권한이 없습니다",
+    "createDeals": "읽기 전용 — 거래를 만들 권한이 없습니다",
+    "createBroadcasts": "읽기 전용 — 브로드캐스트를 만들 권한이 없습니다",
+    "manageContacts": "읽기 전용 — 연락처를 추가하거나 가져올 권한이 없습니다",
+    "deleteContacts": "읽기 전용 — 연락처를 삭제할 권한이 없습니다",
+    "createAutomations": "읽기 전용 — 자동화를 만들 권한이 없습니다",
+    "createFlows": "읽기 전용 — 플로우를 만들 권한이 없습니다",
+    "sendMessages": "읽기 전용 — 메시지를 보낼 권한이 없습니다"
   }
 }

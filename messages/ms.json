@@ -2159,5 +2159,15 @@
     "signOutError": "Tidak dapat log keluar. Cuba muat semula halaman.",
     "verifying": "Mengesahkan jemputan…",
     "acceptFailed": "Gagal menerima jemputan"
+  },
+  "Gated": {
+    "createPipelines": "Baca sahaja — peranan anda tidak boleh mencipta saluran paip",
+    "createDeals": "Baca sahaja — peranan anda tidak boleh mencipta deal",
+    "createBroadcasts": "Baca sahaja — peranan anda tidak boleh mencipta siaran",
+    "manageContacts": "Baca sahaja — peranan anda tidak boleh menambah atau mengimport kenalan",
+    "deleteContacts": "Baca sahaja — peranan anda tidak boleh memadam kenalan",
+    "createAutomations": "Baca sahaja — peranan anda tidak boleh mencipta automasi",
+    "createFlows": "Baca sahaja — peranan anda tidak boleh mencipta aliran",
+    "sendMessages": "Baca sahaja — peranan anda tidak boleh menghantar mesej"
   }
 }
