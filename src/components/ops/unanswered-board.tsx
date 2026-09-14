@@ -472,8 +472,9 @@ function relativeSince(
 }
 
 function BoardSkeleton() {
+  const t = useTranslations("Ops.unanswered");
   return (
-    <ul className="space-y-2" aria-busy="true" aria-label="Loading">
+    <ul className="space-y-2" aria-busy="true" aria-label={t("loadingBoard")}>
       {Array.from({ length: 4 }).map((_, i) => (
         <li
           key={i}

@@ -2026,7 +2026,8 @@
       "sentMinutesAgo": "dihantar {count} min lalu",
       "sentHoursAgo": "dihantar {count, plural, =1 {1 jam} other {# jam}} lalu",
       "sentDaysAgo": "dihantar {count, plural, =1 {1 hari} other {# hari}} lalu",
-      "boardHeading": "Menunggu balasan"
+      "boardHeading": "Menunggu balasan",
+      "loadingBoard": "Memuatkan papan"
     },
     "responseTime": {
       "withinTargetToday": "Dalam sasaran hari ini",
