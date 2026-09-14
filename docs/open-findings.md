@@ -928,3 +928,66 @@ sebelum dan selepas:
 
 `radio-group.tsx` membawa 4 utiliti `dark:` dan **tiada pengguna** dalam
 `src/`. Ia tidak boleh diuji kerana ia tidak dirender di mana-mana.
+
+## Carian nama tidak boleh menemui kelas kecacatan ini
+
+`bg-primary/10 text-primary` mengukur 4.19 terang / 3.60 gelap, dan
+`bg-primary/20 text-primary` mengukur 3.66 / 3.24. Pasangan itu muncul
+**23 kali dalam 18 fail** dan terselamat daripada **lima** pusingan warna
+berturut-turut.
+
+Ia terselamat kerana setiap pusingan mencari **nama token**.
+`bg-primary-soft` dan `bg-primary/10` menghasilkan permukaan yang hampir
+sama dan memerlukan pembetulan yang sama — tetapi hanya satu daripadanya
+mengandungi perkataan yang sedang dicari. Pasangan kelegapan mengeja idea
+yang sama tanpa sebarang nama yang boleh digrep.
+
+**Pengesan yang betul untuk kelas ini bukan carian nama.** Ia: untuk
+setiap pasangan latar-dan-teks yang **dirender**, kira nisbahnya. Harness
+pengukuran menangkapnya serta-merta; lima larian grep tidak.
+
+Peraturan yang sama menjelaskan kenapa `--destructive` yang identik dalam
+kedua-dua blok mod tidak pernah dilaporkan oleh sesiapa: tiada nama yang
+salah, hanya nilai yang salah.
+
+## Penukar berasaskan corak mengedit komen yang menerangkan keadaan lama
+
+Semasa migrasi pasangan di atas, penukar menulis semula `text-primary`
+menjadi `text-primary-on-soft` **di dalam komen** yang merekodkan pepijat
+bersejarah:
+
+```
+// `primary` — so the old `bg-primary/20 text-primary` chip was
+// primary-on-primary and invisible.
+```
+
+Komen itu menerangkan keadaan **lama**. Menukarnya memadamkan rekod
+kenapa pepijat itu wujud, sambil menjadikan ayat itu tidak masuk akal.
+
+Ditangkap sebelum commit dan dipulihkan. Direkod kerana **mana-mana**
+penukar berasaskan regex akan melakukan perkara yang sama, dan diffnya
+kelihatan tidak mencurigakan melainkan pembaca menyemak baris komen.
+Semak diff prosa, bukan hanya diff kod, selepas sebarang penukaran
+berskop.
+
+## `tsc` menyapu `.next` — dev sebelum typecheck memberi ralat palsu
+
+`tsconfig.json` menggunakan `include: ["**/*.ts"]` dengan `exclude` yang
+menyenaraikan `node_modules`, `project-command-board` dan `tools` sahaja.
+`.next` tidak dikecualikan.
+
+Jadi menjalankan dev server dan kemudian `npx tsc --noEmit` dalam worktree
+yang sama memberikan ralat dalam `.next/dev/types/validator.ts` — artifak
+binaan, bukan kod. `rm -rf .next/dev` membersihkannya.
+
+Sesiapa yang menjalankan dev sebelum gate dalam worktree yang sama akan
+terkena, dan ralatnya menunjuk kepada fail yang tiada siapa tulis.
+
+## `radio-group.tsx` membawa empat keputusan yang tidak pernah dilihat
+
+Ia mengandungi empat utiliti `dark:` dan **tiada pengimport di mana-mana
+dalam `src/`**. Ia tidak dirender, jadi ia tidak boleh disemak — dan ia
+tidak termasuk dalam sapuan pengukuran pembalikan varian atas sebab itu.
+
+Ia akan muncul suatu hari nanti apabila seseorang menggunakannya, membawa
+empat nilai mod gelap yang tidak pernah dilihat sesiapa berfungsi.
