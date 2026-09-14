@@ -1,5 +1,24 @@
 # Release Fasa 1 — 045, 046, 047
 
+> # ✅ SELESAI — diapply 15 Sep 2026
+>
+> Ketiga-tiganya mendarat dalam **satu transaksi**, ditampal daripada
+> `supabase/release/APPLY-045-046-047.sql`. Urutan tiga langkah runtuh
+> kepada satu kerana deploy kod sudah berlaku sebelum itu, yang merupakan
+> satu-satunya sebab 047 perlu menunggu.
+>
+> Tiga penegasan dalam transaksi kesemuanya `t`, dan probe baca-sahaja
+> berasingan mengesahkannya dari **luar** pangkalan data:
+> `member_presence.tab_id` 200, ketiga-tiga bucket awam 400,
+> domain 200.
+>
+> **Dokumen ini kini sejarah, bukan pelan.** Ia menerangkan apa yang
+> ketiga-tiga migration itu buat dan kenapa, yang kekal berguna. Jangan
+> baca bahagian di bawah sebagai kerja tertunggak — tiada satu pun
+> daripadanya tertunggak.
+>
+> Keadaan production semasa ada dalam `supabase/migrations/README.md`.
+
 > **Pembetulan kedua, 14 Sep 2026.** 049 **sudah diapply pada production**
 > — disahkan dengan probe REST read-only, bukan dengan membaca ledger.
 > Set yang tinggal ialah **045, 046, 047**. Lihat "049 sudah live" di bawah.

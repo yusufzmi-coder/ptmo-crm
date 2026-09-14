@@ -13,6 +13,15 @@ tidak pernah dibina, dan board meletakkannya dalam Fasa 3, bukan Fasa 1.
 Ia memerlukan **jadual baharu dalam pangkalan data**, dan semua kerja
 skema diparkir sepanjang Fasa 1. Itu sebab tab itu tiada, bukan terlepas.
 
+**Dikemas kini 15 Sep 2026.** Fasa 1 selesai — `045`, `046` dan `047`
+diapply, jadi sekatan asal tidak lagi terpakai. Tetapi halangan sebenar
+bertukar bentuk dan bukan hilang: menulis `050` bermakna menulisnya di
+atas pokok yang `042`–`048`-nya **tidak pernah dijalankan oleh mana-mana
+pangkalan data**. Jurang itu melebar dengan setiap migration baharu.
+
+Putuskan apa yang berlaku kepada empat fail itu **sebelum** tab ini
+dibina, bukan selepas.
+
 ---
 
 ## Apa yang sudah ada untuk dibina di atasnya
