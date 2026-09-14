@@ -4,13 +4,15 @@
 
 **Pemilik:** Yusuf Azmi  
 **Produk:** CRM PTMO Operation Dept  
-**Status keseluruhan:** Fasa 1 - release gate  
-**Dikemas kini:** 14 Sep 2026
-**Branch kerja bersepadu:** `feat/multi-number` = `origin/main` = `019e722` — semua diserap
-**Gate:** lint 0 error / 35 warning · typecheck 0 · 1195 ujian lulus · build berjaya
-**Katalog:** en/ko/ms 1737 kunci setiap satu. Bahasa Melayu **belum diaktifkan** — `NEXT_PUBLIC_APP_LOCALE` pada Vercel masih `en`
-**Live:** `crm.ptmostaff.com` menyajikan `019e722` melalui Vercel projek `crmfinal_ptmo`
-**Baseline production:** skema **041 + 049** (diprobe, bukan diandaikan). Set release tinggal **045, 046, 047**
+**Status keseluruhan:** Fasa 1 **SELESAI** · Fasa 3 (Issue Case) sedang dibina
+**Dikemas kini:** 15 Sep 2026
+**Branch kerja bersepadu:** `feat/multi-number` = `origin/main` = `6928678` — semua diserap
+**Gate:** lint 0 error / 32 warning · typecheck 0 · **1285 ujian lulus** · build berjaya
+**Katalog:** en/ko/ms **1905 kunci** setiap satu. Bahasa Melayu **aktif** — domain menyajikan `lang="ms"`
+**Live:** `crm.ptmostaff.com` 200, melalui Vercel projek `crmfinal_ptmo`
+**Baseline production:** skema **041 + 045 + 046 + 047 + 049**. Release Fasa 1 diapply 15 Sep dalam satu transaksi; tiga penegasan `t`, disahkan bebas dengan probe baca-sahaja dari luar pangkalan data.
+**CI:** kedua-dua job Migrations **hijau** — kali pertama dalam hayat repo ini. Ia masih **tidak tercetus sendiri**; sembilan push ke `main` menghasilkan sifar larian sementara events API menunjukkan push itu mendarat. Lihat `docs/open-findings.md`.
+**Belum diapply, dan tiada pangkalan data pernah menjalankannya:** `042`, `043`, `044`, `048`. Jurang itu melebar dengan setiap migration baharu.
 
 ---
 
@@ -18,25 +20,28 @@
 
 | Keutamaan | Tindakan | Siapa | Bila selesai |
 |---|---|---|---|
-| P0 | Jalankan `release-preflight-accounts.sql` dalam Supabase SQL Editor dan kongsi hasil | Yusuf | [ ] |
-| P0 | Jalankan `release-preflight-storage.sql` dan kongsi hasil | Yusuf | [ ] |
-| P1 | Susun release migration 042-049 | Coordinator | [x] 14 Sep - `docs/release-042-049.md` |
-| P1 | Semak hasil preflight, betulkan blocker jika ada | Coordinator | [ ] tunggu P0 |
-| P1 | Final QA branch: tests, type-check, lint | Coordinator + QA | [x] 14 Sep - 4 gate hijau pada `841db55` |
-| P1 | PR/merge ke `main` | Coordinator | [ ] tunggu arahan |
-| P1 | Deploy | Coordinator | [x] 14 Sep - auto-deploy Vercel pada setiap merge ke `main` |
-| P1 | UAT tanpa WhatsApp sebenar | Yusuf + Coordinator | [ ] sebahagian - 10 halaman disahkan, 7 item perlukan data sebenar |
-| P2 | Pilih satu nombor WhatsApp **baharu** dan satu Centre untuk pilot | Yusuf | [ ] |
-| P2 | Cleanup locale Korea: sahkan `NEXT_PUBLIC_APP_LOCALE` production bukan `ko`, kemudian buang `messages/ko.json` dan `TRANSLATED_LOCALES` dalam `src/i18n/messages.test.ts` | Coordinator | [ ] |
+| P0 | Sambung nombor WhatsApp — Callback `https://crm.ptmostaff.com/api/whatsapp/webhook`, verify token yang kau reka, PIN 6-digit | Yusuf | [ ] **satu-satunya yang menghalang Fasa 2** |
+| P1 | Tab Actions GitHub — sepanduk fork. Sembilan push, sifar larian; setiap gate setakat ini dicetuskan dengan tangan | Yusuf | [ ] |
+| P1 | Vercel: pastikan `WHATSAPP_TEMPLATES_DRY_RUN` **tiada**. Kalau `true`, templat dapat ID rekaan dan tidak pernah sampai ke Meta — UI kata "menunggu kelulusan" selama-lamanya | Yusuf | [ ] |
+| P1 | Vercel: sahkan `META_APP_SECRET` ialah App Secret sebenar. Tanpanya **setiap mesej ibu bapa ditolak** — gagal tertutup, betul, tetapi kelihatan seperti WhatsApp senyap | Yusuf | [ ] |
+| P1 | Supabase Auth → URL Configuration mesti termasuk domain live, kalau tidak reset kata laluan mendarat di `localhost` | Yusuf | [ ] |
+| P2 | Vercel: putuskan projek pendua kalau `ptmo-crm` masih bersambung — env var mungkin hanya ada pada satu | Yusuf | [ ] |
+| P2 | Putuskan nasib `042`, `043`, `044`, `048` — empat migration yang tiada pangkalan data pernah jalankan. Jurang melebar dengan setiap migration baharu | Yusuf + Coordinator | [ ] |
+| P2 | Jadual cron — automasi dengan langkah `wait` berhenti kekal tanpanya. Halangan kod sudah dibuang; tinggal jadual, dan Hobby hadkan sekali sehari | Yusuf | [ ] |
+| — | ~~Preflight akaun + storage~~ | Yusuf | [x] **15 Sep** lulus |
+| — | ~~Apply 045, 046, 047~~ | Yusuf | [x] **15 Sep** satu transaksi, tiga penegasan `t` |
+| — | ~~Locale Melayu pada Vercel~~ | Yusuf | [x] **15 Sep** domain menyajikan `lang="ms"` |
+| — | ~~Kunci service-role~~ | Yusuf | [x] **15 Sep** ditukar kepada `sb_secret_` — sebelum ini salinan kunci anon, cap SHA-256 identik |
+| — | ~~Kedua-dua job CI hijau~~ | Coordinator | [x] **14 Sep** tujuh sekatan berturut-turut, setiap satu menyembunyikan yang berikutnya |
 
 ## Peta fasa
 
 | Fasa | Hasil yang hendak dicapai | Status |
 |---|---|---|
 | 0 - Foundation | Reka bentuk multi-zone, nombor balasan betul, migration 041 co-viewer | Done |
-| 1 - Shared Inbox Foundation | Multi-number, zone/HQ, security, centres, release safety | Release gate |
-| 2 - WhatsApp Pilot | 1 Centre, 1 nombor baharu, 2 staf, chat/media/call log asas | Next |
-| 3 - Operations Workflow | Claim chat, issue case, lifecycle, follow-up, escalation longgar | Planned |
+| 1 - Shared Inbox Foundation | Multi-number, zone/HQ, security, centres, release safety | **Done** 15 Sep |
+| 2 - WhatsApp Pilot | 1 Centre, 1 nombor baharu, 2 staf, chat/media/call log asas | **Next** — tinggal sambung nombor |
+| 3 - Operations Workflow | Claim chat, issue case, lifecycle, follow-up, escalation longgar | **Sedang dibina** — teras Issue Case |
 | 4 - Scale & HQ | Rollout ikut gelombang, zone health, HQ report, BSC | Planned |
 | 5 - SMS & Automation | Sambung SMS sebagai source of truth, AI/automation terkawal | Later |
 
