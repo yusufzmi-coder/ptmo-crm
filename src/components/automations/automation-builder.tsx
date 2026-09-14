@@ -1530,6 +1530,18 @@ function FieldBlock({
 }
 
 /**
+ * Wait units the builder offers, mapped to their preview keys. The
+ * dropdown at `config.units.*` writes these three values; anything else
+ * would be data we never wrote, so the lookup falls back to the same
+ * default the config editor uses.
+ */
+const WAIT_PREVIEW_KEY: Record<string, string> = {
+  minutes: "previewWaitMinutes",
+  hours: "previewWaitHours",
+  days: "previewWaitDays",
+}
+
+/**
  * One-line summary under a step's title in the builder tree.
  *
  * Takes both translators because the two namespaces are not
@@ -1540,12 +1552,15 @@ function FieldBlock({
  */
 function previewFor(
   step: BuilderStep,
-  t: (key: string) => string,
+  t: (key: string, values?: Record<string, string | number>) => string,
   tInteractive: (key: string) => string,
 ): string {
   switch (step.step_type) {
     case "send_message":
-      return (step.step_config.text as string) || "no text yet"
+      // Same wording as an empty interactive payload — both mean "this
+      // step has no message text yet", so they share one key rather
+      // than drifting into two phrasings of the same sentence.
+      return (step.step_config.text as string) || t("previewNoBody")
     case "send_buttons":
     case "send_list":
       return (
@@ -1554,12 +1569,24 @@ function previewFor(
       )
     case "send_template":
       return (step.step_config.template_name as string) || t("previewNoTemplate")
-    case "wait":
-      return `${step.step_config.amount ?? "?"} ${step.step_config.unit ?? ""}`
-    case "condition":
-      return `when ${step.step_config.subject ?? "?"}`
+    case "wait": {
+      // "5" on its own does not say five of what, so the unit is part
+      // of the translated string, not concatenated after it. Each unit
+      // is its own ICU plural — languages do not agree on how (or
+      // whether) a count changes the noun.
+      const amount = Number(step.step_config.amount)
+      if (!Number.isFinite(amount)) return t("previewWaitUnset")
+      const unit = (step.step_config.unit as string) ?? "hours"
+      return t(WAIT_PREVIEW_KEY[unit] ?? WAIT_PREVIEW_KEY.hours, { amount })
+    }
+    case "condition": {
+      const subject = step.step_config.subject as string | undefined
+      return subject
+        ? t("previewCondition", { subject })
+        : t("previewConditionUnset")
+    }
     case "send_webhook":
-      return (step.step_config.url as string) || "no url"
+      return (step.step_config.url as string) || t("previewNoUrl")
     default:
       return ""
   }

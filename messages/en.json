@@ -1078,7 +1078,14 @@
         "closeConversationHint": "Sets the conversation status to \"closed\". No configuration needed."
       },
       "previewNoBody": "No message text yet",
-      "previewNoTemplate": "Pick a template"
+      "previewNoTemplate": "Pick a template",
+      "previewNoUrl": "No URL yet",
+      "previewCondition": "When {subject}",
+      "previewConditionUnset": "Condition not set",
+      "previewWaitMinutes": "{amount, plural, one {# minute} other {# minutes}}",
+      "previewWaitHours": "{amount, plural, one {# hour} other {# hours}}",
+      "previewWaitDays": "{amount, plural, one {# day} other {# days}}",
+      "previewWaitUnset": "Duration not set"
     }
   },
   "Flows": {

@@ -1078,7 +1078,14 @@
         "closeConversationHint": "대화 상태를 \"닫힘\"으로 설정합니다. 추가 설정이 필요 없습니다."
       },
       "previewNoBody": "메시지 내용 없음",
-      "previewNoTemplate": "템플릿 선택"
+      "previewNoTemplate": "템플릿 선택",
+      "previewNoUrl": "URL 없음",
+      "previewCondition": "{subject}일 때",
+      "previewConditionUnset": "조건 미설정",
+      "previewWaitMinutes": "{amount, plural, other {#분}}",
+      "previewWaitHours": "{amount, plural, other {#시간}}",
+      "previewWaitDays": "{amount, plural, other {#일}}",
+      "previewWaitUnset": "기간 미설정"
     }
   },
   "Flows": {
