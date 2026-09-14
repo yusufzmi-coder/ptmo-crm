@@ -207,7 +207,7 @@ export function Step4ScheduleSend({
             <p className="text-foreground">{audienceLabel}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Estimated Reach</p>
+            <p className="text-xs text-muted-foreground">{t('scheduleSend.estimatedReach')}</p>
             <div className="flex items-center gap-1.5">
               {loadingReach ? (
                 <Spinner size="sm" className="text-primary" />
@@ -220,7 +220,7 @@ export function Step4ScheduleSend({
             </div>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Language</p>
+            <p className="text-xs text-muted-foreground">{t('scheduleSend.language')}</p>
             <p className="text-foreground">{template.language ?? 'en_US'}</p>
           </div>
         </div>
@@ -283,13 +283,17 @@ export function Step4ScheduleSend({
           </DialogTrigger>
           <DialogContent className="border-border bg-popover sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-popover-foreground">Confirm Broadcast</DialogTitle>
+              <DialogTitle className="text-popover-foreground">{t('scheduleSend.confirmTitle')}</DialogTitle>
               <DialogDescription className="text-muted-foreground">
-                You are about to send this broadcast to{' '}
-                <span className="font-medium text-popover-foreground">{estimatedReach.toLocaleString()}</span>{' '}
-                contacts using the{' '}
-                <span className="font-medium text-popover-foreground">{template.name}</span> template.
-                This action cannot be undone.
+                {t.rich('scheduleSend.confirmDesc', {
+                  count: estimatedReach.toLocaleString(),
+                  template: template.name,
+                  strong: (chunks) => (
+                    <span className="font-medium text-popover-foreground">
+                      {chunks}
+                    </span>
+                  ),
+                })}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>

@@ -815,7 +815,11 @@
         "errorCsvParse": "Gagal menghurai fail CSV.",
         "errorCsvMissingPhone": "CSV mesti mempunyai lajur 'phone'.",
         "loadingTags": "Memuat tag",
-        "loadingFields": "Memuat medan tersuai"
+        "loadingFields": "Memuat medan tersuai",
+        "summaryTitle": "Ringkasan Audiens",
+        "calculating": "Sedang mengira…",
+        "estimatedRecipients": "anggaran penerima",
+        "summaryHint": "Pilih jenis audiens untuk melihat anggaran."
       },
       "personalize": {
         "title": "Peribadikan Pemboleh Ubah",
@@ -865,7 +869,11 @@
         "progressDesc": "Memproses {current} daripada {total} penerima...",
         "toastFailedPreview": "Gagal memuat data pratonton",
         "sendFrom": "Hantar dari",
-        "sendFromHint": "Balasan dan kempen ini keluar melalui nombor ini. Parent nampak cawangan yang mereka kenal."
+        "sendFromHint": "Balasan dan kempen ini keluar melalui nombor ini. Parent nampak cawangan yang mereka kenal.",
+        "estimatedReach": "Anggaran Jangkauan",
+        "language": "Bahasa",
+        "confirmTitle": "Sahkan Broadcast",
+        "confirmDesc": "Anda akan menghantar broadcast ini kepada <strong>{count}</strong> kenalan menggunakan template <strong>{template}</strong>. Tindakan ini tidak boleh dibatalkan."
       }
     }
   },
@@ -1320,6 +1328,23 @@
       "modeRemove": "Buang",
       "tagPicked": "{mode} tag {tag}…",
       "tagNone": "{mode} tag (belum dipilih)"
+    },
+    "header": {
+      "backToFlows": "Kembali ke Flow",
+      "flowName": "Nama Flow",
+      "unsavedChanges": "Perubahan belum disimpan — tekan Simpan untuk menyimpannya",
+      "edited": "Diedit",
+      "runs": "Larian",
+      "delete": "Padam",
+      "pause": "Jeda",
+      "activate": "Aktifkan",
+      "save": "Simpan",
+      "fixIssuesFirst": "Betulkan isu di bawah sebelum mengaktifkan",
+      "descriptionPlaceholder": "Tambah penerangan ringkas (dalaman — pelanggan tidak nampak ini)",
+      "descriptionLabel": "Penerangan Flow",
+      "statusDraft": "Draf",
+      "statusActive": "Aktif",
+      "statusArchived": "Diarkibkan"
     }
   },
   "Settings": {
