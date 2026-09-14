@@ -7,10 +7,15 @@
  *
  * WHY THIS EXISTS — a text search is not good enough here.
  *
- * An audit of src/components/settings found 26 untranslated strings and
- * exactly ONE of them was JSX text. The other 25 were toast arguments,
+ * A hand audit of src/components/settings found 26 untranslated strings
+ * and exactly ONE was JSX text. The other 25 were toast arguments,
  * window.confirm messages, aria-labels, titles and placeholders. Grepping
  * for prose between angle brackets would have called that tree clean.
+ *
+ * (Those are the hand-audit numbers. This detector reports the same tree
+ * differently — see the benchmark below for its own figures. Do not
+ * calibrate against 26/1; that pair describes what a human found, not
+ * what this script prints.)
  *
  * So this walks the TypeScript AST instead and looks at every string the
  * program can produce, wherever it sits.
@@ -30,10 +35,50 @@
  * there — a toast, an aria-label, a title. Only then does silence on your
  * own tree mean anything.
  *
- * The benchmark: src/components/settings. It should surface toast text
- * ("Failed to create invitation"), title="Edit" / title="Delete", and
- * placeholder values. If your filters have silenced those, they are too
- * aggressive — loosen them before auditing anything else.
+ * The benchmark: src/components/settings AS IT WAS AT a800140^.
+ *
+ *   git archive a800140^ src/components/settings | tar -x -C /tmp/calib
+ *   node tools/find-untranslated.mjs /tmp/calib/src/components/settings/*.tsx
+ *
+ * Measured against THIS detector, that tree yields ~138 hits. Check the
+ * kinds, not the total — the total carries a lot of readable noise:
+ *
+ *   toast            29     the arm that matters most
+ *   attr:placeholder  5
+ *   assigned-string   4
+ *   jsx-text          3
+ *   attr:title        3
+ *   attr:aria-label   2
+ *
+ * If `toast` collapses, the filters are too aggressive. If `jsx-text`
+ * reaches zero, the JSX arm is broken. Counting only the total would
+ * hide either failure behind the noise.
+ *
+ * The commit pin is not pedantry. This benchmark originally read "run it
+ * against src/components/settings" with no revision, and settings was
+ * translated in a800140 and 36c418e a few hours later. Anyone
+ * calibrating after that got 3 hits from a detector that was working
+ * perfectly, and had no way to tell whether the tool or the tree had
+ * changed. A benchmark that points at HEAD has an expiry date nobody
+ * wrote down.
+ *
+ * ---------------------------------------------------------------------
+ * WHAT IT STILL CANNOT SEE
+ *
+ * A literal assigned to a variable and interpolated into a translator or
+ * toast a line later. The call site holds no literal at all:
+ *
+ *   const reason = err instanceof Error ? err.message : "network error";
+ *   toast.error(t("sendFailed", { reason }));
+ *
+ * Six of these hid in an inbox tree that this detector had just reported
+ * on, and they were found by reading the code, not by scanning. The
+ * `assigned-string` arm below catches the common shape — a prose string
+ * in a ternary or `||` fallback assigned to a local — but a value routed
+ * through a function or a second variable still escapes it.
+ *
+ * Treat an empty result as "no literal at the call site", never as "no
+ * English reaches the user".
  *
  * ---------------------------------------------------------------------
  * WHAT IS FILTERED OUT, AND WHY EACH FILTER EXISTS
@@ -114,6 +159,18 @@ function isTechnical(s) {
   if (/^#[0-9a-fA-F]{3,8}$/.test(v)) return true;
   if (/^(oklch|rgb|hsl|var)\(/.test(v)) return true;
   if (/^[\d\s.,%+()-]+$/.test(v)) return true;
+  // A Tailwind class list. Tested on EVERY token carrying a utility
+  // marker (- : [ /), not merely on being lowercase: "network error" is
+  // two lowercase words and an earlier version of this filter swallowed
+  // it, which is the exact failure the assigned-string arm exists to
+  // prevent. A filter that hides a real hit is worse than one that lets
+  // a class list through.
+  if (
+    /\s/.test(v) &&
+    v.split(/\s+/).every((t) => /^[a-z0-9]+[-:[\]/][\S]*$/.test(t))
+  ) {
+    return true;
+  }
   return false;
 }
 
@@ -207,6 +264,31 @@ function analyse(file) {
         hits.push([lineOf(n), "template", head + "${…}"]);
       }
     }
+    // assigned-string: a prose literal handed to a local that a
+    // translator or toast reads a line later. The call site holds no
+    // literal, so every arm above walks past it — this is the shape that
+    // hid six "network error" strings in an already-audited tree.
+    if (ts.isVariableDeclaration(n) && n.initializer) {
+      const lits = [];
+      const collect = (e) => {
+        if (!e) return;
+        if (ts.isStringLiteral(e)) lits.push(e);
+        else if (ts.isConditionalExpression(e)) { collect(e.whenTrue); collect(e.whenFalse); }
+        else if (ts.isBinaryExpression(e) &&
+                 (e.operatorToken.kind === ts.SyntaxKind.BarBarToken ||
+                  e.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken)) {
+          collect(e.left); collect(e.right);
+        }
+      };
+      collect(n.initializer);
+      for (const lit of lits) {
+        const text = lit.text.trim();
+        if (text && !isTechnical(text) && !insideTranslator(lit) && /\s/.test(text)) {
+          hits.push([lineOf(lit), "assigned-string", text]);
+        }
+      }
+    }
+
     ts.forEachChild(n, visit);
   };
   visit(src);
