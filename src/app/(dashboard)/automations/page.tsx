@@ -192,7 +192,7 @@ export default function AutomationsPage() {
                   onClick={() => startFromTemplate(slug)}
                   className="group flex flex-col items-start rounded-xl border border-border bg-card p-4 text-left transition-colors hover:border-primary/50 hover:bg-card/80"
                 >
-                  <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary-on-soft group-hover:bg-primary/15">
+                  <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary-readable group-hover:bg-primary/15">
                     <Icon className="h-5 w-5" />
                   </div>
                   <div className="text-sm font-semibold text-foreground">{t.name}</div>
@@ -207,7 +207,7 @@ export default function AutomationsPage() {
       {automations.length === 0 ? (
         <div className="flex h-48 flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card/40">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-            <Zap className="h-6 w-6 text-primary" />
+            <Zap className="h-6 w-6 text-primary-readable" />
           </div>
           <p className="mt-3 text-sm font-medium text-foreground">{t("emptyTitle")}</p>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -287,7 +287,7 @@ function AutomationCard({
           className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10"
           aria-hidden
         >
-          <Zap className="h-5 w-5 text-primary" />
+          <Zap className="h-5 w-5 text-primary-readable" />
         </div>
 
         <button

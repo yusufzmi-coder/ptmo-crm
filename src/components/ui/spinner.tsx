@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
  * there was nowhere to fix it.
  *
  * Colour is inherited: the icon is drawn in `currentColor`, so a
- * `text-primary` or `text-muted-foreground` on the spinner (or on any
+ * `text-primary-readable` or `text-muted-foreground` on the spinner (or on any
  * parent) is what tints it. Don't add colours to the variants.
  *
  * Reduced motion is already handled globally — `globals.css` collapses

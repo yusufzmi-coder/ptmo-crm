@@ -224,7 +224,7 @@ export default function JoinPage() {
     return (
       <Card className="w-full max-w-md border-border bg-card">
         <CardContent className="flex flex-col items-center gap-3 py-12">
-          <Loader2 className="size-6 animate-spin text-primary" />
+          <Loader2 className="size-6 animate-spin text-primary-readable" />
           <p className="text-sm text-muted-foreground">{t('verifying')}</p>
         </CardContent>
       </Card>
@@ -296,16 +296,16 @@ export default function JoinPage() {
   const inviteHeader = (
     <CardHeader className="items-center text-center">
       <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-        <UsersRound className="h-6 w-6 text-primary" />
+        <UsersRound className="h-6 w-6 text-primary-readable" />
       </div>
       <CardTitle className="text-xl text-foreground">
         You&apos;re invited to{' '}
-        <span className="text-primary">{peek.account_name}</span>
+        <span className="text-primary-readable">{peek.account_name}</span>
       </CardTitle>
       <CardDescription className="text-muted-foreground">
         You&apos;ll join as{' '}
         <span className="inline-flex items-center gap-1 text-foreground">
-          <ShieldCheck className="size-3.5 text-primary" />
+          <ShieldCheck className="size-3.5 text-primary-readable" />
           {ROLE_LABEL[peek.role]}
         </span>
         . Link valid until{' '}

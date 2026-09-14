@@ -326,7 +326,7 @@ export function Step2SelectAudience({
               <div
                 className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
                   isSelected
-                    ? 'bg-primary/10 text-primary-on-soft'
+                    ? 'bg-primary/10 text-primary-readable'
                     : 'bg-muted text-muted-foreground'
                 }`}
               >
@@ -370,7 +370,7 @@ export function Step2SelectAudience({
                     onClick={() => toggleTag(tag.id)}
                     className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-all ${
                       isSelected
-                        ? 'border-primary/30 bg-primary/10 text-primary-on-soft'
+                        ? 'border-primary/30 bg-primary/10 text-primary-readable'
                         : 'border-border bg-muted text-muted-foreground hover:border-border'
                     }`}
                   >
@@ -473,7 +473,7 @@ export function Step2SelectAudience({
               {csvFileName ?? t('selectAudience.uploadCsv')}
             </p>
             {csvCount > 0 && (
-              <p className="text-xs text-primary">
+              <p className="text-xs text-primary-readable">
                 {t('selectAudience.csvContactsFound', { count: csvCount })}
               </p>
             )}
@@ -530,12 +530,12 @@ export function Step2SelectAudience({
         <p className="mb-2 text-sm font-medium text-foreground">{t('selectAudience.summaryTitle')}</p>
         {loadingCount ? (
           <div className="flex items-center gap-2">
-            <Spinner size="sm" className="text-primary" />
+            <Spinner size="sm" className="text-primary-readable" />
             <span className="text-xs text-muted-foreground">{t('selectAudience.calculating')}</span>
           </div>
         ) : estimatedCount !== null ? (
           <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-primary" />
+            <Users className="h-4 w-4 text-primary-readable" />
             <span className="text-sm text-foreground">
               {estimatedCount.toLocaleString()}
             </span>

@@ -96,7 +96,7 @@ export function Header({ onOpenSidebar }: HeaderProps) {
                 alt={profile.full_name ?? t("defaultAvatar")}
               />
             ) : null}
-            <AvatarFallback className="bg-primary/10 text-sm font-medium text-primary-on-soft">
+            <AvatarFallback className="bg-primary/10 text-sm font-medium text-primary-readable">
               {initial}
             </AvatarFallback>
           </Avatar>

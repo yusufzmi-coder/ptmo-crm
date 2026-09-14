@@ -75,7 +75,7 @@ export default function FlowEditorPage() {
         <button
           type="button"
           onClick={() => router.push("/flows")}
-          className="text-sm text-primary hover:opacity-80"
+          className="text-sm text-primary-readable hover:opacity-80"
         >
           {t("backToFlows")}
         </button>

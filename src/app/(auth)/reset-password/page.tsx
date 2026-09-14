@@ -137,7 +137,7 @@ export default function ResetPasswordPage() {
         <Card className="w-full max-w-md border-border bg-card">
           <CardHeader className="items-center text-center">
             <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-              <CheckCircle className="h-6 w-6 text-primary" />
+              <CheckCircle className="h-6 w-6 text-primary-readable" />
             </div>
             <CardTitle className="text-[1.35rem] font-semibold leading-tight tracking-tight text-foreground">
               {t("successTitle")}

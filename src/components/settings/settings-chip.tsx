@@ -16,7 +16,7 @@ export type ChipVariant = 'owner' | 'admin' | 'ok' | 'warn' | 'muted';
 
 const VARIANTS: Record<ChipVariant, string> = {
   owner: 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300',
-  admin: 'border-primary-soft-2 bg-primary-soft text-primary-on-soft',
+  admin: 'border-primary-soft-2 bg-primary-soft text-primary-readable',
   ok: 'border-success/70 bg-success/10 text-success',
   warn: 'border-warning/70 bg-warning/10 text-warning',
   muted: 'border-border bg-muted text-muted-foreground',

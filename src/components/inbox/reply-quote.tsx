@@ -45,7 +45,7 @@ export function ReplyQuote({
         <div
           className={cn(
             "truncate text-[11px] font-medium",
-            onPrimary ? "text-primary-foreground" : "text-primary",
+            onPrimary ? "text-primary-foreground" : "text-primary-readable",
           )}
         >
           {authorLabel}

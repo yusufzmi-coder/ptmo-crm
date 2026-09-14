@@ -63,7 +63,21 @@
   --color-primary-hover: var(--primary-hover);
   --color-primary-soft: var(--primary-soft);
   --color-primary-soft-2: var(--primary-soft-2);
-  --color-primary-on-soft: var(--primary-on-soft);
+  /* The brand blue when it has to be READ rather than filled with.
+   * --primary is a fill: it sits under near-white on every button and
+   * measures 4.81 there, so it has to stay dark. As text it fails on
+   * every ordinary surface in dark mode — 3.91 on card and popover,
+   * 3.59 on muted — and making --primary itself mode-aware cannot fix
+   * that, because the button wants it darker at exactly the moment the
+   * text wants it lighter.
+   *
+   * So this is the same hue, moved in lightness per mode, and it is the
+   * ONLY thing text-* and icons should use. It started life named
+   * -on-soft, for tinted surfaces; it was renamed once it turned out to
+   * be the answer on plain ones too. A token named after one surface
+   * gets missed when someone searches for the other, which is how
+   * bg-primary/10 text-primary survived five contrast rounds. */
+  --color-primary-readable: var(--primary-readable);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -103,7 +117,7 @@
  *
  * So there is no second place to change, and no reference to check a
  * value against. Every accent value outside ptmo has since been chosen
- * by measurement alone — see the --primary-on-soft block below. If the
+ * by measurement alone — see the --primary-readable block below. If the
  * handoff ever comes back, reconcile against it; until then, measure.
  * ============================================================ */
 
@@ -192,7 +206,7 @@ html[data-theme="ptmo"] {
   --primary-hover: #08639b;
   --primary-soft: color-mix(in srgb, #0a77bb 14%, transparent);
   --primary-soft-2: color-mix(in srgb, #0a77bb 26%, transparent);
-  --primary-on-soft: #5aaee0;
+  --primary-readable: #5aaee0;
   --ring: #0a77bb;
   --chart-1: #0a77bb;
   --chart-2: #4fa3dc;
@@ -220,7 +234,7 @@ html[data-theme="ptmo"][data-mode="light"] {
   --input: #d9e4ef;
   --primary-soft: #e8f3fb;
   --primary-soft-2: #d3e6f5;
-  --primary-on-soft: #065a8e;
+  --primary-readable: #065a8e;
   --sidebar: #fafcfe;
   --sidebar-accent: #e8f3fb;
   --sidebar-border: #d9e4ef;
@@ -232,7 +246,7 @@ html[data-theme="violet"] {
   --primary-hover: oklch(0.6 0.22 293);
   --primary-soft: oklch(0.526 0.247 293 / 0.12);
   --primary-soft-2: oklch(0.526 0.247 293 / 0.2);
-  --primary-on-soft: oklch(0.70 0.18 293);
+  --primary-readable: oklch(0.70 0.18 293);
   --ring: oklch(0.526 0.247 293);
   --chart-1: oklch(0.526 0.247 293);
   --sidebar-primary: oklch(0.526 0.247 293);
@@ -241,7 +255,7 @@ html[data-theme="violet"] {
 }
 
 html[data-theme="violet"][data-mode="light"] {
-  --primary-on-soft: oklch(0.44 0.24 293);
+  --primary-readable: oklch(0.44 0.24 293);
 }
 
 html[data-theme="emerald"] {
@@ -250,7 +264,7 @@ html[data-theme="emerald"] {
   --primary-hover: oklch(0.68 0.15 162);
   --primary-soft: oklch(0.62 0.16 162 / 0.12);
   --primary-soft-2: oklch(0.62 0.16 162 / 0.22);
-  --primary-on-soft: oklch(0.72 0.15 162);
+  --primary-readable: oklch(0.72 0.15 162);
   --ring: oklch(0.62 0.16 162);
   --chart-1: oklch(0.62 0.16 162);
   --chart-2: oklch(0.7 0.14 195);
@@ -260,7 +274,7 @@ html[data-theme="emerald"] {
 }
 
 html[data-theme="emerald"][data-mode="light"] {
-  --primary-on-soft: oklch(0.45 0.14 162);
+  --primary-readable: oklch(0.45 0.14 162);
 }
 
 html[data-theme="cobalt"] {
@@ -269,7 +283,7 @@ html[data-theme="cobalt"] {
   --primary-hover: oklch(0.66 0.18 254);
   --primary-soft: oklch(0.585 0.2 254 / 0.12);
   --primary-soft-2: oklch(0.585 0.2 254 / 0.22);
-  --primary-on-soft: oklch(0.70 0.16 254);
+  --primary-readable: oklch(0.70 0.16 254);
   --ring: oklch(0.585 0.2 254);
   --chart-1: oklch(0.585 0.2 254);
   --chart-2: oklch(0.7 0.15 220);
@@ -279,7 +293,7 @@ html[data-theme="cobalt"] {
 }
 
 html[data-theme="cobalt"][data-mode="light"] {
-  --primary-on-soft: oklch(0.47 0.19 254);
+  --primary-readable: oklch(0.47 0.19 254);
 }
 
 html[data-theme="amber"] {
@@ -288,7 +302,7 @@ html[data-theme="amber"] {
   --primary-hover: oklch(0.8 0.15 65);
   --primary-soft: oklch(0.745 0.16 65 / 0.12);
   --primary-soft-2: oklch(0.745 0.16 65 / 0.22);
-  --primary-on-soft: oklch(0.80 0.15 65);
+  --primary-readable: oklch(0.80 0.15 65);
   --ring: oklch(0.745 0.16 65);
   --chart-1: oklch(0.745 0.16 65);
   --chart-2: oklch(0.7 0.15 35);
@@ -298,7 +312,7 @@ html[data-theme="amber"] {
 }
 
 html[data-theme="amber"][data-mode="light"] {
-  --primary-on-soft: oklch(0.48 0.12 65);
+  --primary-readable: oklch(0.48 0.12 65);
 }
 
 html[data-theme="rose"] {
@@ -307,7 +321,7 @@ html[data-theme="rose"] {
   --primary-hover: oklch(0.71 0.2 16);
   --primary-soft: oklch(0.645 0.22 16 / 0.12);
   --primary-soft-2: oklch(0.645 0.22 16 / 0.22);
-  --primary-on-soft: oklch(0.71 0.19 16);
+  --primary-readable: oklch(0.71 0.19 16);
   --ring: oklch(0.645 0.22 16);
   --chart-1: oklch(0.645 0.22 16);
   --chart-2: oklch(0.7 0.18 340);
@@ -317,7 +331,7 @@ html[data-theme="rose"] {
 }
 
 html[data-theme="rose"][data-mode="light"] {
-  --primary-on-soft: oklch(0.49 0.21 16);
+  --primary-readable: oklch(0.49 0.21 16);
 }
 
 @layer base {

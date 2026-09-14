@@ -162,7 +162,7 @@ export function AiKnowledgeCard({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <BookOpen className="h-4 w-4 text-primary" /> {t('title')}
+          <BookOpen className="h-4 w-4 text-primary-readable" /> {t('title')}
         </CardTitle>
         <CardDescription>
           {t('description', {

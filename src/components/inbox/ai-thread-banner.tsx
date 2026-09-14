@@ -164,7 +164,7 @@ export function AiThreadBanner({
   return (
     <Banner tone="primary">
       <div className="flex min-w-0 flex-1 items-center gap-1.5">
-        <Sparkles className="h-3.5 w-3.5 flex-shrink-0 text-primary" />
+        <Sparkles className="h-3.5 w-3.5 flex-shrink-0 text-primary-readable" />
         <span className="truncate font-medium text-foreground">
           {t("activeText")}
         </span>

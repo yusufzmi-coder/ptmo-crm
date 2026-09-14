@@ -132,7 +132,7 @@ function MessageContent({
 
     case "template":
       // Templates are almost always outbound, where the bubble fill IS
-      // `primary` — so the old `bg-primary/20 text-primary` chip was
+      // `primary` — so the old `bg-primary/20 text-primary-readable` chip was
       // primary-on-primary and invisible. Paired with a null
       // content_text (issue #483) that rendered a bubble with nothing
       // in it at all. Invert on the primary fill, and fall back to the
@@ -145,7 +145,7 @@ function MessageContent({
               "mb-1 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium",
               isAgent
                 ? "bg-primary-foreground/20 text-primary-foreground"
-                : "bg-primary/20 text-primary-on-soft",
+                : "bg-primary/20 text-primary-readable",
             )}
           >
             <LayoutTemplate className="h-3 w-3" />

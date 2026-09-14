@@ -703,7 +703,7 @@ export function MessageComposer({
           className={cn(
             "pointer-events-none absolute inset-1 z-20 flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed backdrop-blur-sm",
             canAccept
-              ? "border-primary bg-primary-soft/90 text-primary-on-soft"
+              ? "border-primary bg-primary-soft/90 text-primary-readable"
               : "border-border bg-muted/90 text-muted-foreground",
           )}
         >
@@ -719,7 +719,7 @@ export function MessageComposer({
       {(branchName || coViewers.length > 0) && (
         <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1">
           {branchName && (
-            <span className="inline-flex max-w-full items-center gap-1 rounded-full border border-primary-soft-2 bg-primary-soft px-2 py-0.5 text-xs font-semibold text-primary-on-soft">
+            <span className="inline-flex max-w-full items-center gap-1 rounded-full border border-primary-soft-2 bg-primary-soft px-2 py-0.5 text-xs font-semibold text-primary-readable">
               <Building2 className="h-3 w-3 shrink-0" aria-hidden />
               {/* Deliberately NOT truncated. If the name is long enough
                   to wrap, it wraps — this is the string that must never
@@ -922,7 +922,7 @@ export function MessageComposer({
             gateReasonKey="sendMessages"
             disabled={drafting}
             title={readOnly ? undefined : t("draftWithAI")}
-            className="h-9 w-9 shrink-0 p-0 text-muted-foreground hover:text-primary"
+            className="h-9 w-9 shrink-0 p-0 text-muted-foreground hover:text-primary-readable"
             onClick={handleDraft}
           >
             {drafting ? (

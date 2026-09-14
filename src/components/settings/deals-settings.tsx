@@ -78,7 +78,7 @@ export function DealsSettings() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-foreground">
-            <Coins className="size-4 text-primary" />
+            <Coins className="size-4 text-primary-readable" />
             {t("defaultCurrency")}
           </CardTitle>
           <CardDescription className="text-muted-foreground">

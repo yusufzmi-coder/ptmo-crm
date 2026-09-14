@@ -158,7 +158,7 @@ export default function NewBroadcastPage() {
                     isCompleted
                       ? 'bg-primary text-primary-foreground'
                       : isActive
-                        ? 'border-2 border-primary bg-primary/10 text-primary-on-soft'
+                        ? 'border-2 border-primary bg-primary/10 text-primary-readable'
                         : 'border border-border bg-muted text-muted-foreground'
                   }`}
                 >
@@ -166,7 +166,7 @@ export default function NewBroadcastPage() {
                 </div>
                 <span
                   className={`hidden text-sm font-medium sm:block ${
-                    isActive ? 'text-foreground' : isCompleted ? 'text-primary' : 'text-muted-foreground'
+                    isActive ? 'text-foreground' : isCompleted ? 'text-primary-readable' : 'text-muted-foreground'
                   }`}
                 >
                   {t(`steps.${step.label}`)}
