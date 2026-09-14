@@ -1080,3 +1080,81 @@ Korea **ditangguhkan** sebagai keputusan produk, jadi ini konsisten dengan
 keputusan itu dan bukan kecacatan baharu. Direkod supaya ia tidak ditemui
 semula sebagai kejutan, dan supaya sesiapa yang membangkitkan sokongan
 Korea semula tahu skalanya sebelum menganggarkan.
+
+## Kontras: 37 tapak yang larian automatik tidak akan pernah tunjukkan
+
+`tools/measure-contrast.mjs` menyapu keadaan **rehat** sahaja. Ia tidak
+boleh memasuki `hover:`, `focus-visible:`, `aria-invalid:` atau
+`disabled:`, kerana tiada cara memaksa keadaan itu pada setiap elemen
+halaman dan mengukurnya.
+
+Akibatnya bukan teori. Larian bersih daripada alat itu bermakna "tiada
+kegagalan rehat", dan tidak lebih — tetapi laporan yang mengatakan "sifar
+kegagalan" dibaca sebagai "tiada kegagalan". Kiraan di bawah diambil
+dengan grep kerana grep ialah satu-satunya cara melihat perkara ini.
+
+Diukur pada `cd8204a`.
+
+### Sembilan `hover:text-destructive/80`
+
+    components/interactive/interactive-builder.tsx    ×3
+    components/flows/forms/node-config-form.tsx       ×3
+    components/flows/header.tsx                       ×1
+    components/flows/flow-canvas.tsx                  ×1
+    components/flows/flow-builder.tsx                 ×1
+
+Kesemuanya butang buang/padam. Ia ditulis semasa migrasi warna token,
+menggantikan `hover:text-red-300` — pasangan tona tangan yang ditala
+untuk mod gelap sahaja. `/80` dipilih kerana ia menghasilkan langkah
+hover yang kelihatan betul, **bukan kerana ia diukur**.
+
+Nisbahnya tidak diketahui. Alat tidak boleh memberitahu, dan tiada siapa
+telah mengukurnya dengan tangan.
+
+### 28 sempadan di bawah `/70` dalam keadaan rehat
+
+Ambang `/70` datang daripada pengukuran QA: `/40` diuji terhadap kad pada
+lapan kes dan gagal ambang bukan-teks 3:1 pada kesemuanya — 1.84 hingga
+2.50. Sempadan di bawah `/70` belum tentu gagal, tetapi tiada satu pun
+telah diukur sejak ambang itu ditetapkan.
+
+     9  border-border/50      contact-detail-view ×5, deal-form ×2,
+                              ai-playground, deal-card
+     4  border-primary/30     automations/[id]/logs, notifications,
+                              step2-select-audience, template-picker
+     3  border-primary/40     flow-builder, sidebar, settings/role-meta
+     3  border-primary/60     appearance-panel ×2, message-reactions
+     2  border-primary/20     step4-schedule-send, ai-thread-banner
+     2  border-border/60      media-lightbox, message-media
+     1  border-primary/50     flow-builder
+     1  border-primary/35     import-modal
+     1  border-primary-foreground/50  reply-quote
+     1  border-destructive/40 failed-messages-alert
+     1  border-destructive/30 settings/password-form
+
+`border-border/50` ialah kes yang paling mungkin **bukan** kecacatan —
+`--border` sudah rendah kontras secara reka bentuk, jadi melembutkannya
+lagi mungkin disengajakan. Ia disenaraikan kerana ia tidak dibezakan
+daripada yang lain tanpa pengukuran.
+
+### 18 lagi di belakang varian
+
+    8  hover:border-primary/50 dan seumpamanya
+    5  aria-invalid:border-destructive/50   (input, select, textarea,
+                                             radio-group, button)
+    4  hover:border-primary/40
+    1  hover:border-destructive/40
+
+`aria-invalid:` ialah yang paling membimbangkan daripada kumpulan ini:
+ia sempadan yang menandakan medan borang sebagai **tidak sah**, jadi ia
+satu-satunya penanda visual bahawa sesuatu perlu dibetulkan — dan ia
+muncul hanya dalam keadaan yang alat tidak boleh sapu.
+
+### Apa yang diperlukan untuk menutupnya
+
+Bukan grep yang lebih baik. Sama ada harness yang memaksa keadaan
+(`element.classList.add` bagi setiap varian, kemudian ukur), atau satu
+pusingan pengukuran tangan terhadap 37 tapak ini.
+
+Sehingga salah satu berlaku, mana-mana laporan kontras hendaklah
+mengatakan "tiada kegagalan **rehat**" dan bukan "tiada kegagalan".
