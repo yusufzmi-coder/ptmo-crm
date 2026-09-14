@@ -7,7 +7,7 @@ import type { PresenceStatus } from "@/lib/presence";
 export const PRESENCE_DOT_CLASS: Record<PresenceStatus, string> = {
   online: "bg-success",
   away: "bg-warning",
-  offline: "bg-muted-foreground/50",
+  offline: "bg-muted-foreground/80",
 };
 
 /**
