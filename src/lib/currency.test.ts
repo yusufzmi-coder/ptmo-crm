@@ -59,14 +59,18 @@ describe("formatCurrency", () => {
 
 describe("formatCurrencyShort", () => {
   it("abbreviates millions and thousands with the currency symbol", () => {
-    expect(formatCurrencyShort(2_500_000, "USD")).toBe("$2.5M");
-    expect(formatCurrencyShort(3_400, "USD")).toBe("$3.4k");
-    expect(formatCurrencyShort(900, "USD")).toBe("$900");
+    expect(formatCurrencyShort(2_500_000, "MYR")).toBe("RM2.5M");
+    expect(formatCurrencyShort(3_400, "MYR")).toBe("RM3.4k");
+    expect(formatCurrencyShort(900, "MYR")).toBe("RM900");
   });
 
-  it("uses the matching symbol for non-USD currencies", () => {
-    expect(formatCurrencyShort(1_000, "EUR")).toBe("€1.0k");
-    expect(formatCurrencyShort(1_000, "INR")).toBe("₹1.0k");
+  it("falls back to the code prefix for currencies no longer offered", () => {
+    // CURRENCIES holds MYR alone — PTMO trades in ringgit and nothing
+    // else. Codes that used to be in the list are now treated exactly
+    // like any unknown code: prefixed, never guessed at a symbol. Rows
+    // written before the list was narrowed still render legibly.
+    expect(formatCurrencyShort(1_000, "USD")).toBe("USD 1.0k");
+    expect(formatCurrencyShort(1_000, "EUR")).toBe("EUR 1.0k");
   });
 
   it("falls back to the code prefix for unknown currencies (no throw)", () => {

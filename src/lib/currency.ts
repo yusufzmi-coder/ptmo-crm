@@ -11,7 +11,7 @@
  */
 
 /** App-wide fallback when no account/deal currency is available. */
-export const DEFAULT_CURRENCY = "USD";
+export const DEFAULT_CURRENCY = "MYR";
 
 export interface CurrencyOption {
   /** ISO-4217 code, e.g. "USD". Stored verbatim in the DB. */
@@ -41,29 +41,16 @@ export interface CurrencyOption {
  * list to offer more — nothing else needs to change.
  */
 export const CURRENCIES: CurrencyOption[] = [
-  { code: "USD", label: "US Dollar", symbol: "$" },
-  { code: "EUR", label: "Euro", symbol: "€" },
-  { code: "GBP", label: "British Pound", symbol: "£" },
-  { code: "INR", label: "Indian Rupee", symbol: "₹" },
-  { code: "AUD", label: "Australian Dollar", symbol: "A$" },
-  { code: "CAD", label: "Canadian Dollar", symbol: "C$" },
-  { code: "BRL", label: "Brazilian Real", symbol: "R$" },
-  { code: "JPY", label: "Japanese Yen", symbol: "¥" },
-  { code: "CNY", label: "Chinese Yuan", symbol: "¥" },
-  { code: "AED", label: "UAE Dirham", symbol: "د.إ" },
-  { code: "ZAR", label: "South African Rand", symbol: "R" },
-  { code: "NGN", label: "Nigerian Naira", symbol: "₦" },
-  { code: "SGD", label: "Singapore Dollar", symbol: "S$" },
+  // PTMO trades in ringgit and nothing else, so this list is deliberately
+  // one entry long rather than a long menu with one correct answer in it.
   // ms-MY so the symbol resolves to "RM" regardless of browser locale.
   { code: "MYR", label: "Malaysian Ringgit", symbol: "RM", locale: "ms-MY" },
-  { code: "MXN", label: "Mexican Peso", symbol: "$" },
-  { code: "COP", label: "Colombian Peso", symbol: "$" },
 ];
 
 /**
  * Format a deal value as a currency string. Whole-number output
  * (no minor units) — deal values are tracked to the dollar across
- * the app. `currency` defaults to USD so callers with nothing better
+ * the app. `currency` defaults to MYR so callers with nothing better
  * stay safe, but pass the account/deal currency wherever known.
  *
  * When the code carries a `locale` in CURRENCIES that locale is used,
