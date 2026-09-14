@@ -22,6 +22,7 @@
 | P1 | PR/merge ke `main` | Coordinator | [ ] tunggu arahan |
 | P1 | Deploy dan UAT aplikasi tanpa WhatsApp sebenar dahulu | Yusuf + Coordinator | [ ] |
 | P2 | Pilih satu nombor WhatsApp **baharu** dan satu Centre untuk pilot | Yusuf | [ ] |
+| P2 | Cleanup locale Korea: sahkan `NEXT_PUBLIC_APP_LOCALE` production bukan `ko`, kemudian buang `messages/ko.json` dan `TRANSLATED_LOCALES` dalam `src/i18n/messages.test.ts` | Coordinator | [ ] |
 
 ## Peta fasa
 
@@ -112,6 +113,7 @@
 | 2026-09-13 | Issue Case diasingkan daripada tag | Aduan tidak boleh hilang sebab staf terlupa tag | Planned |
 | 2026-09-14 | Pilot kekal satu nombor Ops baharu; seni bina multi-number tidak dibuang | Kurangkan risiko cutover sekarang sambil kekalkan ruang scale kemudian | Active |
 | 2026-09-14 | Worktree sesi serentak kekal di luar repo (`~/Projects/ptmo-crm-*`); `.worktrees/` dalam repo diabaikan Git | Elak folder kerja tersilap commit | Active |
+| 2026-09-14 | Bahasa Korea tidak akan digunakan. `ko.json` dikekalkan buat sementara supaya ujian pariti locale tidak pecah; pembuangan dijadual sebagai P2 berasingan | Semakan penutur asli bukan blocker untuk kerja UI | Active |
 
 ## Update log
 
@@ -121,6 +123,8 @@
 | 2026-09-14 | Cross-check brief baharu dengan repo: betulkan status Centres, hardening, 050 dan konflik status 049 | `0842f58`, `57e4437`, `5f91f70`, `bd4366b`, ledger migration | Codex |
 | 2026-09-14 | Gate QA dikunci pada `841db55`: lint 0 error, typecheck 0 error, 1131/1131 ujian lulus, build berjaya (checkout bersih) | `841db55` | Coordinator |
 | 2026-09-14 | Runbook release ditulis; 5 branch worker disahkan sudah diserap penuh, tiada kerja tergantung | `docs/release-042-049.md` | Coordinator |
+| 2026-09-14 | UI batch 1 diintegrasi: skeleton/EmptyState inbox, aria-current, label status i18n, prefers-reduced-motion | `c9fca23` | Coordinator |
+| 2026-09-14 | UI batch 2 diintegrasi: penapis pemilikan Anyone/Mine/Unassigned/Others + chip pemilik; 1148 ujian lulus | `9c113b8` | Coordinator |
 
 ---
 
