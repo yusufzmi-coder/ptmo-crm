@@ -1398,3 +1398,82 @@ Disahkan dengan tiga mutasi, bukan dengan pemerhatian bahawa ia hijau:
 Dan pembungkusan `IF v_has_044` diuji dalam KEDUA-DUA arah: job upgrade
 melangkaunya, job bersih masih pergi merah bila `account_members`
 dinamakan semula.
+
+## Pengasingan zon kini diuji dalam KEDUA-DUA pelaksanaan
+
+Sekatan keenam dan ketujuh, dan keputusan yang datang bersamanya.
+
+`zone_isolation_test.sql` gagal dalam job upgrade dengan
+`relation "account_members" does not exist` — ia ditulis untuk dunia
+pasca-044, dan job upgrade memarkir 044.
+
+Pilihan yang paling mudah ialah melangkau keseluruhan suite di sana.
+Ia ditolak: job yang membina pangkalan data **berbentuk production**
+akan menjadi satu-satunya job yang tidak menguji pengasingan zon — dan
+production berjalan pada laluan pra-044 **hari ini**.
+
+### Kenapa mencabangkannya boleh dilakukan langsung
+
+Kedua-dua pelaksanaan menjawab soalan yang sama bagi pengguna satu zon:
+
+| | apa yang disemak |
+|---|---|
+| 017 | target IALAH akaun profil saya, dan peranan profil saya cukup tinggi |
+| 044 | saya memegang baris `account_members` untuk target, **DAN** target ialah zon AKTIF saya, dan peranan baris itu cukup tinggi |
+
+Bagi seseorang yang tergolong dalam satu zon, itu predikat yang sama
+melalui dua laluan. Maka 20 daripada 25 penegasan ditulis sekali dan
+berjalan dalam kedua-dua dunia.
+
+Lima yang tidak boleh ialah yang tentang tergolong dalam zon KEDUA —
+`is_account_member_any()` dan empat di sekeliling `set_active_account()`
+— kerana pra-044 tiada tempat untuk merekod keahlian kedua. Ia di-`skip`,
+bukan dipadam: plan kekal 25 dan larian menyebut dengan kuat apa yang ia
+tidak semak.
+
+Jurang yang tinggal sempit dengan sengaja: yang tidak diuji pra-044
+hanyalah keupayaan BERGERAK antara zon, yang production pra-044 memang
+tidak ada. Sempadan zon itu sendiri diuji di kedua-dua belah.
+
+### Dibuktikan dengan melebarkan fungsi, bukan dengan memerhati hijau
+
+`is_account_member()` versi 017 dilebarkan dengan membuang padanan
+`account_id` dan mengekalkan peringkat peranan:
+
+| keadaan | penegasan merah |
+|---------|-----------------|
+| 017 dilebarkan | **15** daripada 20 yang dikongsi |
+| 017 dipulihkan | 0 |
+
+Kebocoran yang dilaporkannya boleh dibaca terus:
+`have: Ibu Bapa Ujian, Ibu Zon A, Ibu Zon B` — satu zon membaca ibu bapa
+zon lain, tepat kelas kegagalan yang fail ini wujud untuk menangkap.
+
+Pembungkusan `\if :has_044` guna psql, bukan `CASE` SQL. PostgreSQL
+menyelesaikan nama fungsi ketika ia mem-PARSE pernyataan, jadi cabang
+`CASE` yang menyebut `set_active_account()` tetap gagal dengan "function
+does not exist" pada pangkalan data tanpa 044, walaupun cabang itu tidak
+pernah diambil. `\if` tidak menghantar baris itu langsung.
+
+### Sekatan ketujuh, ditemui semasa membetulkan keenam
+
+Seed suite itu menyapu **setiap** baris dalam pangkalan data:
+
+```sql
+INSERT INTO conversations (...) SELECT c.account_id, c.user_id, c.id FROM contacts c;
+```
+
+Job upgrade menjalankan pgTAP terhadap pangkalan data yang
+`seed-legacy-state.sql` sudah isi, jadi `FROM contacts` tanpa skop
+menyapu ibu bapa fixture itu juga — yang sudah ada conversation — dan
+INSERT mati pada `idx_conversations_account_contact`.
+
+Suite itu ditulis terhadap pangkalan data kosong dan hanya pernah
+berjalan terhadap satu. Ketiga-tiga INSERT seednya kini berskop kepada
+dua zonnya sendiri.
+
+### Kiraan setakat ini
+
+Tujuh sekatan, tiada satu pun pepijat dalam migration. Semuanya dalam
+perancah yang sepatutnya menguji migration. Andaian bahawa tujuh ialah
+yang terakhir mempunyai rekod yang sama seperti lima dan enam.
