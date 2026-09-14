@@ -8,7 +8,6 @@ import {
   Download,
   ExternalLink,
   ImageOff,
-  Loader2,
   ZoomIn,
   ZoomOut,
   type LucideIcon,
@@ -26,6 +25,7 @@ import {
 import { useMediaBlobUrl } from "@/hooks/use-media-blob-url";
 import { downloadMediaMessage } from "@/lib/media/download";
 import { galleryIndexOf, type MediaGalleryItem } from "@/lib/media/gallery";
+import { Spinner } from "@/components/ui/spinner";
 
 /**
  * Full-size viewer for the images and videos in the open conversation
@@ -242,7 +242,7 @@ function LightboxImage({
   if (status !== "ready" || !src) {
     return (
       <div className="flex h-64 w-full min-w-64 items-center justify-center rounded-lg bg-muted">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <Spinner label={t("loadingMedia")} className="text-primary" />
       </div>
     );
   }
@@ -294,7 +294,7 @@ function ToolbarButton({
       className="flex h-10 w-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-60 lg:h-8 lg:w-8"
     >
       {busy ? (
-        <Loader2 className="h-4 w-4 animate-spin" />
+        <Spinner size="sm" />
       ) : (
         <Icon className="h-4 w-4" />
       )}

@@ -279,7 +279,8 @@
       "downloadFailed": "Couldn't download the attachment",
       "viewImage": "View image",
       "expandVideo": "Expand video",
-      "imageAlt": "Shared image"
+      "imageAlt": "Shared image",
+      "loadingMedia": "Loading image"
     },
     "mediaViewer": {
       "counter": "{index} of {total}",
@@ -292,7 +293,8 @@
       "downloadFailed": "Couldn't download the attachment",
       "failed": "This attachment is no longer available",
       "imageAlt": "Shared image",
-      "you": "You"
+      "you": "You",
+      "loadingMedia": "Loading image"
     },
     "actions": {
       "reply": "Reply",

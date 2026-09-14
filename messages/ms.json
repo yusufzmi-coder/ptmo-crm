@@ -279,7 +279,8 @@
       "downloadFailed": "Gagal memuat turun lampiran",
       "viewImage": "Lihat imej",
       "expandVideo": "Besarkan video",
-      "imageAlt": "Imej dikongsi"
+      "imageAlt": "Imej dikongsi",
+      "loadingMedia": "Memuatkan imej"
     },
     "mediaViewer": {
       "counter": "{index} daripada {total}",
@@ -292,7 +293,8 @@
       "downloadFailed": "Gagal memuat turun lampiran",
       "failed": "Lampiran ini tidak lagi tersedia",
       "imageAlt": "Imej dikongsi",
-      "you": "Anda"
+      "you": "Anda",
+      "loadingMedia": "Memuatkan imej"
     },
     "actions": {
       "reply": "Balas",

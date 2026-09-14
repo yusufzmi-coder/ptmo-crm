@@ -17,7 +17,6 @@ import {
   Mic,
   Square,
   X,
-  Loader2,
   Sparkles,
   Plus,
   MessageSquareDashed,
@@ -58,6 +57,7 @@ import {
 import { validateInteractivePayload } from "@/lib/whatsapp/interactive";
 import type { InteractiveMessagePayload, QuickReply } from "@/types";
 import { QuickReplyPicker } from "./quick-reply-picker";
+import { Spinner } from "@/components/ui/spinner";
 
 /** Media content types an agent can send from the composer. */
 export type ComposerMediaKind = "image" | "video" | "document" | "audio";
@@ -844,7 +844,7 @@ export function MessageComposer({
               className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md p-0 text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
             >
               {busy ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Spinner size="sm" />
               ) : (
                 <Paperclip className="h-4 w-4" />
               )}
@@ -920,7 +920,7 @@ export function MessageComposer({
             onClick={handleDraft}
           >
             {drafting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Spinner size="sm" />
             ) : (
               <Sparkles className="h-4 w-4" />
             )}
@@ -998,7 +998,7 @@ export function MessageComposer({
               onClick={saveAsQuickReply}
             >
               {savingQuickReply ? (
-                <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                <Spinner size="sm" className="mr-1" />
               ) : (
                 <Zap className="mr-1 h-4 w-4" />
               )}
