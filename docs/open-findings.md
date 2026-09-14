@@ -637,3 +637,61 @@ benar: sumber menunjukkan kedua-duanya menggunakan token yang **sama
 persis**, jadi nisbahnya mesti identik — dan memang identik, 5.52 terang
 dan 5.79 gelap, kedua-duanya lulus. Pengukur itu menangkap kesilapannya
 sendiri dan menariknya balik sebelum sesiapa menampal apa-apa.
+
+### P1 — ~170 warna hardcode menganggap mod gelap, dan mod terang ialah lalai
+
+Inventori penuh, 54 fail. Tiada satu pun dibaiki — saiznya perlu diketahui
+sebelum sesiapa bersetuju membetulkannya.
+
+`themes.ts:52` menetapkan `DEFAULT_MODE = "light"` dan `layout.tsx:98`
+meletakkannya pada `<html>`. Jadi setiap tapak di bawah gagal untuk
+pengguna yang **tidak pernah menyentuh tetapan Rupa**.
+
+**Yang paling teruk hidup pada domain sekarang:**
+
+```
+whatsapp-config.tsx:632   banner BERDAFTAR
+  bg-emerald-950/30 + text-emerald-400
+  mod terang  1.02:1        mod gelap  9.22:1
+```
+
+1.02 bermakna teks dan latar mempunyai luminans yang hampir sama — bukan
+sukar dibaca, **halimunan**. Disahkan dua kali secara bebas: diukur dalam
+pelayar, dan dikira daripada nilai Tailwind (emerald-950 pada 30% atas kad
+putih = `rgb(179,192,189)`; emerald-400 atasnya = 1.02).
+
+Ini banner yang memberitahu sama ada nombor WhatsApp berjaya didaftarkan.
+
+| Kelas | Tapak | Perihal |
+| --- | --- | --- |
+| **D** — latar menganggap mod gelap | 8 (2 fail) | 1.02–2.89 dalam terang, semua lulus dalam gelap |
+| **A** — teks menganggap mod gelap | ~154 (54 fail) | `text-red-400` 2.89, `text-amber-300` 1.45, `text-amber-200` 1.24 |
+| **B** — teks menganggap mod terang | 8 | arah bertentangan, set kecil |
+| **C** — tengah | 8 | gagal terang sahaja |
+
+**Pembetulan tidak boleh bermula sehingga token wujud.** Tiada apa untuk
+170 tapak itu ditukar KEPADA:
+
+```
+--destructive   wujud, tetapi IDENTIK dalam kedua-dua blok mod
+                (globals.css:112 dan :141) — ia tidak menyesuaikan diri
+--success       tiada
+--warning       tiada
+--info          tiada
+```
+
+Urutan: bina token status per-mod dahulu (satu fail), kemudian Kelas D
+(paling teruk, paling kecil), kemudian Kelas A secara bertahap ikut
+kawasan produk — bukan satu commit 54 fail.
+
+**Perangkap kaedah yang patut direkod.** Larian pertama melaporkan
+`text-red-200` lulus cemerlang pada 17.76/17.99. Itu mustahil untuk merah
+jambu pucat atas kad putih. Puncanya: kelas itu **tidak dijana dalam
+bundle** — ia hanya wujud sebagai `hover:text-red-200` — jadi harness
+mengukur warna teks yang diwarisi dan ia kelihatan sempurna.
+
+Kelas yang tidak wujud mengukur sebagai lulus. Sesiapa yang menjalankan
+audit sebegini mesti mengesahkan kelas itu benar-benar dijana.
+
+Akibatnya: setiap varian `hover:` dalam inventori ini **tidak diukur
+secara langsung**. Hover perlukan pusingannya sendiri.
