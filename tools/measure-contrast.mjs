@@ -104,6 +104,14 @@
  * This is written here as an instruction to a person, not implemented as
  * a heuristic, because the distinction is about what the pixel MEANS.
  *
+ * The same judgement applies to borders, and --border is where it bites.
+ * That token is deliberately faint: it draws dividers, card outlines and
+ * section rules, and at 3:1 the product would look boxed in. A border
+ * only owes 3:1 when it is CARRYING something — marking a field invalid,
+ * a card selected, a row active. This tool reports every resting border
+ * under 3:1 because it cannot tell those apart; most of what it lists
+ * for --border is a divider and should be left exactly as it is.
+ *
  * ---------------------------------------------------------------------
  * LIMITS — what an empty result does and does not say
  *
@@ -302,6 +310,31 @@ const SCAN = `
     const fg = H.composite(cs.color, H.rgb(bg));
 
     scanned++;
+
+    // Borders at rest. A border that marks a selected, active or invalid
+    // state is non-text information and needs 3.0 against the surface it
+    // sits on. A divider is not — see the note on --border below.
+    // A fully transparent border is layout, not information — buttons
+    // carry border-transparent so a focus ring has somewhere to land.
+    const bTransparent = /^rgba\(.*,\s*0\)$/.test(cs.borderTopColor) || cs.borderTopColor === 'transparent';
+    if ((parseFloat(cs.borderTopWidth) || 0) > 0 && !bTransparent) {
+      const bd = H.ratio(H.composite(cs.borderTopColor, H.rgb(under)), under);
+      if (bd < 3.0) {
+        const bkey = 'B|' + cs.borderTopColor + '|' + cs.borderTopWidth;
+        if (!seen.has(bkey)) {
+          seen.add(bkey);
+          out.push({
+            text: '(border)',
+            cls: (el.className && el.className.baseVal !== undefined ? el.className.baseVal : el.className || '').toString().slice(0, 58),
+            px: cs.borderTopWidth,
+            weight: '-',
+            need: 3.0,
+            got: bd,
+          });
+        }
+      }
+    }
+
     const need = H.thresholdFor(cs);
     const got = H.ratio(fg, bg);
     if (got >= need) continue;
