@@ -423,7 +423,7 @@ export function ContactDetailView({
             <SheetHeader className="p-4 border-b border-border/50">
               <div className="flex items-center gap-3">
                 <Avatar className="size-12 bg-muted border border-border">
-                  <AvatarFallback className="bg-primary/10 text-primary-on-soft text-sm font-medium">
+                  <AvatarFallback className="bg-primary/10 text-primary-readable text-sm font-medium">
                     {getInitials(contact.name)}
                   </AvatarFallback>
                 </Avatar>
@@ -437,12 +437,12 @@ export function ContactDetailView({
                   <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-muted-foreground">
                     <button
                       onClick={copyPhone}
-                      className="flex items-center gap-1 hover:text-primary transition-colors cursor-pointer"
+                      className="flex items-center gap-1 hover:text-primary-readable transition-colors cursor-pointer"
                     >
                       <Phone className="size-3" />
                       {contact.phone}
                       {copiedPhone ? (
-                        <Check className="size-3 text-primary" />
+                        <Check className="size-3 text-primary-readable" />
                       ) : (
                         <Copy className="size-3" />
                       )}
@@ -484,31 +484,31 @@ export function ContactDetailView({
               <TabsList className="bg-muted/50 border-b border-border mx-4 mt-3">
                 <TabsTrigger
                   value="details"
-                  className="data-active:bg-muted data-active:text-primary text-muted-foreground"
+                  className="data-active:bg-muted data-active:text-primary-readable text-muted-foreground"
                 >
                   {t('tabs.details')}
                 </TabsTrigger>
                 <TabsTrigger
                   value="tags"
-                  className="data-active:bg-muted data-active:text-primary text-muted-foreground"
+                  className="data-active:bg-muted data-active:text-primary-readable text-muted-foreground"
                 >
                   {t('tabs.tags')}
                 </TabsTrigger>
                 <TabsTrigger
                   value="notes"
-                  className="data-active:bg-muted data-active:text-primary text-muted-foreground"
+                  className="data-active:bg-muted data-active:text-primary-readable text-muted-foreground"
                 >
                   {t('tabs.notes')}
                 </TabsTrigger>
                 <TabsTrigger
                   value="custom"
-                  className="data-active:bg-muted data-active:text-primary text-muted-foreground"
+                  className="data-active:bg-muted data-active:text-primary-readable text-muted-foreground"
                 >
                   {t('tabs.custom')}
                 </TabsTrigger>
                 <TabsTrigger
                   value="deals"
-                  className="data-active:bg-muted data-active:text-primary text-muted-foreground"
+                  className="data-active:bg-muted data-active:text-primary-readable text-muted-foreground"
                 >
                   {t('tabs.deals')}
                 </TabsTrigger>
@@ -786,7 +786,7 @@ export function ContactDetailView({
                             <span
                               className={
                                 deal.status === 'won'
-                                  ? 'text-primary'
+                                  ? 'text-primary-readable'
                                   : 'text-destructive'
                               }
                             >

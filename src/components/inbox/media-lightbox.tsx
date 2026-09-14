@@ -242,7 +242,7 @@ function LightboxImage({
   if (status !== "ready" || !src) {
     return (
       <div className="flex h-64 w-full min-w-64 items-center justify-center rounded-lg bg-muted">
-        <Spinner label={t("loadingMedia")} className="text-primary" />
+        <Spinner label={t("loadingMedia")} className="text-primary-readable" />
       </div>
     );
   }

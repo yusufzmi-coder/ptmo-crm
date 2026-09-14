@@ -32,8 +32,8 @@ interface KindTheme {
 
 const KIND_THEME: Record<ActivityKind, KindTheme> = {
   message: { icon: MessageSquare, badge: 'bg-blue-500/10 text-blue-400' },
-  contact: { icon: UserPlus, badge: 'bg-primary/10 text-primary-on-soft' },
-  deal: { icon: Briefcase, badge: 'bg-primary/10 text-primary-on-soft' },
+  contact: { icon: UserPlus, badge: 'bg-primary/10 text-primary-readable' },
+  deal: { icon: Briefcase, badge: 'bg-primary/10 text-primary-readable' },
   broadcast: { icon: Radio, badge: 'bg-amber-500/10 text-amber-400' },
   automation: { icon: Zap, badge: 'bg-rose-500/10 text-rose-400' },
 }
@@ -62,7 +62,7 @@ export function ActivityFeed({ items, loading }: ActivityFeedProps) {
         <h2 className="text-sm font-semibold text-foreground">{t('title')}</h2>
         <Link
           href="/inbox"
-          className="text-xs font-medium text-primary hover:text-primary/80"
+          className="text-xs font-medium text-primary-readable hover:text-primary-readable/80"
         >
           {t('viewAll')}
         </Link>

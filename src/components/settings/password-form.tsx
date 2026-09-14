@@ -86,7 +86,7 @@ export function PasswordForm() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-foreground">
-          <KeyRound className="size-4 text-primary" />
+          <KeyRound className="size-4 text-primary-readable" />
           {t('passwordTitle')}
         </CardTitle>
         <CardDescription className="text-muted-foreground">

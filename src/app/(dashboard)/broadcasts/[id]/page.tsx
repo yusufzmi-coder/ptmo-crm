@@ -479,7 +479,7 @@ export default function BroadcastDetailPage() {
           value={broadcast.sent_count}
           total={broadcast.total_recipients}
           icon={<Send className="h-4 w-4" />}
-          color="bg-primary/10 text-primary-on-soft"
+          color="bg-primary/10 text-primary-readable"
         />
         <StatCard
           label={t('stats.delivered')}
@@ -542,7 +542,7 @@ export default function BroadcastDetailPage() {
                 <DropdownMenuItem
                   onClick={() => setStatusFilter('all')}
                   className={
-                    statusFilter === 'all' ? 'text-primary' : 'text-popover-foreground'
+                    statusFilter === 'all' ? 'text-primary-readable' : 'text-popover-foreground'
                   }
                 >
                   {t('allStatuses')}
@@ -553,7 +553,7 @@ export default function BroadcastDetailPage() {
                     onClick={() => setStatusFilter(s)}
                     className={
                       statusFilter === s
-                        ? 'text-primary'
+                        ? 'text-primary-readable'
                         : 'text-popover-foreground'
                     }
                   >

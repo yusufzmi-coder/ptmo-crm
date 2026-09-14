@@ -84,7 +84,7 @@ export function SettingsRail({
                     'flex shrink-0 items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm font-medium whitespace-nowrap transition-colors',
                     'lg:w-full',
                     isActive
-                      ? 'bg-primary-soft text-primary-on-soft'
+                      ? 'bg-primary-soft text-primary-readable'
                       : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                   )}
                 >
@@ -94,7 +94,7 @@ export function SettingsRail({
                     <span
                       className={cn(
                         'hidden items-center gap-1.5 text-xs lg:inline-flex',
-                        isActive ? 'text-primary' : 'text-muted-foreground',
+                        isActive ? 'text-primary-readable' : 'text-muted-foreground',
                       )}
                     >
                       {hints[s]}

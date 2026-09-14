@@ -287,7 +287,7 @@ export function DealForm({
               {linkedConversation && (
                 <Link
                   href="/inbox"
-                  className="mt-1 inline-flex items-center gap-1.5 self-start rounded-md bg-primary/10 px-2 py-1 text-xs text-primary-on-soft hover:bg-primary/20"
+                  className="mt-1 inline-flex items-center gap-1.5 self-start rounded-md bg-primary/10 px-2 py-1 text-xs text-primary-readable hover:bg-primary/20"
                 >
                   <MessageSquare className="h-3 w-3" />
                   {t("linkToConversation")}

@@ -332,7 +332,7 @@ export function ConversationList({
                   className={cn(
                     "text-sm",
                     filter === opt.value
-                      ? "text-primary"
+                      ? "text-primary-readable"
                       : "text-popover-foreground"
                   )}
                 >
@@ -350,7 +350,7 @@ export function ConversationList({
               className={cn(
                 "inline-flex items-center justify-center h-8 gap-1 lg:h-7 px-2 text-xs rounded-md hover:bg-muted",
                 assignment !== "all"
-                  ? "text-primary"
+                  ? "text-primary-readable"
                   : "text-muted-foreground hover:text-foreground",
               )}
             >
@@ -370,7 +370,7 @@ export function ConversationList({
                   className={cn(
                     "text-sm",
                     assignment === value
-                      ? "text-primary"
+                      ? "text-primary-readable"
                       : "text-popover-foreground",
                   )}
                 >
@@ -386,7 +386,7 @@ export function ConversationList({
                 className={cn(
                   "inline-flex items-center justify-center h-8 gap-1 lg:h-7 px-2 text-xs rounded-md hover:bg-muted",
                   selectedTagIds.length > 0
-                    ? "text-primary"
+                    ? "text-primary-readable"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
@@ -428,7 +428,7 @@ export function ConversationList({
                 className={cn(
                   "inline-flex max-w-40 items-center justify-center h-8 gap-1 lg:h-7 px-2 text-xs rounded-md hover:bg-muted",
                   selectedCompany
-                    ? "text-primary"
+                    ? "text-primary-readable"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
@@ -444,7 +444,7 @@ export function ConversationList({
                   className={cn(
                     "text-sm",
                     selectedCompany === null
-                      ? "text-primary"
+                      ? "text-primary-readable"
                       : "text-popover-foreground"
                   )}
                 >
@@ -457,7 +457,7 @@ export function ConversationList({
                     className={cn(
                       "text-sm",
                       selectedCompany === co
-                        ? "text-primary"
+                        ? "text-primary-readable"
                         : "text-popover-foreground"
                     )}
                   >
@@ -642,7 +642,7 @@ function ConversationItem({
         </div>
         {showBranch && conversation.whatsapp_config && (
           <div className="mt-0.5">
-            <span className="inline-flex max-w-full items-center rounded-full border border-primary-soft-2 bg-primary-soft px-1.5 py-0.5 text-[10px] font-medium text-primary-on-soft">
+            <span className="inline-flex max-w-full items-center rounded-full border border-primary-soft-2 bg-primary-soft px-1.5 py-0.5 text-[10px] font-medium text-primary-readable">
               <span className="truncate">
                 {configDisplayName(conversation.whatsapp_config)}
               </span>
@@ -668,7 +668,7 @@ function ConversationItem({
                 className={cn(
                   "flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-semibold",
                   assignee.isMine
-                    ? "bg-primary-soft text-primary-on-soft"
+                    ? "bg-primary-soft text-primary-readable"
                     : "bg-muted text-muted-foreground",
                 )}
               >

@@ -149,7 +149,7 @@ function groupMessagesByDate(messages: Message[]) {
 // text. Writing the key makes it findable and stops the scanner
 // flagging a string that was never shown.
 const STATUS_OPTIONS: { labelKey: string; value: ConversationStatus; color: string }[] = [
-  { labelKey: "statusOpen", value: "open", color: "text-primary" },
+  { labelKey: "statusOpen", value: "open", color: "text-primary-readable" },
   { labelKey: "statusPending", value: "pending", color: "text-warning" },
   { labelKey: "statusClosed", value: "closed", color: "text-muted-foreground" },
 ];
@@ -985,7 +985,7 @@ export function MessageThread({
               {branchName && (
                 <>
                   <span aria-hidden> · </span>
-                  <span className="text-primary">
+                  <span className="text-primary-readable">
                     {t("replyingAsBranch", { branch: branchName })}
                   </span>
                 </>
@@ -998,7 +998,7 @@ export function MessageThread({
             variant="outline"
             className={cn(
               "ml-1 hidden gap-1 border-border text-[10px] sm:inline-flex sm:ml-2",
-              sessionInfo.expired ? "text-destructive" : "text-primary"
+              sessionInfo.expired ? "text-destructive" : "text-primary-readable"
             )}
           >
             <Clock className="h-3 w-3" />
@@ -1023,7 +1023,7 @@ export function MessageThread({
               aria-pressed={contactPanelOpen}
               className={cn(
                 "hidden h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-muted hover:text-foreground lg:inline-flex",
-                contactPanelOpen ? "text-primary" : "text-muted-foreground",
+                contactPanelOpen ? "text-primary-readable" : "text-muted-foreground",
               )}
             >
               {contactPanelOpen ? (
@@ -1088,7 +1088,7 @@ export function MessageThread({
             <DropdownMenuTrigger
               className={cn(
                 "inline-flex items-center justify-center h-7 gap-1 px-2 text-xs rounded-md hover:bg-muted",
-                assignedAgentId ? "text-primary" : "text-muted-foreground"
+                assignedAgentId ? "text-primary-readable" : "text-muted-foreground"
               )}
             >
               <UserPlus className="h-3 w-3" />
@@ -1113,7 +1113,7 @@ export function MessageThread({
                       onClick={() => handleAssignChange(p.user_id)}
                       className={cn(
                         "text-sm",
-                        isSelected ? "text-primary" : "text-popover-foreground"
+                        isSelected ? "text-primary-readable" : "text-popover-foreground"
                       )}
                     >
                       <PresenceDot

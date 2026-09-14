@@ -104,7 +104,7 @@ export function PipelineAnalytics({ stages, deals }: PipelineAnalyticsProps) {
           t={t}
         />
         <Metric
-          icon={<DollarSign className="h-4 w-4 text-primary" />}
+          icon={<DollarSign className="h-4 w-4 text-primary-readable" />}
           label={t("pipelineValue")}
           value={formatCurrency(stats.totalValue, defaultCurrency)}
           tooltip={t("pipelineValueTooltip")}
@@ -118,14 +118,14 @@ export function PipelineAnalytics({ stages, deals }: PipelineAnalyticsProps) {
           t={t}
         />
         <Metric
-          icon={<TrendingUp className="h-4 w-4 text-primary" />}
+          icon={<TrendingUp className="h-4 w-4 text-primary-readable" />}
           label={t("weightedValue")}
           value={formatCurrency(stats.weightedValue, defaultCurrency)}
           tooltip={t("weightedValueTooltip")}
           t={t}
         />
         <Metric
-          icon={<Trophy className="h-4 w-4 text-primary" />}
+          icon={<Trophy className="h-4 w-4 text-primary-readable" />}
           label={t("wonThisMonth")}
           value={String(stats.wonThisMonth)}
           tooltip={t("wonThisMonthTooltip")}

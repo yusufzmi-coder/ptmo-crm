@@ -86,7 +86,7 @@ export function AiPlayground({ onGoToSetup }: { onGoToSetup?: () => void }) {
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <div className="flex items-center gap-2">
-          <Bot className="h-4 w-4 text-primary" />
+          <Bot className="h-4 w-4 text-primary-readable" />
           <span className="text-sm font-medium text-foreground">{t('title')}</span>
           <span className="text-xs text-muted-foreground">{t('subtitle')}</span>
         </div>
@@ -130,7 +130,7 @@ export function AiPlayground({ onGoToSetup }: { onGoToSetup?: () => void }) {
             )}
           >
             {turn.role === 'assistant' && (
-              <Bot className="mt-1 h-5 w-5 shrink-0 text-primary" />
+              <Bot className="mt-1 h-5 w-5 shrink-0 text-primary-readable" />
             )}
             <div
               className={cn(
@@ -161,7 +161,7 @@ export function AiPlayground({ onGoToSetup }: { onGoToSetup?: () => void }) {
 
         {sending && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Bot className="h-5 w-5 text-primary" />
+            <Bot className="h-5 w-5 text-primary-readable" />
             <Loader2 className="h-4 w-4 animate-spin" /> {t('thinking')}
           </div>
         )}

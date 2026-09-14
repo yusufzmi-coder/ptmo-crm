@@ -72,7 +72,7 @@ export function EditorHeader() {
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary-on-soft">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary-readable">
           <Workflow className="h-[18px] w-[18px]" />
         </span>
         <input

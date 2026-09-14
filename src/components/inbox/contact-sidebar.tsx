@@ -176,7 +176,7 @@ export function ContactSidebar({ contact }: ContactSidebarProps) {
               <Phone className="h-4 w-4 text-muted-foreground" />
               <span className="flex-1 text-left">{contact.phone}</span>
               {copied ? (
-                <Check className="h-3 w-3 text-primary" />
+                <Check className="h-3 w-3 text-primary-readable" />
               ) : (
                 <Copy className="h-3 w-3 text-muted-foreground" />
               )}

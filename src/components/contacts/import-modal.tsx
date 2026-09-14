@@ -429,7 +429,7 @@ export function ImportModal({
             {file ? (
               <>
                 <div className="bg-primary/15 ring-primary/25 flex size-10 items-center justify-center rounded-lg ring-1">
-                  <FileText className="text-primary size-5" />
+                  <FileText className="text-primary-readable size-5" />
                 </div>
                 <p
                   className="max-w-full truncate px-2 text-sm font-medium text-popover-foreground"
@@ -475,7 +475,7 @@ export function ImportModal({
                 <div className="flex flex-wrap items-center gap-1.5">
                   {tagStats.rowsWithTags > 0 && (
                     <span className="inline-flex items-center gap-1 rounded-md bg-muted/90 px-2 py-0.5 text-[11px] text-muted-foreground">
-                      <Tag className="text-primary/80 size-3" />
+                      <Tag className="text-primary-readable/80 size-3" />
                       {t('previewTags', { tags: tagStats.unique, contacts: tagStats.rowsWithTags })}
                     </span>
                   )}
