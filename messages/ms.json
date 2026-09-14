@@ -215,7 +215,8 @@
       "sendTemplateFailed": "Gagal hantar templat: {reason}",
       "waitForSend": "Tunggu mesej selesai dihantar",
       "reactionFailed": "Reaksi gagal: {reason}",
-      "assignFailed": "Gagal kemas kini tugasan"
+      "assignFailed": "Gagal kemas kini tugasan",
+      "reasonNetwork": "ralat rangkaian"
     },
     "sessionTimer": {
       "expired": "Tamat tempoh",
@@ -508,7 +509,8 @@
       "loadingContact": "Memuat kenalan",
       "loadingNotes": "Memuat nota",
       "loadingCustomFields": "Memuat medan tersuai",
-      "loadingDeals": "Memuat deal"
+      "loadingDeals": "Memuat deal",
+      "reasonNetwork": "ralat rangkaian"
     },
     "importModal": {
       "title": "Import Kenalan",

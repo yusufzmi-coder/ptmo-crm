@@ -215,7 +215,8 @@
       "sendTemplateFailed": "Failed to send template: {reason}",
       "waitForSend": "Wait for the message to finish sending",
       "reactionFailed": "Reaction failed: {reason}",
-      "assignFailed": "Failed to update assignment"
+      "assignFailed": "Failed to update assignment",
+      "reasonNetwork": "network error"
     },
     "sessionTimer": {
       "expired": "Expired",
@@ -508,7 +509,8 @@
       "loadingContact": "Loading contact",
       "loadingNotes": "Loading notes",
       "loadingCustomFields": "Loading custom fields",
-      "loadingDeals": "Loading deals"
+      "loadingDeals": "Loading deals",
+      "reasonNetwork": "network error"
     },
     "importModal": {
       "title": "Import Contacts",
