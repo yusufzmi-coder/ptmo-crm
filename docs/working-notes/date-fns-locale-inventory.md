@@ -155,11 +155,25 @@ a catalogue-based precedent in this repo, written twice:
 - `components/dashboard/activity-feed.tsx:160` — a local `relativeTime()`
   taking a translator, using `Dashboard.activityFeed.time{S,M,H,D}`
 
-Both bypass date-fns entirely and read correctly in all three locales
-today. A third option is therefore to delete `formatDistanceToNow` from
-these three sites and reuse that pattern, which needs no locale plumbing
-at all and gives translators control over the wording. It costs three new
-key sets and loses date-fns's plural handling.
+Both bypass date-fns entirely. A third option is therefore to delete
+`formatDistanceToNow` from these three sites and reuse that pattern, which
+needs no locale plumbing at all and gives translators control over the
+wording. It costs three new key sets and loses date-fns's plural handling.
+
+**Correction to an earlier draft of this file:** it said both precedents
+"read correctly in all three locales today". That is true of English and
+Malay only. The whole `Ops.unanswered` namespace — all 25 keys, including
+`sent*Ago` — is still the English text in `ko.json`, so the Ops board
+reads English under the Korean locale. Korean was shelved by the Boss, so
+this is consistent with that decision rather than a new defect, but the
+claim as written was wrong and would have overstated how ready the
+catalogue approach is.
+
+One more path this inventory missed on the first pass: `relativeTime()`
+falls through to `new Date(iso).toLocaleDateString()` beyond thirty days.
+That is not date-fns, so it is outside the twelve — but it is a
+locale-sensitive date render with no locale argument, and it belongs in
+whatever round settles this.
 
 ---
 
