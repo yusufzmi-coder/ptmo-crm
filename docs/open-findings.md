@@ -417,3 +417,67 @@ src/components/inbox/contact-sidebar.tsx:125  (panel kanan)
 
 Sedia ada, bukan daripada batch ini — ia berkelakuan sama dalam Inggeris.
 Ia kelihatan seperti pengulangan, bukan reka bentuk tiga-panel.
+
+### P0 — template automasi menghantar mesej Inggeris SaaS kepada ibu bapa
+
+`src/lib/automations/templates.ts`
+
+Empat template mula-pantas pada `/automations`. Nama dan huraiannya
+Inggeris, tetapi itu bahagian kecil. Setiap satu membawa `step_type:
+'send_message'` dengan `text:` — badan mesej yang **dihantar kepada Parent
+melalui WhatsApp**.
+
+`welcome_message` dicetuskan oleh `first_inbound_message`, jadi ia perkara
+**pertama** yang ibu bapa terima:
+
+```
+:47   "Hi! 👋 Thanks for reaching out. We'll get back to you shortly."
+:74   "Thanks for your message! Our team is offline right now (9am–6pm)
+       and will reply first thing tomorrow."
+:95   "Great — happy to help with pricing! Quick question: roughly how
+       many seats are you looking for?"
+:123  "Just circling back — did you have any other questions for us?"
+```
+
+Dua masalah berasingan, dan yang kedua lebih besar daripada bahasa:
+
+1. **Ia Inggeris.** Ibu bapa PTMO menerima balasan automatik Inggeris.
+2. **Kandungannya salah untuk perniagaan ini.** "how many seats are you
+   looking for" ialah bahasa jualan SaaS B2B — *seats* bermaksud lesen
+   perisian. PTMO ialah pusat tuisyen bercakap dengan ibu bapa tentang
+   anak mereka. Dan "9am–6pm" bercanggah dengan waktu operasi sebenar;
+   katalog sendiri menggunakan "Isnin-Khamis 8.30 pagi-1.30 petang".
+
+Diwarisi daripada `wacrm` dan tidak pernah disesuaikan. Ia lulus setiap
+gate kerana ia literal kod, bukan katalog — ujian pariti dan ICU tidak
+melihatnya langsung.
+
+**Ini menyekat Fasa 2.** Pilot WhatsApp bermakna nombor sebenar menerima
+mesej ibu bapa sebenar, dan `welcome_message` akan membalas secara
+automatik. Apa yang PTMO hantar kepada ibu bapa ialah keputusan
+perniagaan, bukan terjemahan — ia perlukan Boss membaca dan meluluskan
+teks gantian sebelum sesiapa menulisnya.
+
+### P1 — tagline tema kekal Inggeris
+
+`src/lib/themes.ts:79-109` membawa enam `tagline` Inggeris yang dirender
+di tengah panel Rupa yang selainnya Melayu sepenuhnya — "Confident,
+slightly playful.", "Clean B2B-SaaS blue — calm and product-y.", dan
+empat lagi. Sebab yang sama: literal kod, bukan katalog.
+
+`MODES = ["light","dark"]` (`:46`) juga dirender mentah — lihat penemuan
+mod tema di atas. Bezanya penting: **tagline ialah teks paparan dan
+boleh dipindahkan ke katalog; MODES ialah pengecam yang disimpan dalam
+localStorage dan mesti kekal.**
+
+### Limpahan Melayu — diuji, tidak berlaku
+
+10 halaman × 2 lebar (1280px, 500px) dalam `ms`, diulang sepenuhnya dalam
+`en` sebagai baseline dan dibandingkan. **Melayu tidak lebih teruk
+daripada Inggeris pada mana-mana halaman.** Sifar teks terpotong, sifar
+limpahan-X, kedua-dua lebar. Satu-satunya elemen terpotong ialah emel
+akaun dalam sidebar, dan ia terpotong identik dalam Inggeris — truncate
+yang disengajakan pada alamat panjang, bukan kesan terjemahan.
+
+Risiko panjang teks yang ditandakan berulang kali sepanjang batch ini
+kini ditutup dengan pengukuran, bukan anggaran.
