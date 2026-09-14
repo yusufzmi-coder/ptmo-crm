@@ -2215,6 +2215,7 @@
       "minutes": "{count}분 전",
       "hours": "{count}시간 전",
       "days": "{count}일 전"
-    }
+    },
+    "underASecond": "1초 미만"
   }
 }

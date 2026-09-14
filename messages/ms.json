@@ -2215,6 +2215,7 @@
       "minutes": "{count} minit lalu",
       "hours": "{count} jam lalu",
       "days": "{count} hari lalu"
-    }
+    },
+    "underASecond": "kurang dari sesaat"
   }
 }
