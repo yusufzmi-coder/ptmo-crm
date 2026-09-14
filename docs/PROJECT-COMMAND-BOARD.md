@@ -6,7 +6,7 @@
 **Produk:** CRM PTMO Operation Dept  
 **Status keseluruhan:** Fasa 1 - release gate  
 **Dikemas kini:** 14 Sep 2026
-**Branch kerja bersepadu:** `feat/multi-number` @ `fb7fac0` lokal / `bd4366b` origin
+**Branch kerja bersepadu:** `feat/multi-number` @ `841db55` lokal / `bd4366b` origin (3 commit belum push)
 
 ---
 
@@ -16,8 +16,10 @@
 |---|---|---|---|
 | P0 | Jalankan `release-preflight-accounts.sql` dalam Supabase SQL Editor dan kongsi hasil | Yusuf | [ ] |
 | P0 | Jalankan `release-preflight-storage.sql` dan kongsi hasil | Yusuf | [ ] |
-| P1 | Semak hasil preflight, betulkan blocker jika ada, kemudian susun release migration 042-049 | Coordinator | [ ] |
-| P1 | Final QA branch: tests, type-check, lint, lalu PR/merge ke `main` | Coordinator + QA | [ ] |
+| P1 | Susun release migration 042-049 | Coordinator | [x] 14 Sep - `docs/release-042-049.md` |
+| P1 | Semak hasil preflight, betulkan blocker jika ada | Coordinator | [ ] tunggu P0 |
+| P1 | Final QA branch: tests, type-check, lint | Coordinator + QA | [x] 14 Sep - 4 gate hijau pada `841db55` |
+| P1 | PR/merge ke `main` | Coordinator | [ ] tunggu arahan |
 | P1 | Deploy dan UAT aplikasi tanpa WhatsApp sebenar dahulu | Yusuf + Coordinator | [ ] |
 | P2 | Pilih satu nombor WhatsApp **baharu** dan satu Centre untuk pilot | Yusuf | [ ] |
 
@@ -109,6 +111,7 @@
 | 2026-09-13 | Fasa 1 ditutup hanya selepas preflight + release + UAT | Kod yang push bukan bukti production ready | Active |
 | 2026-09-13 | Issue Case diasingkan daripada tag | Aduan tidak boleh hilang sebab staf terlupa tag | Planned |
 | 2026-09-14 | Pilot kekal satu nombor Ops baharu; seni bina multi-number tidak dibuang | Kurangkan risiko cutover sekarang sambil kekalkan ruang scale kemudian | Active |
+| 2026-09-14 | Worktree sesi serentak kekal di luar repo (`~/Projects/ptmo-crm-*`); `.worktrees/` dalam repo diabaikan Git | Elak folder kerja tersilap commit | Active |
 
 ## Update log
 
@@ -116,6 +119,8 @@
 |---|---|---|---|
 | 2026-09-13 | Board dicipta; status batch `feat/multi-number` direkod | `bd4366b` | Codex |
 | 2026-09-14 | Cross-check brief baharu dengan repo: betulkan status Centres, hardening, 050 dan konflik status 049 | `0842f58`, `57e4437`, `5f91f70`, `bd4366b`, ledger migration | Codex |
+| 2026-09-14 | Gate QA dikunci pada `841db55`: lint 0 error, typecheck 0 error, 1131/1131 ujian lulus, build berjaya (checkout bersih) | `841db55` | Coordinator |
+| 2026-09-14 | Runbook release ditulis; 5 branch worker disahkan sudah diserap penuh, tiada kerja tergantung | `docs/release-042-049.md` | Coordinator |
 
 ---
 
