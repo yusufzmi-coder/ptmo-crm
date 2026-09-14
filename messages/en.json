@@ -2159,5 +2159,15 @@
     "signOutError": "Could not sign out. Try refreshing the page.",
     "verifying": "Verifying invitation…",
     "acceptFailed": "Failed to accept invitation"
+  },
+  "Gated": {
+    "createPipelines": "Read-only — your role can't create pipelines",
+    "createDeals": "Read-only — your role can't create deals",
+    "createBroadcasts": "Read-only — your role can't create broadcasts",
+    "manageContacts": "Read-only — your role can't add or import contacts",
+    "deleteContacts": "Read-only — your role can't delete contacts",
+    "createAutomations": "Read-only — your role can't create automations",
+    "createFlows": "Read-only — your role can't create flows",
+    "sendMessages": "Read-only — your role can't send messages"
   }
 }
