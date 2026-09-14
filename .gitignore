@@ -60,3 +60,8 @@ _scratch/
 # setiap gate release dijalankan atas arkib bersih. Mengabaikannya hanya
 # menyembunyikan kesan itu; tanpa entri ini, worktree bersarang yang
 # tersilap cipta akan muncul dalam `git status` dan dapat diperbaiki.
+
+# Supabase CLI local state. `db start` writes .branches/ and .temp/ into
+# the repo; neither belongs in version control.
+supabase/.branches/
+supabase/.temp/

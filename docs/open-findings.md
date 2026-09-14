@@ -1158,3 +1158,119 @@ pusingan pengukuran tangan terhadap 37 tapak ini.
 
 Sehingga salah satu berlaku, mana-mana laporan kontras hendaklah
 mengatakan "tiada kegagalan **rehat**" dan bukan "tiada kegagalan".
+
+## Job "upgrade path" tidak pernah lulus — dan NULL role bukan sebabnya
+
+Ditemui semasa membetulkan `null_role_backfill_test` (14 Sep 2026).
+
+Diagnosis asal — milik aku — ialah: seed menyisipkan profil dengan
+`account_role` NULL, mustahil sejak 017:275, dan itu menjatuhkan job.
+Separuh pertama betul. Separuh kedua salah, dan cara ia salah penting:
+**job mati dua kali sebelum ia sampai ke baris itu.**
+
+Dijalankan secara tempatan, langkah demi langkah, mengikut
+`.github/workflows/migrations.yml`:
+
+### 1. Langkah seed tidak boleh berjalan langsung (baris 195)
+
+```
+supabase db query --local --file supabase/ci/seed-legacy-state.sql
+→ cannot insert multiple commands into a prepared statement
+```
+
+`db query --file` menghantar fail sebagai SATU pernyataan bersedia.
+`seed-legacy-state.sql` mengandungi lapan INSERT. Ia tidak pernah
+melaksanakan walau satu baris — jadi kecacatan NULL role tidak pernah
+sempat dicapai, dan tiada seorang pun pernah melihat mesejnya.
+
+Ini sebab yang sama `verify-schema.sql` dan
+`grant-platform-privileges.sql` berbentuk satu blok `DO $$`. Seed tidak
+mengikut corak itu.
+
+### 2. Seed melawan trigger yang dokumentasinya sendiri bergantung padanya
+
+Selepas menjalankan seed melalui `psql` (yang menerima berbilang
+pernyataan), kegagalan seterusnya:
+
+```
+ERROR: duplicate key value violates unique constraint "idx_accounts_one_per_owner"
+DETAIL: Key (owner_user_id)=(aaaaaaaa-0000-0000-0000-000000000001) already exists.
+```
+
+`on_auth_user_created` → `handle_new_user` sudah memperuntukkan satu
+akaun dan satu profil untuk setiap baris `auth.users`. Seed kemudian
+`INSERT INTO accounts ... ON CONFLICT (id) DO NOTHING` — dan `(id)`
+tidak menangkap perlanggaran, yang berlaku pada `owner_user_id`.
+
+`zone_isolation_test.sql:45` menerangkan trigger ini dengan betul dan
+bekerja DENGANnya: ia menyisipkan `auth.users` sahaja, kemudian membaca
+`account_id` yang trigger cipta. Seed melawannya.
+
+Akibat sampingan yang boleh diperiksa: profil untuk
+`aaaaaaaa-...0003` wujud sebagai **`owner`** dengan nama kosong — dibuat
+oleh trigger — bukan `viewer` seperti yang seed hasratkan. `ON CONFLICT
+DO NOTHING` menyembunyikan perbezaan itu dan bukan melaporkannya.
+
+### 3. `verify-upgrade.sql` menegaskan tentang migration yang diparkir
+
+Tiga blok membaca struktur yang tidak wujud dalam release seperti
+yang diskopkan, kerana job upgrade memarkir migration yang menciptanya:
+
+| blok | bergantung pada | dicipta oleh |
+|------|-----------------|--------------|
+| 044  | `account_members` | 044:110 — diparkir |
+| 048  | `broadcasts.whatsapp_config_id` | 048:67 — diparkir |
+| 042  | — | lulus secara remeh, tidak membuktikan apa-apa |
+
+Dibuang dalam commit ini, dengan komen yang menerangkan sebabnya.
+Yang tinggal — 045 (`member_presence`) dan 047 (bucket storage) — ialah
+dua penegasan yang benar-benar menguji release ini.
+
+### Apa yang masih terbuka
+
+Membetulkan (1) dan (2) bukan pembetulan satu baris. Ia:
+
+* membungkus semula seed sebagai satu `DO $$`, **atau** menukar baris
+  195 daripada `db query --file` kepada `psql -f` — yang terakhir
+  menyentuh `.github/workflows/`, di luar geran batch ini;
+* menulis semula bahagian identiti supaya ia membaca apa yang trigger
+  cipta dan bukan cuba menciptanya semula.
+
+Dan satu soalan yang mengikutinya: sebahagian besar fixture seed —
+empat baris `messages` dengan bentuk media yang berbeza — kini tidak
+ditegaskan oleh sesiapa, kerana satu-satunya blok yang membacanya ialah
+blok 042 yang dibuang. Fixture tanpa penegasan ialah kos tanpa faedah.
+Sama ada penegasan media dipulihkan, atau baris itu digugurkan.
+
+## Soalan release: adakah backfill VIEWER dalam 044 melindungi apa-apa?
+
+**Ini keputusan Boss, bukan keputusan jurutera. Ia dalam repo supaya ia
+tidak hilang dalam mesej.**
+
+044 mem-backfill satu baris `account_members` bagi setiap profil,
+dengan `viewer` sebagai jaring keselamatan untuk profil yang rolenya
+tidak dapat ditentukan.
+
+Penemuan 017 mempersoalkan sama ada jaring itu boleh tertangkap apa-apa:
+
+* 017:122 menambah `profiles.account_role` sebagai nullable;
+* 017:275 — **fail yang sama** — menjadikannya `NOT NULL`.
+
+`SET NOT NULL` gagal jika ada satu baris NULL. 017 berjaya pada
+produksi. Maka tiada profil tanpa peranan wujud pada masa itu, dan
+kekangan telah melarangnya sejak. Invarian itu kini ditegaskan terus
+dalam `verify-schema.sql`, dengan alasan yang dinyatakan: profil tanpa
+peranan dikunci keluar daripada setiap polisi RLS serentak.
+
+Jadi, atas pembacaan itu, cabang VIEWER dalam 044 ialah kod mati.
+
+Yang aku **tidak** dapat buktikan, dan sebab ini diserahkan ke atas:
+
+1. sama ada produksi memegang profil yang `account_role`-nya sah tetapi
+   nilainya di luar set yang 044 tahu petakan — itu bukan NULL, jadi
+   hujah di atas tidak menyentuhnya;
+2. sama ada 044 pernah dijalankan separa pada mana-mana persekitaran
+   sebelum diparkir, meninggalkan `account_members` yang tidak lengkap.
+
+Kedua-duanya boleh dijawab dengan satu pertanyaan read-only terhadap
+produksi (`supabase/preflight/` ialah tempatnya). Ia belum dijalankan.
