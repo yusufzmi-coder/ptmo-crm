@@ -171,7 +171,7 @@ export function QuickRepliesManager() {
               className="flex items-start gap-3 rounded-lg border border-border bg-card p-3"
             >
               {qr.kind === "interactive" ? (
-                <Zap className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <Zap className="mt-0.5 h-4 w-4 shrink-0 text-primary-readable" />
               ) : (
                 <MessageSquare className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
               )}
@@ -276,7 +276,7 @@ function KindTab({
       onClick={onClick}
       className={
         active
-          ? "flex-1 rounded-md border border-primary bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary-on-soft"
+          ? "flex-1 rounded-md border border-primary bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary-readable"
           : "flex-1 rounded-md border border-border bg-muted px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
       }
     >

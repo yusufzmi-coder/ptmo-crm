@@ -1221,7 +1221,7 @@ function ConditionBranches({
     // it anyway, leaving two columns too narrow to render a step in.
     <div className="@container mt-3 w-full">
       <div className="grid grid-cols-1 gap-3 @sm:grid-cols-2">
-        <BranchColumn label={t("branches.yes")} color="text-primary">
+        <BranchColumn label={t("branches.yes")} color="text-primary-readable">
           <StepList
             {...props}
             steps={yes}
@@ -1266,7 +1266,7 @@ function AddButton({ onPick }: { onPick: (t: AutomationStepType) => void }) {
       <div className="h-4 w-[2px] bg-border" aria-hidden />
       <DropdownMenu>
         <DropdownMenuTrigger
-          className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-dashed border-border bg-background text-muted-foreground transition-colors hover:border-primary hover:bg-primary/10 hover:text-primary-on-soft data-[popup-open]:border-primary data-[popup-open]:bg-primary/20 data-[popup-open]:text-primary-on-soft"
+          className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-dashed border-border bg-background text-muted-foreground transition-colors hover:border-primary hover:bg-primary/10 hover:text-primary-readable data-[popup-open]:border-primary data-[popup-open]:bg-primary/20 data-[popup-open]:text-primary-readable"
           aria-label={t("addStep")}
         >
           <Plus className="h-4 w-4" />

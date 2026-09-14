@@ -185,7 +185,7 @@ export function InviteMemberDialog({
           <>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-popover-foreground">
-                <Sparkles className="size-4 text-primary" />
+                <Sparkles className="size-4 text-primary-readable" />
                 {t('inviteCreated')}
               </DialogTitle>
               <DialogDescription className="text-muted-foreground">

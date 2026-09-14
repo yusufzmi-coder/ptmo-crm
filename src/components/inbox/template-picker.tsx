@@ -192,7 +192,7 @@ export function TemplatePicker({
       <DialogContent className="border-border bg-popover sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-popover-foreground">
-            <LayoutTemplate className="h-4 w-4 text-primary" />
+            <LayoutTemplate className="h-4 w-4 text-primary-readable" />
             {selected ? selected.name : t("sendTemplate")}
           </DialogTitle>
           <DialogDescription className="text-muted-foreground">
@@ -237,7 +237,7 @@ export function TemplatePicker({
                         <p className="truncate text-sm font-medium text-popover-foreground">
                           {t.name}
                         </p>
-                        <Badge className="border border-primary/30 bg-primary/20 text-[10px] text-primary-on-soft">
+                        <Badge className="border border-primary/30 bg-primary/20 text-[10px] text-primary-readable">
                           {t.category}
                         </Badge>
                         {t.language && (

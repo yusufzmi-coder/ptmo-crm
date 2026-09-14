@@ -155,7 +155,7 @@ export function TagManager() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-foreground">
-          <TagIcon className="size-4 text-primary" />
+          <TagIcon className="size-4 text-primary-readable" />
           {t('tagsTitle')}
         </CardTitle>
         <CardDescription className="text-muted-foreground">

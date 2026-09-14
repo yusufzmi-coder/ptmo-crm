@@ -294,7 +294,7 @@ function LineSvg({
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-500" />
               {t('tooltipIncoming', { count: hovered.incoming })}
             </span>
-            <span className="flex items-center gap-1.5 text-primary">
+            <span className="flex items-center gap-1.5 text-primary-readable">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary" />
               {t('tooltipOutgoing', { count: hovered.outgoing })}
             </span>

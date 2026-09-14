@@ -569,7 +569,7 @@ export function WhatsAppConfig() {
         <Alert className="bg-card border-border">
           <div className="flex items-center gap-2">
             {connectionStatus === 'connected' ? (
-              <CheckCircle2 className="size-4 text-primary" />
+              <CheckCircle2 className="size-4 text-primary-readable" />
             ) : (
               <XCircle className="size-4 text-destructive" />
             )}
@@ -804,7 +804,7 @@ export function WhatsAppConfig() {
                         </span>
                       )}
                       {n.is_primary && (
-                        <span className="rounded-full border border-primary-soft-2 bg-primary-soft px-2 py-0.5 text-[11px] font-medium text-primary-on-soft">
+                        <span className="rounded-full border border-primary-soft-2 bg-primary-soft px-2 py-0.5 text-[11px] font-medium text-primary-readable">
                           {t('primaryBadge')}
                         </span>
                       )}
@@ -1194,7 +1194,7 @@ export function WhatsAppConfig() {
                 href="https://developers.facebook.com/docs/whatsapp/cloud-api/get-started"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors"
+                className="inline-flex items-center gap-1.5 text-sm text-primary-readable hover:text-primary-readable/80 transition-colors"
               >
                 <ExternalLink className="size-3.5" />
                 {t('metaDocs')}

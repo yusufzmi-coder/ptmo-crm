@@ -323,7 +323,7 @@ export default function PipelinesPage() {
             <DropdownMenuTrigger
               className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors data-[popup-open]:bg-muted"
             >
-              <GitBranch className="h-4 w-4 text-primary" />
+              <GitBranch className="h-4 w-4 text-primary-readable" />
               <span className="font-semibold">
                 {selectedPipeline?.name ?? t("selectPipeline")}
               </span>
@@ -344,7 +344,7 @@ export default function PipelinesPage() {
                   onClick={() => setSelectedPipelineId(p.id)}
                   className={
                     p.id === selectedPipelineId
-                      ? "text-primary"
+                      ? "text-primary-readable"
                       : "text-popover-foreground"
                   }
                 >

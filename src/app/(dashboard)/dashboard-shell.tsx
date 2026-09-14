@@ -34,7 +34,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     return (
       <div className="flex h-dvh items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
-          <Spinner size="lg" className="text-primary" />
+          <Spinner size="lg" className="text-primary-readable" />
           <p className="text-sm text-muted-foreground">{t("loading")}</p>
         </div>
       </div>

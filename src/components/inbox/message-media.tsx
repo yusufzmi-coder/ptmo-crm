@@ -138,7 +138,7 @@ export function MediaImageBubble({
   if (status !== "ready" || !src) {
     return (
       <MediaPlaceholder>
-        <Spinner label={t("loadingMedia")} className="size-5 text-primary" />
+        <Spinner label={t("loadingMedia")} className="size-5 text-primary-readable" />
       </MediaPlaceholder>
     );
   }

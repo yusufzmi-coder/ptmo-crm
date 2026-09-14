@@ -159,7 +159,7 @@ export default function NotificationsPage() {
   if (notifications === null) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <Spinner size="md" className="text-primary" label={t("loading")} />
+        <Spinner size="md" className="text-primary-readable" label={t("loading")} />
       </div>
     );
   }
@@ -191,7 +191,7 @@ export default function NotificationsPage() {
       {notifications.length === 0 ? (
         <div className="flex h-48 flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/40">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-            <Bell className="h-6 w-6 text-primary" />
+            <Bell className="h-6 w-6 text-primary-readable" />
           </div>
           <p className="mt-3 text-sm font-medium text-foreground">
             {t("emptyTitle")}
@@ -227,7 +227,7 @@ export default function NotificationsPage() {
                     <Icon
                       className={cn(
                         "h-5 w-5",
-                        isUnread ? "text-primary" : "text-muted-foreground",
+                        isUnread ? "text-primary-readable" : "text-muted-foreground",
                       )}
                     />
                   </div>

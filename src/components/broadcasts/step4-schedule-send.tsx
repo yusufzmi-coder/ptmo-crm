@@ -210,10 +210,10 @@ export function Step4ScheduleSend({
             <p className="text-xs text-muted-foreground">{t('scheduleSend.estimatedReach')}</p>
             <div className="flex items-center gap-1.5">
               {loadingReach ? (
-                <Spinner size="sm" className="text-primary" />
+                <Spinner size="sm" className="text-primary-readable" />
               ) : (
                 <>
-                  <Users className="h-3.5 w-3.5 text-primary" />
+                  <Users className="h-3.5 w-3.5 text-primary-readable" />
                   <p className="font-medium text-foreground">{estimatedReach.toLocaleString()}</p>
                 </>
               )}
@@ -231,10 +231,10 @@ export function Step4ScheduleSend({
         <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
           <div className="mb-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Spinner size="sm" className="text-primary" />
+              <Spinner size="sm" className="text-primary-readable" />
               <p className="text-sm font-medium text-foreground">{t('scheduleSend.sending')}</p>
             </div>
-            <span className="text-xs font-medium text-primary">{progress}%</span>
+            <span className="text-xs font-medium text-primary-readable">{progress}%</span>
           </div>
           <div className="h-1.5 w-full rounded-full bg-muted">
             <div

@@ -88,7 +88,7 @@ function LoginPageInner() {
         <CardHeader className="items-center text-center">
           {inviteToken ? (
             <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-              <UsersRound className="h-6 w-6 text-primary" />
+              <UsersRound className="h-6 w-6 text-primary-readable" />
             </div>
           ) : (
             <BrandAuthHeader />
@@ -132,7 +132,7 @@ function LoginPageInner() {
                 </Label>
                 <Link
                   href="/forgot-password"
-                  className="text-sm text-primary hover:text-primary/80"
+                  className="text-sm text-primary-readable hover:text-primary-readable/80"
                 >
                   {t('forgotPassword')}
                 </Link>
@@ -185,7 +185,7 @@ function LoginPageInner() {
                   ? `/signup?invite=${encodeURIComponent(inviteToken)}`
                   : "/signup"
               }
-              className="text-primary hover:text-primary/80"
+              className="text-primary-readable hover:text-primary-readable/80"
             >
               {t('createAccount')}
             </Link>

@@ -356,7 +356,7 @@ function EntryPicker({
   if (state.nodes.length === 0) return null;
   return (
     <section className="border-border bg-card flex items-center gap-3 rounded-lg border p-3">
-      <CornerDownRight className="text-primary h-4 w-4 shrink-0" />
+      <CornerDownRight className="text-primary-readable h-4 w-4 shrink-0" />
       <span className="text-muted-foreground text-xs">{t('entryNodeTitle')}</span>
       <NodeKeySelect
         value={state.entry_node_id}
@@ -445,7 +445,7 @@ function NodeCard({
             {isEntry && (
               <Badge
                 variant="outline"
-                className="border-primary/40 bg-primary/10 text-primary-on-soft text-[10px]"
+                className="border-primary/40 bg-primary/10 text-primary-readable text-[10px]"
               >
                 {t('badgeEntry')}
               </Badge>

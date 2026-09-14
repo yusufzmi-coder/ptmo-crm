@@ -166,7 +166,7 @@ export default function FlowRunsPage() {
         <button
           type="button"
           onClick={() => router.push("/flows")}
-          className="text-sm text-primary hover:opacity-80"
+          className="text-sm text-primary-readable hover:opacity-80"
         >
           {tEdit("backToFlows")}
         </button>
@@ -312,7 +312,7 @@ const EVENT_COLOR: Record<string, string> = {
   started: "text-success",
   node_entered: "text-muted-foreground",
   message_sent: "text-info",
-  reply_received: "text-primary",
+  reply_received: "text-primary-readable",
   fallback_fired: "text-warning",
   handoff: "text-warning",
   timeout: "text-muted-foreground",

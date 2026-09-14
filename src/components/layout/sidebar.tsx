@@ -50,7 +50,7 @@ const ROLE_CHIP: Record<
     labelKey: "roleAdmin",
     // Primary-tinted: significant but not as scarce as owner.
     className:
-      "border-primary/40 bg-primary/10 text-primary-on-soft",
+      "border-primary/40 bg-primary/10 text-primary-readable",
   },
   agent: {
     icon: UserCog,
@@ -197,7 +197,7 @@ function NavRow({
         // Taller on mobile so fingers can hit the row reliably (≥44px).
         "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors lg:py-2",
         isActive
-          ? "bg-primary-soft text-primary-on-soft"
+          ? "bg-primary-soft text-primary-readable"
           : "text-muted-foreground hover:bg-muted hover:text-foreground",
       )}
     >
@@ -435,7 +435,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                     alt={profile.full_name ?? t("defaultAvatar")}
                   />
                 ) : null}
-                <AvatarFallback className="bg-primary/10 text-sm font-medium text-primary-on-soft">
+                <AvatarFallback className="bg-primary/10 text-sm font-medium text-primary-readable">
                   {profile?.full_name?.charAt(0)?.toUpperCase() ??
                     profile?.email?.charAt(0)?.toUpperCase() ??
                     "U"}

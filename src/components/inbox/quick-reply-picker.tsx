@@ -89,7 +89,7 @@ export function QuickReplyPicker({
               truncating line — and the snippet they are about to pick
               may name a centre. Say it where the choice is made. */}
           {branch && (
-            <p className="text-xs font-medium text-primary">
+            <p className="text-xs font-medium text-primary-readable">
               {t("quickRepliesFor", { branch })}
             </p>
           )}
@@ -147,7 +147,7 @@ export function QuickReplyPicker({
                       )}
                     >
                       {qr.kind === "interactive" ? (
-                        <Zap className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                        <Zap className="mt-0.5 h-4 w-4 shrink-0 text-primary-readable" />
                       ) : (
                         <MessageSquare className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                       )}
@@ -157,7 +157,7 @@ export function QuickReplyPicker({
                             {qr.title}
                           </span>
                           {pinned && branch && (
-                            <span className="shrink-0 rounded-full border border-primary-soft-2 bg-primary-soft px-1.5 py-0.5 text-[10px] font-medium text-primary-on-soft">
+                            <span className="shrink-0 rounded-full border border-primary-soft-2 bg-primary-soft px-1.5 py-0.5 text-[10px] font-medium text-primary-readable">
                               {t("quickReplyPinned", { branch })}
                             </span>
                           )}
