@@ -27,7 +27,6 @@ import {
   ArrowLeft,
   CircleDot,
   History,
-  Loader2,
   PauseCircle,
   PlayCircle,
   Save,
@@ -36,6 +35,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import {
   useFlowEditor,
@@ -123,7 +123,7 @@ export function EditorHeader() {
               disabled={activating}
             >
               {activating ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <Spinner size="sm" />
               ) : (
                 <PauseCircle className="h-3.5 w-3.5" />
               )}
@@ -142,7 +142,7 @@ export function EditorHeader() {
               }
             >
               {activating ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <Spinner size="sm" />
               ) : (
                 <PlayCircle className="h-3.5 w-3.5" />
               )}
@@ -151,7 +151,7 @@ export function EditorHeader() {
           )}
           <Button onClick={() => void save()} disabled={saving} size="sm">
             {saving ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              <Spinner size="sm" />
             ) : (
               <Save className="h-3.5 w-3.5" />
             )}

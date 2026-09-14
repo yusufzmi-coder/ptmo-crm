@@ -22,8 +22,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { ArrowLeft, Send, Loader2, Users, Save } from 'lucide-react';
+import { ArrowLeft, Send, Users, Save } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { Spinner } from '@/components/ui/spinner';
 
 interface AudienceConfig {
   type: string;
@@ -209,7 +210,7 @@ export function Step4ScheduleSend({
             <p className="text-xs text-muted-foreground">Estimated Reach</p>
             <div className="flex items-center gap-1.5">
               {loadingReach ? (
-                <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                <Spinner size="sm" className="text-primary" />
               ) : (
                 <>
                   <Users className="h-3.5 w-3.5 text-primary" />
@@ -230,7 +231,7 @@ export function Step4ScheduleSend({
         <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
           <div className="mb-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              <Spinner size="sm" className="text-primary" />
               <p className="text-sm font-medium text-foreground">{t('scheduleSend.sending')}</p>
             </div>
             <span className="text-xs font-medium text-primary">{progress}%</span>

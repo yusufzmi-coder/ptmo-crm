@@ -14,9 +14,10 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { Skeleton } from '@/components/dashboard/skeleton';
 import { useTranslations } from 'next-intl';
+import { Spinner } from '@/components/ui/spinner';
 
 interface CustomFieldsManagerProps {
   open: boolean;
@@ -195,7 +196,7 @@ export function CustomFieldsPanel() {
           className="bg-primary hover:bg-primary/90 text-primary-foreground shrink-0"
         >
           {creating ? (
-            <Loader2 className="size-4 animate-spin" />
+            <Spinner size="sm" />
           ) : (
             <Plus className="size-4" />
           )}
@@ -290,7 +291,7 @@ function FieldRow({
         className="shrink-0 text-muted-foreground hover:text-red-400"
       >
         {busy ? (
-          <Loader2 className="size-4 animate-spin" />
+          <Spinner size="sm" />
         ) : (
           <Trash2 className="size-4" />
         )}

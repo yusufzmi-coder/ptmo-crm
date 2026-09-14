@@ -24,9 +24,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { Skeleton } from '@/components/dashboard/skeleton';
 import { useTranslations } from 'next-intl';
+import { Spinner } from '@/components/ui/spinner';
 
 interface ContactFormProps {
   open: boolean;
@@ -385,7 +386,7 @@ export function ContactForm({
               disabled={saving || checkingDup || (!isEdit && !!dupMatch?.exact)}
               className="bg-primary hover:bg-primary/90 text-primary-foreground"
             >
-              {saving && <Loader2 className="size-4 animate-spin" />}
+              {saving && <Spinner size="sm" />}
               {isEdit ? t('update') : t('create')}
             </Button>
           </DialogFooter>
