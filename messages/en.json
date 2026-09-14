@@ -815,7 +815,11 @@
         "errorCsvParse": "Could not parse CSV file.",
         "errorCsvMissingPhone": "CSV must have a 'phone' column.",
         "loadingTags": "Loading tags",
-        "loadingFields": "Loading custom fields"
+        "loadingFields": "Loading custom fields",
+        "summaryTitle": "Audience Summary",
+        "calculating": "Calculating…",
+        "estimatedRecipients": "estimated recipients",
+        "summaryHint": "Select an audience type to see the estimate."
       },
       "personalize": {
         "title": "Personalize Variables",
@@ -865,7 +869,11 @@
         "progressDesc": "Processing {current} of {total} recipients...",
         "toastFailedPreview": "Failed to load preview data",
         "sendFrom": "Send from",
-        "sendFromHint": "Replies and this campaign go out on this number. Parents see the branch they know."
+        "sendFromHint": "Replies and this campaign go out on this number. Parents see the branch they know.",
+        "estimatedReach": "Estimated Reach",
+        "language": "Language",
+        "confirmTitle": "Confirm Broadcast",
+        "confirmDesc": "You are about to send this broadcast to <strong>{count}</strong> contacts using the <strong>{template}</strong> template. This action cannot be undone."
       }
     }
   },
@@ -1320,6 +1328,23 @@
       "modeRemove": "Remove",
       "tagPicked": "{mode} tag {tag}…",
       "tagNone": "{mode} tag (none picked)"
+    },
+    "header": {
+      "backToFlows": "Back to Flows",
+      "flowName": "Flow name",
+      "unsavedChanges": "Unsaved changes — hit Save to persist",
+      "edited": "Edited",
+      "runs": "Runs",
+      "delete": "Delete",
+      "pause": "Pause",
+      "activate": "Activate",
+      "save": "Save",
+      "fixIssuesFirst": "Fix the issues below before activating",
+      "descriptionPlaceholder": "Add a short description (internal — customers don't see this)",
+      "descriptionLabel": "Flow description",
+      "statusDraft": "Draft",
+      "statusActive": "Active",
+      "statusArchived": "Archived"
     }
   },
   "Settings": {
