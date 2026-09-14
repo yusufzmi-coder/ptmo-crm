@@ -686,7 +686,8 @@
         "date": "Date"
       },
       "errorLoad": "Failed to load broadcasts",
-      "retry": "Retry"
+      "retry": "Retry",
+      "loading": "Loading broadcasts"
     },
     "status": {
       "draft": "Draft",
@@ -746,7 +747,8 @@
       "retryFailed": "Retry failed ({count})",
       "toastResumeStarted": "Sending {count} recipients in the background.",
       "toastResumeStartedCapped": "Sending {count} recipients in the background. {remaining} more will need another run.",
-      "toastResumeFailed": "Could not resume: {error}"
+      "toastResumeFailed": "Could not resume: {error}",
+      "loading": "Loading broadcast"
     },
     "new": {
       "title": "New Broadcast",
@@ -893,7 +895,8 @@
         "updateError": "Failed to update",
         "duplicateError": "Failed to duplicate",
         "deleteError": "Failed to delete"
-      }
+      },
+      "loading": "Loading automations"
     },
     "edit": {
       "loading": "Loading...",
@@ -915,7 +918,8 @@
         "failed": "failed"
       },
       "back": "Back",
-      "backAria": "Back"
+      "backAria": "Back",
+      "loading": "Loading automation logs"
     },
     "builder": {
       "steps": {
@@ -1107,12 +1111,14 @@
       "triggerKeywordNone": "Triggers on keyword (none set)",
       "triggerKeyword": "Triggers on: {keywords}",
       "triggerFirstInbound": "Triggers on a contact's first-ever inbound message",
-      "triggerManual": "Manual trigger"
+      "triggerManual": "Manual trigger",
+      "loading": "Loading flows"
     },
     "edit": {
       "notFound": "Flow not found.",
       "backToFlows": "← Back to flows",
-      "loadError": "Couldn't load flow."
+      "loadError": "Couldn't load flow.",
+      "loadingEditor": "Loading flow editor"
     },
     "logs": {
       "title": "Runs",
@@ -1131,7 +1137,8 @@
       "statusHandedOff": "Handed off",
       "statusTimedOut": "Timed out",
       "statusPaused": "Paused by agent",
-      "statusFailed": "Failed"
+      "statusFailed": "Failed",
+      "loading": "Loading flow runs"
     },
     "builder": {
       "triggerTitle": "Trigger",

@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
-  Loader2,
   CircleCheck,
   CircleAlert,
   Clock,
@@ -18,6 +17,7 @@ import { toast } from "sonner";
 import { format, formatDistanceToNow } from "date-fns";
 
 import { useTranslations } from "next-intl";
+import { PageSkeleton, RowListSkeleton } from "../../../page-skeletons";
 
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -154,9 +154,9 @@ export default function FlowRunsPage() {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
+      <PageSkeleton label={t("loading")} action={false}>
+        <RowListSkeleton count={6} />
+      </PageSkeleton>
     );
   }
   if (notFound || !flow) {

@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation"
 import {
   ArrowLeft,
   Check,
-  Loader2,
   X,
   ChevronDown,
   ChevronRight,
 } from "lucide-react"
 import { useTranslations } from "next-intl"
+import { PageSkeleton, RowListSkeleton } from "../../../page-skeletons"
 
 import { createClient } from "@/lib/supabase/client"
 import type {
@@ -77,9 +77,9 @@ export default function AutomationLogsPage({
 
   if (!automation || logs === null) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      </div>
+      <PageSkeleton label={t("loading")} action={false}>
+        <RowListSkeleton count={6} />
+      </PageSkeleton>
     )
   }
 
