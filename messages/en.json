@@ -1954,7 +1954,8 @@
     "unreadLabel": "Unread",
     "retry": "Retry",
     "toastMarkReadFailed": "Failed to mark notification as read",
-    "toastMarkAllFailed": "Failed to mark all as read"
+    "toastMarkAllFailed": "Failed to mark all as read",
+    "loading": "Loading notifications"
   },
   "Interactive": {
     "emptyButtons": "Buttons, no message text",

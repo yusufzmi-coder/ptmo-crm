@@ -15,12 +15,12 @@ import {
   Clock,
   Users,
   PhoneCall,
-  Loader2,
 } from "lucide-react"
 
 import { createClient } from "@/lib/supabase/client"
 import { useCan } from "@/hooks/use-can"
 import { useTranslations } from "next-intl"
+import { Spinner } from "@/components/ui/spinner"
 import { PageSkeleton, CardGridSkeleton } from "../page-skeletons"
 import type { Automation } from "@/types"
 import { Button } from "@/components/ui/button"
@@ -252,7 +252,7 @@ export default function AutomationsPage() {
               onClick={confirmDelete}
               disabled={deleting}
             >
-              {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+              {deleting ? <Spinner size="sm" /> : <Trash2 className="h-4 w-4" />}
               {t("delete")}
             </Button>
           </DialogFooter>

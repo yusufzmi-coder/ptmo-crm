@@ -8,7 +8,6 @@ import {
   Plus,
   Trash2,
   Pencil,
-  Loader2,
   MessageSquare,
   PlayCircle,
   PauseCircle,
@@ -19,6 +18,7 @@ import {
 } from "lucide-react";
 
 import { useTranslations } from "next-intl";
+import { Spinner } from "@/components/ui/spinner";
 import { PageSkeleton, CardGridSkeleton } from "../page-skeletons";
 import { useCan } from "@/hooks/use-can";
 import { Button } from "@/components/ui/button";
@@ -314,7 +314,7 @@ export default function FlowsPage() {
               {t("cancel")}
             </Button>
             <Button onClick={handleCreate} disabled={!newName.trim() || creating}>
-              {creating && <Loader2 className="h-4 w-4 animate-spin" />}
+              {creating && <Spinner size="sm" />}
               {t("createBlank")}
             </Button>
           </DialogFooter>

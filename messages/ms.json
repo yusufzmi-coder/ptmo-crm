@@ -1954,7 +1954,8 @@
     "unreadLabel": "Belum dibaca",
     "retry": "Cuba lagi",
     "toastMarkReadFailed": "Gagal menanda pemberitahuan sebagai dibaca",
-    "toastMarkAllFailed": "Gagal menanda semua sebagai dibaca"
+    "toastMarkAllFailed": "Gagal menanda semua sebagai dibaca",
+    "loading": "Memuatkan pemberitahuan"
   },
   "Interactive": {
     "emptyButtons": "Butang, tiada teks mesej",
