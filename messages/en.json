@@ -210,7 +210,12 @@
       "replyingAsBranch": "replying as {branch}",
       "aTeammate": "A teammate",
       "alsoViewing": "{names} {count, plural, one {is} other {are}} also in this chat right now — check before you reply.",
-      "loadingMessages": "Loading messages"
+      "loadingMessages": "Loading messages",
+      "sendFailed": "Failed to send: {reason}",
+      "sendTemplateFailed": "Failed to send template: {reason}",
+      "waitForSend": "Wait for the message to finish sending",
+      "reactionFailed": "Reaction failed: {reason}",
+      "assignFailed": "Failed to update assignment"
     },
     "sessionTimer": {
       "expired": "Expired",
@@ -260,7 +265,15 @@
       "dropUnavailable": "Can't attach right now",
       "unsupportedFile": "That file type can't be sent on WhatsApp.",
       "onlyFirstFile": "One attachment per message — using {filename}.",
-      "attachmentBusy": "Finish or remove the current attachment first."
+      "attachmentBusy": "Finish or remove the current attachment first.",
+      "aiNotConfigured": "AI isn't set up yet — enable it in Settings → AI Assistant.",
+      "draftFailed": "Couldn't draft a reply.",
+      "draftEmpty": "The assistant didn’t return a reply.",
+      "aiUnreachable": "Couldn't reach the AI assistant.",
+      "uploadFailed": "Upload failed.",
+      "recordingTooLong": "Recording is too long (over {limit}).",
+      "recordingUnsupported": "Voice recording isn't supported in this browser.",
+      "micDenied": "Microphone access denied or unavailable."
     },
     "bubble": {
       "photo": "Photo",

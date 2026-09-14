@@ -210,7 +210,12 @@
       "replyingAsBranch": "membalas sebagai {branch}",
       "aTeammate": "Seorang rakan sepasukan",
       "alsoViewing": "{names} {count, plural, one {juga} other {juga}} dalam chat ini sekarang — semak sebelum anda balas.",
-      "loadingMessages": "Memuat mesej"
+      "loadingMessages": "Memuat mesej",
+      "sendFailed": "Gagal hantar: {reason}",
+      "sendTemplateFailed": "Gagal hantar templat: {reason}",
+      "waitForSend": "Tunggu mesej selesai dihantar",
+      "reactionFailed": "Reaksi gagal: {reason}",
+      "assignFailed": "Gagal kemas kini tugasan"
     },
     "sessionTimer": {
       "expired": "Tamat tempoh",
@@ -260,7 +265,15 @@
       "dropUnavailable": "Tidak boleh lampirkan sekarang",
       "unsupportedFile": "Jenis fail itu tidak boleh dihantar melalui WhatsApp.",
       "onlyFirstFile": "Satu lampiran setiap mesej — menggunakan {filename}.",
-      "attachmentBusy": "Selesaikan atau buang lampiran semasa dahulu."
+      "attachmentBusy": "Selesaikan atau buang lampiran semasa dahulu.",
+      "aiNotConfigured": "AI belum disediakan — hidupkannya di Tetapan → Pembantu AI.",
+      "draftFailed": "Tidak dapat menyediakan draf balasan.",
+      "draftEmpty": "Pembantu tidak mengembalikan sebarang balasan.",
+      "aiUnreachable": "Tidak dapat menghubungi pembantu AI.",
+      "uploadFailed": "Muat naik gagal.",
+      "recordingTooLong": "Rakaman terlalu panjang (melebihi {limit}).",
+      "recordingUnsupported": "Rakaman suara tidak disokong dalam pelayar ini.",
+      "micDenied": "Akses mikrofon ditolak atau tidak tersedia."
     },
     "bubble": {
       "photo": "Foto",

@@ -311,15 +311,15 @@ export function MessageComposer({
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         if (data.code === "ai_not_configured") {
-          toast.error("AI isn't set up yet — enable it in Settings → AI Assistant.");
+          toast.error(t("aiNotConfigured"));
         } else {
-          toast.error(data.error ?? "Couldn't draft a reply.");
+          toast.error(data.error ?? t("draftFailed"));
         }
         return;
       }
       const draftText = typeof data.draft === "string" ? data.draft.trim() : "";
       if (!draftText) {
-        toast.error("The assistant didn't return a reply.");
+        toast.error(t("draftEmpty"));
         return;
       }
       setText(draftText);
@@ -334,11 +334,11 @@ export function MessageComposer({
         }
       });
     } catch {
-      toast.error("Couldn't reach the AI assistant.");
+      toast.error(t("aiUnreachable"));
     } finally {
       setDrafting(false);
     }
-  }, [drafting, conversationId, adjustHeight]);
+  }, [drafting, conversationId, adjustHeight, t]);
 
   // ---- Interactive message + quick replies --------------------------
 
@@ -445,12 +445,12 @@ export function MessageComposer({
         removeStaged(draftRef.current?.path);
         setDraft({ kind, mediaUrl: pointerUrl, path, filename: file.name, caption: "" });
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Upload failed.");
+        toast.error(err instanceof Error ? err.message : t("uploadFailed"));
       } finally {
         setBusy(false);
       }
     },
-    [removeStaged],
+    [removeStaged, t],
   );
 
   const handlePicked = useCallback(
@@ -564,7 +564,13 @@ export function MessageComposer({
       });
       if (file.size === 0) return; // cancelled / empty take
       if (file.size > MEDIA_MAX_BYTES_BY_KIND.audio) {
-        toast.error("Recording is too long (over 16 MB).");
+        toast.error(
+          t("recordingTooLong", {
+            // From the same constant the check above uses, so the number
+            // in the message can never drift from the limit enforced.
+            limit: `${Math.round(MEDIA_MAX_BYTES_BY_KIND.audio / 1024 / 1024)} MB`,
+          }),
+        );
         return;
       }
       setBusy(true);
@@ -573,18 +579,18 @@ export function MessageComposer({
         removeStaged(draftRef.current?.path);
         setDraft({ kind: "audio", mediaUrl: pointerUrl, path, filename: file.name, caption: "" });
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Upload failed.");
+        toast.error(err instanceof Error ? err.message : t("uploadFailed"));
       } finally {
         setBusy(false);
       }
     },
-    [removeStaged],
+    [removeStaged, t],
   );
 
   const startRecording = useCallback(async () => {
     if (inputsDisabled || busy || recording) return;
     if (!navigator.mediaDevices?.getUserMedia || typeof AudioContext === "undefined") {
-      toast.error("Voice recording isn't supported in this browser.");
+      toast.error(t("recordingUnsupported"));
       return;
     }
     try {
@@ -611,9 +617,9 @@ export function MessageComposer({
     } catch {
       void recorderRef.current?.stop().catch(() => {});
       recorderRef.current = null;
-      toast.error("Microphone access denied or unavailable.");
+      toast.error(t("micDenied"));
     }
-  }, [inputsDisabled, busy, recording, finalizeRecording]);
+  }, [inputsDisabled, busy, recording, finalizeRecording, t]);
 
   const stopRecording = useCallback(() => {
     clearTimer();
