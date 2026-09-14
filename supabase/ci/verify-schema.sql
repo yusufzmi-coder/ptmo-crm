@@ -129,12 +129,89 @@ BEGIN
   -- These four are SECURITY DEFINER and mutate counters. Postgres
   -- grants EXECUTE to PUBLIC by default, so before 046 any JWT could
   -- call them with postgres privileges and no tenant check at all.
-  IF has_function_privilege('public', 'public._bcast_bump(uuid, text, int)'::regprocedure, 'EXECUTE')
-     OR has_function_privilege('public', 'public.record_webhook_failure(uuid, int)'::regprocedure, 'EXECUTE')
-     OR has_function_privilege('public', 'public.recompute_broadcast_counts(uuid)'::regprocedure, 'EXECUTE')
-     OR has_function_privilege('public', 'public.claim_ai_reply_slot(uuid, integer)'::regprocedure, 'EXECUTE')
-  THEN
-    RAISE EXCEPTION 'a SECURITY DEFINER counter function is EXECUTE-able by PUBLIC (migration 046 regressed)';
+  --
+  -- Checked BY NAME, not by signature, and that is the point.
+  --
+  -- 046 revokes an exact signature: `claim_ai_reply_slot(uuid, integer)`.
+  -- A REVOKE naming a signature nothing owns does not pass quietly —
+  -- Postgres raises 42883 — so a typo cannot slip through. What CAN slip
+  -- through is a second function sharing the name with a different
+  -- argument list: the REVOKE hits the one it names, the overload keeps
+  -- Postgres's default grant to PUBLIC, and the migration reports
+  -- success because from its point of view it did exactly what it said.
+  --
+  -- 046 guards that for recompute_broadcast_counts alone. The other
+  -- three have no such guard, and neither has anything after 046 — an
+  -- overload added by a later migration would re-open the hole with
+  -- every assertion in 046 still passing, because 046 only ever runs
+  -- once. Hence a standing check here, over every function carrying one
+  -- of these names.
+  IF (
+    SELECT count(*) FROM pg_proc p
+      JOIN pg_namespace n ON n.oid = p.pronamespace
+     WHERE n.nspname = 'public'
+       AND p.proname IN ('_bcast_bump', 'record_webhook_failure',
+                         'recompute_broadcast_counts', 'claim_ai_reply_slot')
+  ) <> 4 THEN
+    RAISE EXCEPTION
+      'expected exactly 4 SECURITY DEFINER counter functions, found %: % — an overload is un-revoked, or one was dropped',
+      (SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+        WHERE n.nspname = 'public'
+          AND p.proname IN ('_bcast_bump', 'record_webhook_failure',
+                            'recompute_broadcast_counts', 'claim_ai_reply_slot')),
+      (SELECT string_agg(p.oid::regprocedure::text, ', ' ORDER BY p.oid::regprocedure::text)
+         FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+        WHERE n.nspname = 'public'
+          AND p.proname IN ('_bcast_bump', 'record_webhook_failure',
+                            'recompute_broadcast_counts', 'claim_ai_reply_slot'));
+  END IF;
+
+  -- anon and authenticated are named separately from PUBLIC on purpose.
+  -- A direct GRANT to anon does not show up in the PUBLIC check, so the
+  -- older single-role assertion here would have passed while anon could
+  -- still call them.
+  IF EXISTS (
+    SELECT 1 FROM pg_proc p
+      JOIN pg_namespace n ON n.oid = p.pronamespace
+     WHERE n.nspname = 'public'
+       AND p.proname IN ('_bcast_bump', 'record_webhook_failure',
+                         'recompute_broadcast_counts', 'claim_ai_reply_slot')
+       AND (has_function_privilege('public', p.oid, 'EXECUTE')
+         OR has_function_privilege('anon', p.oid, 'EXECUTE')
+         OR has_function_privilege('authenticated', p.oid, 'EXECUTE'))
+  ) THEN
+    RAISE EXCEPTION
+      'a SECURITY DEFINER counter function is EXECUTE-able by PUBLIC, anon or authenticated (migration 046 regressed): %',
+      (SELECT string_agg(p.oid::regprocedure::text, ', ' ORDER BY p.oid::regprocedure::text)
+         FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+        WHERE n.nspname = 'public'
+          AND p.proname IN ('_bcast_bump', 'record_webhook_failure',
+                            'recompute_broadcast_counts', 'claim_ai_reply_slot')
+          AND (has_function_privilege('public', p.oid, 'EXECUTE')
+            OR has_function_privilege('anon', p.oid, 'EXECUTE')
+            OR has_function_privilege('authenticated', p.oid, 'EXECUTE')));
+  END IF;
+
+  -- The positive half. An assertion that only proves absence passes just
+  -- as happily when the migration never applied at all — the 027 lesson.
+  -- If service_role loses EXECUTE the webhook and broadcast paths break
+  -- in production while every check above stays green.
+  IF EXISTS (
+    SELECT 1 FROM pg_proc p
+      JOIN pg_namespace n ON n.oid = p.pronamespace
+     WHERE n.nspname = 'public'
+       AND p.proname IN ('_bcast_bump', 'record_webhook_failure',
+                         'recompute_broadcast_counts', 'claim_ai_reply_slot')
+       AND NOT has_function_privilege('service_role', p.oid, 'EXECUTE')
+  ) THEN
+    RAISE EXCEPTION
+      'a SECURITY DEFINER counter function is NOT EXECUTE-able by service_role — the webhook path would break: %',
+      (SELECT string_agg(p.oid::regprocedure::text, ', ' ORDER BY p.oid::regprocedure::text)
+         FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+        WHERE n.nspname = 'public'
+          AND p.proname IN ('_bcast_bump', 'record_webhook_failure',
+                            'recompute_broadcast_counts', 'claim_ai_reply_slot')
+          AND NOT has_function_privilege('service_role', p.oid, 'EXECUTE'));
   END IF;
 
   -- Column-level backstop for the 034 trigger. Belt and braces: the
