@@ -686,7 +686,8 @@
         "date": "날짜"
       },
       "errorLoad": "브로드캐스트를 불러오지 못했습니다",
-      "retry": "다시 시도"
+      "retry": "다시 시도",
+      "loading": "브로드캐스트 불러오는 중"
     },
     "status": {
       "draft": "초안",
@@ -746,7 +747,8 @@
       "retryFailed": "실패 재시도 ({count})",
       "toastResumeStarted": "{count}명에게 백그라운드로 발송 중입니다.",
       "toastResumeStartedCapped": "{count}명에게 백그라운드로 발송 중입니다. 나머지 {remaining}명은 한 번 더 실행해야 합니다.",
-      "toastResumeFailed": "이어서 발송할 수 없습니다: {error}"
+      "toastResumeFailed": "이어서 발송할 수 없습니다: {error}",
+      "loading": "브로드캐스트 불러오는 중"
     },
     "new": {
       "title": "새 브로드캐스트",
@@ -893,7 +895,8 @@
         "updateError": "업데이트하지 못했습니다",
         "duplicateError": "복제하지 못했습니다",
         "deleteError": "삭제하지 못했습니다"
-      }
+      },
+      "loading": "자동화 불러오는 중"
     },
     "edit": {
       "loading": "불러오는 중...",
@@ -915,7 +918,8 @@
         "failed": "실패"
       },
       "back": "뒤로",
-      "backAria": "뒤로"
+      "backAria": "뒤로",
+      "loading": "자동화 로그 불러오는 중"
     },
     "builder": {
       "steps": {
@@ -1107,12 +1111,14 @@
       "triggerKeywordNone": "키워드로 트리거 (설정 안 됨)",
       "triggerKeyword": "트리거 조건: {keywords}",
       "triggerFirstInbound": "연락처의 첫 수신 메시지에서 트리거됨",
-      "triggerManual": "수동 트리거"
+      "triggerManual": "수동 트리거",
+      "loading": "플로우 불러오는 중"
     },
     "edit": {
       "notFound": "플로우를 찾을 수 없습니다.",
       "backToFlows": "← 플로우로 돌아가기",
-      "loadError": "플로우를 불러올 수 없습니다."
+      "loadError": "플로우를 불러올 수 없습니다.",
+      "loadingEditor": "플로우 편집기 불러오는 중"
     },
     "logs": {
       "title": "실행 기록",
@@ -1131,7 +1137,8 @@
       "statusHandedOff": "인계됨",
       "statusTimedOut": "시간 초과",
       "statusPaused": "상담원이 일시 중지함",
-      "statusFailed": "실패"
+      "statusFailed": "실패",
+      "loading": "플로우 실행 내역 불러오는 중"
     },
     "builder": {
       "triggerTitle": "트리거",
@@ -1927,14 +1934,14 @@
     }
   },
   "Notifications": {
-    "title": "\uc54c\ub9bc",
-    "description": "\ub2e4\ub978 \ud300\uc6d0\uc774 \ub098\uc5d0\uac8c \ubc30\uc815\ud55c \ub300\ud654\uac00 \uc5ec\uae30\uc5d0 \ud45c\uc2dc\ub429\ub2c8\ub2e4.",
-    "markAllRead": "\ubaa8\ub450 \uc77d\uc74c\uc73c\ub85c \ud45c\uc2dc",
-    "emptyTitle": "\uc544\uc9c1 \uc54c\ub9bc\uc774 \uc5c6\uc2b5\ub2c8\ub2e4",
-    "emptyHint": "\ub204\uad70\uac00\uac00 \ub300\ud654\ub97c \ubc30\uc815\ud558\uba74 \uc5ec\uae30\uc5d0 \uc54c\ub9bc\uc774 \ud45c\uc2dc\ub429\ub2c8\ub2e4.",
-    "unreadLabel": "\uc77d\uc9c0 \uc54a\uc74c",
-    "retry": "\ub2e4\uc2dc \uc2dc\ub3c4",
-    "toastMarkReadFailed": "\uc54c\ub9bc\uc744 \uc77d\uc74c\uc73c\ub85c \ud45c\uc2dc\ud558\uc9c0 \ubabb\ud588\uc2b5\ub2c8\ub2e4",
-    "toastMarkAllFailed": "\ubaa8\ub450 \uc77d\uc74c\uc73c\ub85c \ud45c\uc2dc\ud558\uc9c0 \ubabb\ud588\uc2b5\ub2c8\ub2e4"
+    "title": "알림",
+    "description": "다른 팀원이 나에게 배정한 대화가 여기에 표시됩니다.",
+    "markAllRead": "모두 읽음으로 표시",
+    "emptyTitle": "아직 알림이 없습니다",
+    "emptyHint": "누군가가 대화를 배정하면 여기에 알림이 표시됩니다.",
+    "unreadLabel": "읽지 않음",
+    "retry": "다시 시도",
+    "toastMarkReadFailed": "알림을 읽음으로 표시하지 못했습니다",
+    "toastMarkAllFailed": "모두 읽음으로 표시하지 못했습니다"
   }
 }

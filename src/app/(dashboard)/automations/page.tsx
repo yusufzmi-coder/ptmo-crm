@@ -21,6 +21,7 @@ import {
 import { createClient } from "@/lib/supabase/client"
 import { useCan } from "@/hooks/use-can"
 import { useTranslations } from "next-intl"
+import { PageSkeleton, CardGridSkeleton } from "../page-skeletons"
 import type { Automation } from "@/types"
 import { Button } from "@/components/ui/button"
 import { GatedButton } from "@/components/ui/gated-button"
@@ -150,9 +151,9 @@ export default function AutomationsPage() {
 
   if (automations === null) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      </div>
+      <PageSkeleton label={t("loading")}>
+        <CardGridSkeleton count={6} />
+      </PageSkeleton>
     )
   }
 
