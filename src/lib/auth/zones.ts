@@ -49,10 +49,33 @@ interface MyAccountsRow {
  */
 const INSUFFICIENT_PRIVILEGE = "42501";
 
+/**
+ * PostgREST's code for "no function matches that name in the schema
+ * cache". Postgres itself reports `42883` for an undefined function; the
+ * REST layer answers 404 with this instead, so both are treated as the
+ * same thing: 044 has not been applied here.
+ */
+const FUNCTION_NOT_FOUND = new Set(["PGRST202", "42883"]);
+
+/** Whether an RPC error means the function itself is absent. */
+function isMissingFunction(error: { code?: string } | null): boolean {
+  return error?.code !== undefined && FUNCTION_NOT_FOUND.has(error.code);
+}
+
 export type ZoneFailure =
   /** The caller may not enter that zone (or it does not exist). */
   | "not_member"
-  /** Anything else: network, RPC missing, RLS surprise. */
+  /**
+   * The zone feature is not provisioned on this database: `my_accounts()`
+   * does not exist because migration 044 has not been applied.
+   *
+   * This is a deployment state, not a fault. It is kept separate from
+   * `failed` so the UI can stay quiet about it — a build that ships ahead
+   * of its migration would otherwise log an error on every page load and
+   * bury the errors that do matter.
+   */
+  | "unavailable"
+  /** Anything else: network, RLS surprise. */
   | "failed";
 
 export type ZonesResult =
@@ -124,6 +147,10 @@ export function currentZoneName(
 export async function fetchZones(db: SupabaseClient): Promise<ZonesResult> {
   const { data, error } = await db.rpc("my_accounts");
   if (error) {
+    // A missing function is not a failure to report — it means this
+    // database has no zone feature yet. Say so quietly; the switcher
+    // already hides itself when there is nothing to switch between.
+    if (isMissingFunction(error)) return { ok: false, reason: "unavailable" };
     console.error("[zones] my_accounts failed:", error.message);
     return { ok: false, reason: "failed" };
   }

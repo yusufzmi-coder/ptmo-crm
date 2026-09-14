@@ -111,6 +111,50 @@ describe('fetchZones', () => {
 
     await expect(fetchZones(db)).resolves.toEqual({ ok: false, reason: 'failed' });
   });
+
+  it.each(['PGRST202', '42883'])(
+    'calls a missing my_accounts() unavailable, not failed (%s)',
+    async (code) => {
+      // 044 has not been applied, so the function does not exist. That is
+      // a deployment state rather than a fault, and it must not be
+      // reported as one.
+      const { db } = stubDb(() => ({
+        data: null,
+        error: { code, message: 'Could not find the function' },
+      }));
+
+      await expect(fetchZones(db)).resolves.toEqual({
+        ok: false,
+        reason: 'unavailable',
+      });
+    },
+  );
+
+  it('stays silent when the function is missing', async () => {
+    // The switcher renders on every dashboard page, so a build shipped
+    // ahead of its migration would log on every page load and bury the
+    // errors that matter. This is the line that keeps the console usable.
+    const { db } = stubDb(() => ({
+      data: null,
+      error: { code: 'PGRST202', message: 'Could not find the function' },
+    }));
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await fetchZones(db);
+
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('still logs a real failure, so genuine breakage stays visible', async () => {
+    const { db } = stubDb(() => ({
+      data: null,
+      error: { code: '08006', message: 'connection failure' },
+    }));
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await expect(fetchZones(db)).resolves.toEqual({ ok: false, reason: 'failed' });
+    expect(spy).toHaveBeenCalled();
+  });
 });
 
 describe('switchActiveZone', () => {
