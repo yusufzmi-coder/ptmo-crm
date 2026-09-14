@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { requireRole, toErrorResponse } from '@/lib/auth/account'
 import { supabaseAdmin } from '@/lib/issues/admin-client'
 import { INITIAL_ISSUE_STATUS } from '@/lib/issues/status'
-import type { IssueCategory, IssueSeverity } from '@/types'
+import { isIssueCategory, isIssueSeverity } from '@/lib/issues/labels'
 
 /**
  * GET  /api/issues — list the caller's issues.
@@ -17,20 +17,6 @@ import type { IssueCategory, IssueSeverity } from '@/types'
  * Responses carry error CODES, not sentences. The UI owns the wording —
  * see messages/*.json.
  */
-
-const CATEGORIES: readonly IssueCategory[] = [
-  'progress',
-  'keselamatan',
-  'staf',
-  'servis',
-  'yuran',
-  'jadual',
-  'pendaftaran',
-  'fasiliti',
-  'lain',
-]
-
-const SEVERITIES: readonly IssueSeverity[] = ['biasa', 'penting', 'kritikal']
 
 async function requireUser(): Promise<
   | { ok: true; userId: string; supabase: Awaited<ReturnType<typeof createClient>> }
@@ -120,10 +106,14 @@ export async function POST(request: Request) {
   if (!summary) {
     return NextResponse.json({ error: 'summary_required' }, { status: 422 })
   }
-  if (!body.category || !CATEGORIES.includes(body.category as IssueCategory)) {
+  // Guards, not array lookups: the lists behind them are Records keyed
+  // on the union, so a category added to the type without being added
+  // there is a compile error rather than a value this route silently
+  // refuses. See src/lib/issues/labels.ts.
+  if (!isIssueCategory(body.category)) {
     return NextResponse.json({ error: 'invalid_category' }, { status: 422 })
   }
-  if (!body.severity || !SEVERITIES.includes(body.severity as IssueSeverity)) {
+  if (!isIssueSeverity(body.severity)) {
     return NextResponse.json({ error: 'invalid_severity' }, { status: 422 })
   }
 

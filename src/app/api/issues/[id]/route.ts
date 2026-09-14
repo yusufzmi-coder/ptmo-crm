@@ -3,7 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import { requireRole, toErrorResponse } from '@/lib/auth/account'
 import { supabaseAdmin } from '@/lib/issues/admin-client'
 import { canTransition, isResolvedStatus } from '@/lib/issues/status'
-import type { IssueSeverity, IssueStatus } from '@/types'
+import { isIssueSeverity } from '@/lib/issues/labels'
+import type { IssueStatus } from '@/types'
 
 /**
  * GET   /api/issues/[id] — read one issue with its trail.
@@ -16,8 +17,6 @@ import type { IssueSeverity, IssueStatus } from '@/types'
  *
  * Responses carry error CODES, not sentences — the UI owns the wording.
  */
-
-const SEVERITIES: readonly IssueSeverity[] = ['biasa', 'penting', 'kritikal']
 
 async function requireUser(): Promise<
   | { ok: true; userId: string; supabase: Awaited<ReturnType<typeof createClient>> }
@@ -145,7 +144,7 @@ export async function PATCH(
   if (body.due_at !== undefined) patch.due_at = body.due_at
   if (body.resolution !== undefined) patch.resolution = body.resolution
   if (body.severity !== undefined) {
-    if (!SEVERITIES.includes(body.severity as IssueSeverity)) {
+    if (!isIssueSeverity(body.severity)) {
       return NextResponse.json({ error: 'invalid_severity' }, { status: 422 })
     }
     patch.severity = body.severity
