@@ -172,7 +172,7 @@ export function QuickReplyPicker({
                             — the wording may be deliberate — but they
                             should not find out from the parent. */}
                         {foreign.length > 0 && (
-                          <span className="mt-1 flex items-center gap-1 text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                          <span className="mt-1 flex items-center gap-1 text-[11px] font-medium text-warning">
                             <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden />
                             {t("quickReplyForeignBranch", {
                               branches: foreign.join(", "),

@@ -691,7 +691,7 @@ export function MessageComposer({
         // in the thread is the polite announcement; this is the thing
         // still on screen at the moment of typing, and an agent who has
         // scrolled past the banner has no other signal left.
-        coViewers.length > 0 ? "border-amber-500/50" : "border-border",
+        coViewers.length > 0 ? "border-warning/70" : "border-border",
       )}
     >
       {/* Drop overlay. `pointer-events-none` so it cannot swallow the
@@ -732,7 +732,7 @@ export function MessageComposer({
           {coViewers.length > 0 && (
             <span
               role="status"
-              className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-400"
+              className="inline-flex items-center gap-1 text-xs font-medium text-warning"
             >
               <Eye className="h-3.5 w-3.5 shrink-0" aria-hidden />
               {t("alsoViewing", {
@@ -753,14 +753,14 @@ export function MessageComposer({
         </div>
       )}
       {sessionExpired && (
-        <div className="mb-2 flex items-center justify-between rounded-lg bg-amber-500/10 px-3 py-2">
-          <p className="text-xs text-amber-400">
+        <div className="mb-2 flex items-center justify-between rounded-lg bg-warning/10 px-3 py-2">
+          <p className="text-xs text-warning">
             {t("sessionExpiredHint")}
           </p>
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 text-xs text-amber-400 hover:text-amber-300"
+            className="h-7 text-xs text-warning hover:text-warning/80"
             onClick={onOpenTemplates}
           >
             <LayoutTemplate className="mr-1 h-3 w-3" />
