@@ -44,7 +44,7 @@ export const ROLE_META: Record<
     icon: Shield,
     label: 'admin',
     variant: 'admin',
-    className: 'border-primary/40 bg-primary/10 text-primary',
+    className: 'border-primary/40 bg-primary/10 text-primary-readable',
   },
   agent: {
     icon: UserCog,

@@ -20,7 +20,7 @@ export const chartColors = {
     bg: "bg-primary",
     stroke: "stroke-primary",
     fill: "fill-primary",
-    text: "text-primary",
+    text: "text-primary-readable",
   },
   blue: {
     bg: "bg-blue-500",

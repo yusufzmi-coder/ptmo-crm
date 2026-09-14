@@ -104,6 +104,14 @@
  * This is written here as an instruction to a person, not implemented as
  * a heuristic, because the distinction is about what the pixel MEANS.
  *
+ * The same judgement applies to borders, and --border is where it bites.
+ * That token is deliberately faint: it draws dividers, card outlines and
+ * section rules, and at 3:1 the product would look boxed in. A border
+ * only owes 3:1 when it is CARRYING something — marking a field invalid,
+ * a card selected, a row active. This tool reports every resting border
+ * under 3:1 because it cannot tell those apart; most of what it lists
+ * for --border is a divider and should be left exactly as it is.
+ *
  * ---------------------------------------------------------------------
  * LIMITS — what an empty result does and does not say
  *
@@ -200,6 +208,8 @@ async function connect() {
 
   await send('Page.enable');
   await send('Runtime.enable');
+  await send('DOM.enable');
+  await send('CSS.enable');
   return { send, evaluate, close: () => ws.close() };
 }
 
@@ -300,6 +310,31 @@ const SCAN = `
     const fg = H.composite(cs.color, H.rgb(bg));
 
     scanned++;
+
+    // Borders at rest. A border that marks a selected, active or invalid
+    // state is non-text information and needs 3.0 against the surface it
+    // sits on. A divider is not — see the note on --border below.
+    // A fully transparent border is layout, not information — buttons
+    // carry border-transparent so a focus ring has somewhere to land.
+    const bTransparent = /^rgba\(.*,\s*0\)$/.test(cs.borderTopColor) || cs.borderTopColor === 'transparent';
+    if ((parseFloat(cs.borderTopWidth) || 0) > 0 && !bTransparent) {
+      const bd = H.ratio(H.composite(cs.borderTopColor, H.rgb(under)), under);
+      if (bd < 3.0) {
+        const bkey = 'B|' + cs.borderTopColor + '|' + cs.borderTopWidth;
+        if (!seen.has(bkey)) {
+          seen.add(bkey);
+          out.push({
+            text: '(border)',
+            cls: (el.className && el.className.baseVal !== undefined ? el.className.baseVal : el.className || '').toString().slice(0, 58),
+            px: cs.borderTopWidth,
+            weight: '-',
+            need: 3.0,
+            got: bd,
+          });
+        }
+      }
+    }
+
     const need = H.thresholdFor(cs);
     const got = H.ratio(fg, bg);
     if (got >= need) continue;
@@ -318,6 +353,64 @@ const SCAN = `
     });
   }
   return { scanned, rows: out.sort((a, b) => a.got - b.got) };
+})()
+`;
+
+
+// ---------------------------------------------------------------------
+// Forced states. The rest sweep cannot see :hover, :focus-visible or
+// [aria-invalid], and that is where the form-error borders live — the
+// only visual mark that a field needs fixing, visible precisely when
+// the user is already confused.
+//
+// Pseudo-classes are forced through CDP's CSS.forcePseudoState, which
+// really does re-resolve the cascade: verified against a fixture whose
+// :hover and :focus-visible rules change `color`, and the forced value
+// came back changed and the cleared value came back to rest.
+//
+// aria-invalid is an attribute, so it is set and removed in the page.
+// ---------------------------------------------------------------------
+const TAG_STATEFUL = `
+(() => {
+  let i = 0;
+  const found = [];
+  for (const el of document.querySelectorAll('*')) {
+    const cls = (el.className && el.className.baseVal !== undefined ? el.className.baseVal : el.className || '').toString();
+    if (!cls) continue;
+    const states = [];
+    if (/(^|\\s)hover:/.test(cls)) states.push('hover');
+    if (/(^|\\s)focus-visible:/.test(cls)) states.push('focus-visible');
+    else if (/(^|\\s)focus:/.test(cls)) states.push('focus');
+    const invalid = /aria-invalid:/.test(cls);
+    if (!states.length && !invalid) continue;
+    const box = el.getBoundingClientRect();
+    if (box.width < 1 || box.height < 1) continue;
+    el.setAttribute('data-mc-i', String(i));
+    found.push({ i, states, invalid, tag: el.tagName.toLowerCase(), cls: cls.slice(0, 62) });
+    i++;
+  }
+  return found;
+})()
+`;
+
+const MEASURE_ONE = (i) => `
+(() => {
+  const H = ${IN_PAGE};
+  const el = document.querySelector('[data-mc-i="${i}"]');
+  if (!el) return null;
+  const cs = getComputedStyle(el);
+  const under = H.surfaceUnder(el);
+  const bg = cs.backgroundColor && cs.backgroundColor !== 'rgba(0, 0, 0, 0)'
+    ? H.composite(cs.backgroundColor, H.rgb(under)) : under;
+  const out = {};
+  const own = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent.trim()).join(' ').trim();
+  if (own) {
+    out.text = { got: H.ratio(H.composite(cs.color, H.rgb(bg)), bg), need: H.thresholdFor(cs), sample: own.slice(0, 32) };
+  }
+  if ((parseFloat(cs.borderTopWidth) || 0) > 0) {
+    out.border = { got: H.ratio(H.composite(cs.borderTopColor, H.rgb(under)), under), need: 3.0 };
+  }
+  return out;
 })()
 `;
 
@@ -393,6 +486,32 @@ function table(rows, mode) {
   return rows.length;
 }
 
+// A forced state only counts if it CHANGED something. If hover leaves the
+// ratio where rest left it, the rest sweep already reported it.
+function collect(into, el, state, rest, got) {
+  if (!rest || !got) return;
+  for (const kind of ['text', 'border']) {
+    const a = rest[kind];
+    const b = got[kind];
+    if (!b) continue;
+    if (a && a.got === b.got) continue;
+    if (b.got >= b.need) continue;
+    into.push({
+      state,
+      what: kind,
+      got: b.got,
+      need: b.need,
+      sample: b.sample,
+      tag: el.tag,
+      cls: el.cls,
+    });
+  }
+}
+
+const statesSwept = new Set();
+let unreachable = 0;
+let stateChecked = 0;
+
 const { page, pairs, css } = args();
 if (!page && !pairs) {
   die('Usage: --page <url>   or   --pairs <file.json> [--css <origin>]');
@@ -419,6 +538,57 @@ if (page) {
     const { scanned, rows } = await cdp.evaluate(SCAN);
     measured += scanned;
     failures += table(rows, mode);
+
+    // ----- forced states -----
+    const stateful = await cdp.evaluate(TAG_STATEFUL);
+    // Fresh each pass: the attributes were added after any earlier
+    // snapshot, and a stale root silently returns no nodeIds — which
+    // reads as "this page has no hover states" rather than as an error.
+    const doc = await cdp.send('DOM.getDocument', { depth: -1 });
+    const stateRows = [];
+    for (const el of stateful) {
+      const rest = await cdp.evaluate(MEASURE_ONE(el.i));
+      const { nodeIds } = await cdp.send('DOM.querySelectorAll', {
+        nodeId: doc.root.nodeId,
+        selector: `[data-mc-i="${el.i}"]`,
+      });
+      const nodeId = nodeIds?.[0];
+
+      if (el.states.length && !nodeId) {
+        unreachable += el.states.length;
+      }
+      for (const st of el.states) {
+        if (!nodeId) continue;
+        await cdp.send('CSS.forcePseudoState', { nodeId, forcedPseudoClasses: [st] });
+        const got = await cdp.evaluate(MEASURE_ONE(el.i));
+        await cdp.send('CSS.forcePseudoState', { nodeId, forcedPseudoClasses: [] });
+        collect(stateRows, el, st, rest, got);
+        statesSwept.add(st);
+      }
+
+      if (el.invalid) {
+        await cdp.evaluate(
+          `document.querySelector('[data-mc-i="${el.i}"]').setAttribute('aria-invalid','true'); true`,
+        );
+        const got = await cdp.evaluate(MEASURE_ONE(el.i));
+        await cdp.evaluate(
+          `document.querySelector('[data-mc-i="${el.i}"]').removeAttribute('aria-invalid'); true`,
+        );
+        collect(stateRows, el, 'aria-invalid', rest, got);
+        statesSwept.add('aria-invalid');
+      }
+    }
+    await cdp.evaluate(`document.querySelectorAll('[data-mc-i]').forEach((n) => n.removeAttribute('data-mc-i')); true`);
+    stateChecked += stateful.length;
+
+    if (stateRows.length) {
+      console.log(`  forced states — ${mode}`);
+      for (const r of stateRows) {
+        console.log(`    ${String(r.got).padStart(6)} / ${r.need}   [:${r.state}] ${r.what}${r.sample ? ` "${r.sample}"` : ''}`);
+        console.log(`             <${r.tag}> ${r.cls}`);
+      }
+      failures += stateRows.length;
+    }
   }
 } else {
   const spec = JSON.parse(await (await import('node:fs/promises')).readFile(pairs, 'utf8'));
@@ -469,10 +639,34 @@ if (measured === 0) {
       '    thing — check the page actually rendered before reading this as a pass.',
   );
 }
-console.log(
-  `\n  ${failures} failure(s) at rest.  Hover, focus-visible, aria-invalid and\n` +
-    `  disabled states are NOT covered — see LIMITS in the header.\n`,
-);
+// Say what was covered on EVERY run. A clean result is the dangerous one,
+// and "no failures" means something much narrower than it sounds.
+const swept = [...statesSwept].sort();
+console.log(`\n  ${failures} failure(s).`);
+if (page) {
+  console.log(
+    `  coverage: resting state` +
+      (swept.length ? `, plus forced :${swept.join(', :')} on ${stateChecked} element(s)` : '') +
+      `.`,
+  );
+  if (!swept.length) {
+    console.log('  no stateful utilities found on this page — resting state ONLY.');
+  }
+  if (unreachable > 0) {
+    console.log(
+      `  ⚠ ${unreachable} pseudo-state(s) could not be forced — the element was not\n` +
+        '    reachable through the DOM agent. Those states were NOT measured, and\n' +
+        '    their absence above is a tool failure, not a pass.',
+    );
+  }
+  console.log(
+    '  NOT covered: :active, :disabled, [data-*] variants, anything not in the\n' +
+      '  DOM at measure time, and any page this session cannot reach.',
+  );
+} else {
+  console.log('  coverage: declared class pairs only — no page, no states.');
+}
+console.log('');
 
 cdp.close();
 process.exit(0);
