@@ -686,7 +686,8 @@
         "date": "Tarikh"
       },
       "errorLoad": "Gagal memuat broadcast",
-      "retry": "Cuba lagi"
+      "retry": "Cuba lagi",
+      "loading": "Memuat senarai Broadcast"
     },
     "status": {
       "draft": "Draf",
@@ -746,7 +747,8 @@
       "retryFailed": "Cuba semula yang gagal ({count})",
       "toastResumeStarted": "Menghantar {count} penerima di latar belakang.",
       "toastResumeStartedCapped": "Menghantar {count} penerima di latar belakang. {remaining} lagi perlukan satu larian lain.",
-      "toastResumeFailed": "Gagal menyambung semula: {error}"
+      "toastResumeFailed": "Gagal menyambung semula: {error}",
+      "loading": "Memuat Broadcast"
     },
     "new": {
       "title": "Broadcast Baharu",
@@ -893,7 +895,8 @@
         "updateError": "Gagal mengemas kini",
         "duplicateError": "Gagal menyalin",
         "deleteError": "Gagal memadam"
-      }
+      },
+      "loading": "Memuat automasi"
     },
     "edit": {
       "loading": "Memuat...",
@@ -915,7 +918,8 @@
         "failed": "gagal"
       },
       "back": "Kembali",
-      "backAria": "Kembali"
+      "backAria": "Kembali",
+      "loading": "Memuat log automasi"
     },
     "builder": {
       "steps": {
@@ -1072,7 +1076,9 @@
         "matchWordHint": "Memadankan kata kunci hanya sebagai perkataan berdiri sendiri, jadi \"ya\" tidak lagi tercetus pada \"saya\". Terbaik untuk kata kunci pendek dalam bahasa yang dipisah ruang; guna Mengandungi untuk bahasa yang ditulis tanpa ruang.",
         "matchExact": "Tepat",
         "closeConversationHint": "Menetapkan status perbualan kepada \"closed\". Tiada konfigurasi diperlukan."
-      }
+      },
+      "previewNoBody": "Belum ada teks mesej",
+      "previewNoTemplate": "Pilih template"
     }
   },
   "Flows": {
@@ -1107,12 +1113,14 @@
       "triggerKeywordNone": "Tercetus pada kata kunci (belum ditetapkan)",
       "triggerKeyword": "Tercetus pada: {keywords}",
       "triggerFirstInbound": "Tercetus pada mesej masuk pertama kenalan",
-      "triggerManual": "Pencetus manual"
+      "triggerManual": "Pencetus manual",
+      "loading": "Memuat Flow"
     },
     "edit": {
       "notFound": "Flow tidak dijumpai.",
       "backToFlows": "← Kembali ke flow",
-      "loadError": "Gagal memuat flow."
+      "loadError": "Gagal memuat flow.",
+      "loadingEditor": "Memuat editor Flow"
     },
     "logs": {
       "title": "Larian",
@@ -1131,7 +1139,8 @@
       "statusHandedOff": "Diserahkan",
       "statusTimedOut": "Tamat masa",
       "statusPaused": "Dijeda oleh ejen",
-      "statusFailed": "Gagal"
+      "statusFailed": "Gagal",
+      "loading": "Memuat larian Flow"
     },
     "builder": {
       "triggerTitle": "Pencetus",
@@ -1925,5 +1934,20 @@
       "hoursAgo": "{count, plural, =1 {1 jam} other {# jam}} lalu",
       "daysAgo": "{count, plural, =1 {1 hari} other {# hari}} lalu"
     }
+  },
+  "Notifications": {
+    "title": "Pemberitahuan",
+    "description": "Perbualan yang ditugaskan rakan sepasukan lain kepada anda muncul di sini.",
+    "markAllRead": "Tanda semua sebagai dibaca",
+    "emptyTitle": "Belum ada pemberitahuan",
+    "emptyHint": "Anda akan nampak amaran di sini apabila seseorang menugaskan perbualan kepada anda.",
+    "unreadLabel": "Belum dibaca",
+    "retry": "Cuba lagi",
+    "toastMarkReadFailed": "Gagal menanda pemberitahuan sebagai dibaca",
+    "toastMarkAllFailed": "Gagal menanda semua sebagai dibaca"
+  },
+  "Interactive": {
+    "emptyButtons": "Butang, tiada teks mesej",
+    "emptyList": "Senarai, tiada teks mesej"
   }
 }
