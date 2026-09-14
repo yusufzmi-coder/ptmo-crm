@@ -50,7 +50,7 @@ const ROLE_CHIP: Record<
     labelKey: "roleAdmin",
     // Primary-tinted: significant but not as scarce as owner.
     className:
-      "border-primary/40 bg-primary/10 text-primary",
+      "border-primary/40 bg-primary/10 text-primary-on-soft",
   },
   agent: {
     icon: UserCog,
@@ -435,7 +435,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                     alt={profile.full_name ?? t("defaultAvatar")}
                   />
                 ) : null}
-                <AvatarFallback className="bg-primary/10 text-sm font-medium text-primary">
+                <AvatarFallback className="bg-primary/10 text-sm font-medium text-primary-on-soft">
                   {profile?.full_name?.charAt(0)?.toUpperCase() ??
                     profile?.email?.charAt(0)?.toUpperCase() ??
                     "U"}
