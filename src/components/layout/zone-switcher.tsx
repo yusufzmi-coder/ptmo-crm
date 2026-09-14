@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Building2, Check, ChevronsUpDown, Loader2 } from "lucide-react";
+import { Building2, Check, ChevronsUpDown } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { Spinner } from "@/components/layout/spinner";
 
 /**
  * Which zone am I in — and, for HQ, a way to move.
@@ -93,7 +94,7 @@ export function ZoneSwitcher() {
         )}
       >
         {switching ? (
-          <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden />
+          <Spinner />
         ) : (
           <Building2 className="size-4 shrink-0 text-muted-foreground" aria-hidden />
         )}
@@ -125,7 +126,7 @@ export function ZoneSwitcher() {
               className="text-popover-foreground focus:bg-accent focus:text-accent-foreground"
             >
               {isTarget ? (
-                <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden />
+                <Spinner />
               ) : isActive ? (
                 <Check className="size-4 shrink-0" aria-hidden />
               ) : (
