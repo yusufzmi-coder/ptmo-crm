@@ -864,6 +864,439 @@
       }
     }
   },
+  "Automations": {
+    "list": {
+      "title": "Automasi",
+      "subtitle": "Bina aliran kerja yang bertindak balas kepada peristiwa WhatsApp® secara automatik.",
+      "create": "Cipta Automasi",
+      "retry": "Cuba lagi",
+      "templatesTitle": "Template mula pantas",
+      "emptyTitle": "Belum ada automasi",
+      "emptyDesc": "Pilih template di atas atau cipta satu dari awal.",
+      "runs": "{count} larian",
+      "runsPlural": "{count} larian",
+      "lastRun": "terakhir {time}",
+      "activate": "Aktifkan",
+      "deactivate": "Nyahaktifkan",
+      "edit": "Sunting",
+      "duplicate": "Salin",
+      "viewLogs": "Lihat Log",
+      "delete": "Padam",
+      "cancel": "Batal",
+      "deleteTitle": "Padam automasi",
+      "deleteDesc": "Ini membuang {name} dan sejarah pelaksanaannya secara kekal. Ini tidak boleh dibatalkan.",
+      "toasts": {
+        "activated": "Automasi diaktifkan",
+        "paused": "Automasi dijeda",
+        "duplicated": "Automasi disalin",
+        "deleted": "Automasi dipadam",
+        "updateError": "Gagal mengemas kini",
+        "duplicateError": "Gagal menyalin",
+        "deleteError": "Gagal memadam"
+      }
+    },
+    "edit": {
+      "loading": "Memuat...",
+      "loadError": "Gagal memuat ({status})",
+      "back": "Kembali ke Automasi"
+    },
+    "logs": {
+      "title": "Log pelaksanaan",
+      "loadError": "Gagal memuat log",
+      "emptyTitle": "Belum ada pelaksanaan",
+      "emptyDesc": "Cetuskan automasi ini untuk melihat lariannya di sini.",
+      "unknownContact": "Kenalan tidak dikenali",
+      "step": "{count} langkah",
+      "stepPlural": "{count} langkah",
+      "noSteps": "Tiada langkah direkodkan.",
+      "status": {
+        "success": "berjaya",
+        "partial": "separa",
+        "failed": "gagal"
+      },
+      "back": "Kembali",
+      "backAria": "Kembali"
+    },
+    "builder": {
+      "steps": {
+        "send_message": "Hantar Mesej",
+        "send_buttons": "Hantar Butang",
+        "send_list": "Hantar Senarai",
+        "send_template": "Hantar Template",
+        "add_tag": "Tambah Tag",
+        "remove_tag": "Buang Tag",
+        "assign_conversation": "Tugaskan Perbualan",
+        "update_contact_field": "Kemas Kini Medan Kenalan",
+        "create_deal": "Cipta Deal",
+        "wait": "Tunggu",
+        "condition": "Syarat (Jika/Selainnya)",
+        "send_webhook": "Hantar Webhook",
+        "close_conversation": "Tutup Perbualan"
+      },
+      "triggers": {
+        "new_message_received": {
+          "label": "Mesej Baharu Diterima",
+          "hint": "Sebarang mesej masuk"
+        },
+        "first_inbound_message": {
+          "label": "Mesej Pertama daripada Kenalan",
+          "hint": "Kali pertama kenalan ini menghantar mesej kepada anda (berfungsi juga untuk kenalan yang ditambah secara manual)"
+        },
+        "keyword_match": {
+          "label": "Padanan Kata Kunci",
+          "hint": "Mesej mengandungi kata kunci tertentu"
+        },
+        "interactive_reply": {
+          "label": "Balasan Butang / Senarai",
+          "hint": "Pelanggan menekan butang atau baris senarai yang id-nya sepadan — rantaikan menu merentas automasi"
+        },
+        "new_contact_created": {
+          "label": "Kenalan Baharu Dicipta",
+          "hint": "Apabila kenalan dicipta secara automatik daripada mesej masuk"
+        },
+        "conversation_assigned": {
+          "label": "Perbualan Ditugaskan",
+          "hint": "Apabila ditugaskan kepada seorang ejen"
+        },
+        "tag_added": {
+          "label": "Tag Ditambah",
+          "hint": "Apabila tag ditambah kepada kenalan"
+        },
+        "time_based": {
+          "label": "Berasaskan Masa",
+          "hint": "Mengikut jadual berulang"
+        }
+      },
+      "trigger": "Pencetus",
+      "triggerType": "Jenis pencetus",
+      "keywords": "Kata kunci",
+      "keywordsHint": "Senarai dipisah koma (cth. helo, bantuan, beli)",
+      "replyIds": "ID Balasan",
+      "replyIdsHint": "yes, no, more_info",
+      "replyIdsHelp": "ID butang/baris senarai dipisah koma untuk dipadankan, tepat. Guna id yang sama seperti yang anda tetapkan pada langkah Hantar Butang / Hantar Senarai.",
+      "schedule": "Jadual",
+      "scheduleHint": "Ungkapan cron (cth. 0 9 * * 1-5)",
+      "active": "Aktif",
+      "activeAria": "Aktif",
+      "save": "Simpan",
+      "saveDraft": "Simpan Draf",
+      "untitled": "Automasi tanpa tajuk",
+      "backToAutomations": "Kembali ke automasi",
+      "toasts": {
+        "saved": "Automasi disimpan",
+        "created": "Automasi dicipta",
+        "saveFailed": "Gagal menyimpan"
+      },
+      "tags": {
+        "select": "Pilih tag…",
+        "placeholder": "Id tag",
+        "unknown": "{id} (tag tidak dikenali)"
+      },
+      "fields": {
+        "name": "Nama",
+        "email": "E-mel",
+        "company": "Syarikat",
+        "customFields": "Medan tersuai",
+        "unknown": "{id} (medan tidak dikenali)"
+      },
+      "agents": {
+        "select": "Pilih ejen…",
+        "placeholder": "Id ejen",
+        "unknown": "{id} (ejen tidak dikenali)"
+      },
+      "pipelines": {
+        "pipelineLabel": "Pipeline",
+        "pipelineIdLabel": "Id pipeline",
+        "stageLabel": "Peringkat",
+        "stageIdLabel": "Id peringkat",
+        "selectPipeline": "Pilih pipeline…",
+        "selectStage": "Pilih peringkat…",
+        "selectPipelineFirst": "Pilih pipeline dahulu…",
+        "unknownPipeline": "{id} (pipeline tidak dikenali)",
+        "unknownStage": "{id} (peringkat tidak dikenali)"
+      },
+      "templates": {
+        "templateLabel": "Template",
+        "templateNameLabel": "Nama template",
+        "languageLabel": "Bahasa",
+        "select": "Pilih template…",
+        "unknown": "{name} ({lang}) — tiada dalam senarai diluluskan",
+        "unknownLang": "tidak diketahui"
+      },
+      "branches": {
+        "yes": "Ya",
+        "no": "Tidak"
+      },
+      "addStep": "Tambah langkah",
+      "delete": "Padam",
+      "config": {
+        "messageText": "Teks mesej",
+        "placeholderMessageText": "Hai! Terima kasih kerana menghubungi kami…",
+        "tagLabel": "Tag",
+        "modeLabel": "Mod",
+        "modes": {
+          "round_robin": "Giliran berpusing",
+          "specific": "Ejen tertentu"
+        },
+        "agentLabel": "Ejen",
+        "fieldLabel": "Medan",
+        "valueLabel": "Nilai",
+        "placeholderValue": "Teks atau {{ vars.x }} / {{ message.text }}",
+        "titleLabel": "Tajuk",
+        "amountLabel": "Jumlah",
+        "unitLabel": "Unit",
+        "units": {
+          "minutes": "Minit",
+          "hours": "Jam",
+          "days": "Hari"
+        },
+        "subjectLabel": "Subjek",
+        "subjects": {
+          "tag_presence": "Kehadiran tag",
+          "contact_field": "Medan kenalan",
+          "message_content": "Kandungan mesej",
+          "time_of_day": "Waktu hari"
+        },
+        "operandLabel": "Operan",
+        "placeholderTime": "HH:mm-HH:mm",
+        "placeholderContact": "name / email / company",
+        "placeholderTag": "id tag",
+        "urlLabel": "URL",
+        "headersLabel": "Header",
+        "placeholderHeaders": "{\"Authorization\": \"Bearer ...\"}",
+        "bodyTemplateLabel": "Template badan",
+        "placeholderBody": "{\"id\": \"{{ contact.id }}\"}",
+        "matchType": "Jenis padanan",
+        "matchContains": "Mengandungi",
+        "matchWord": "Perkataan penuh",
+        "matchWordHint": "Memadankan kata kunci hanya sebagai perkataan berdiri sendiri, jadi \"ya\" tidak lagi tercetus pada \"saya\". Terbaik untuk kata kunci pendek dalam bahasa yang dipisah ruang; guna Mengandungi untuk bahasa yang ditulis tanpa ruang.",
+        "matchExact": "Tepat",
+        "closeConversationHint": "Menetapkan status perbualan kepada \"closed\". Tiada konfigurasi diperlukan."
+      }
+    }
+  },
+  "Flows": {
+    "list": {
+      "title": "Flow",
+      "beta": "Beta",
+      "description": "Bina perbualan WhatsApp bercabang yang dipandu butang. Berguna untuk menu, FAQ dan triaj sebelum manusia mengambil alih.",
+      "newFlow": "Flow baharu",
+      "statusDraft": "Draf",
+      "statusActive": "Aktif",
+      "statusArchived": "Diarkibkan",
+      "loadError": "Gagal memuat flow.",
+      "createError": "Gagal mencipta flow.",
+      "cloneError": "Gagal menyalin",
+      "deleteConfirm": "Padam \"{name}\"? Sebarang larian aktif akan berakhir serta-merta.",
+      "deleteSuccess": "Flow dipadam.",
+      "deleteError": "Gagal memadam flow.",
+      "emptyTitle": "Belum ada flow",
+      "emptyDesc": "Bina perbualan pertama anda — menu selamat datang, semakan pesanan, bot FAQ. Pelanggan menekan butang; bot menghalakan mereka ke jawapan yang betul (atau ejen yang betul).",
+      "createFirst": "Cipta flow pertama anda",
+      "createTitle": "Cipta flow baharu",
+      "createDesc": "Mula daripada template atau bina dari awal.",
+      "startTemplate": "Mula daripada template",
+      "nodeCount": "{count} {count, plural, =1 {nod} other {nod}}",
+      "startBlank": "Atau mula kosong",
+      "placeholderName": "cth. Menu selamat datang",
+      "cancel": "Batal",
+      "createBlank": "Cipta flow kosong",
+      "runCount": "{count} {count, plural, =1 {larian} other {larian}}",
+      "edit": "Sunting",
+      "delete": "Padam",
+      "triggerKeywordNone": "Tercetus pada kata kunci (belum ditetapkan)",
+      "triggerKeyword": "Tercetus pada: {keywords}",
+      "triggerFirstInbound": "Tercetus pada mesej masuk pertama kenalan",
+      "triggerManual": "Pencetus manual"
+    },
+    "edit": {
+      "notFound": "Flow tidak dijumpai.",
+      "backToFlows": "← Kembali ke flow",
+      "loadError": "Gagal memuat flow."
+    },
+    "logs": {
+      "title": "Larian",
+      "description": "50 kali terkini flow ini berjalan. Kembangkan satu baris untuk melihat log enjin bagi setiap langkah.",
+      "emptyState": "Belum ada larian. Cetuskan flow daripada nombor WhatsApp peribadi untuk melihatnya muncul di sini.",
+      "loadError": "Gagal memuat larian.",
+      "unknownContact": "Kenalan tidak dikenali",
+      "atNode": "pada {node}",
+      "started": "Bermula {time}",
+      "reprompts": "{count} gesaan semula",
+      "ranFor": "berjalan selama {duration}",
+      "capturedVars": "Pemboleh ubah ditangkap ({count})",
+      "noEvents": "Tiada peristiwa direkodkan untuk larian ini.",
+      "statusActive": "Aktif",
+      "statusCompleted": "Selesai",
+      "statusHandedOff": "Diserahkan",
+      "statusTimedOut": "Tamat masa",
+      "statusPaused": "Dijeda oleh ejen",
+      "statusFailed": "Gagal"
+    },
+    "builder": {
+      "triggerTitle": "Pencetus",
+      "whenLabel": "Apabila…",
+      "triggerKeywordTitle": "Mesej mengandungi kata kunci",
+      "triggerFirstInboundTitle": "Mesej masuk pertama pelanggan",
+      "triggerManualTitle": "Manual sahaja (tiada pencetus automatik)",
+      "keywordsLabel": "Kata kunci (dipisah koma)",
+      "keywordsPlaceholder": "sokongan, bantuan, hai",
+      "entryNodeTitle": "Nod masuk:",
+      "entryNodePlaceholder": "Pilih nod pertama…",
+      "nodesTitle": "Nod ({count})",
+      "nodesEmpty": "Tambah nod <strong>Mula</strong>, kemudian nod <strong>Hantar butang</strong>, kemudian <strong>Serahan</strong> — itulah bentuk menu selamat datang daripada brif.",
+      "addNode": "Tambah nod",
+      "setAsEntry": "Jadikan nod masuk",
+      "removeNode": "Buang nod",
+      "showAdvanced": "Papar lanjutan",
+      "hideAdvanced": "Sembunyi lanjutan",
+      "nodeKeyLabel": "Kunci nod (pengecam dalaman — kekalkan stabil untuk analitik)",
+      "replyIdsHint": "ID Balasan untuk setiap pilihan dipaparkan sebaris di atas. Ia dipulangkan oleh WhatsApp apabila pelanggan menekan; biasanya anda tidak perlu menyentuhnya.",
+      "badgeEntry": "Masuk",
+      "noNodesYet": "Belum ada nod.",
+      "deleteNode": "Padam nod",
+      "canvasView": "Kanvas",
+      "listView": "Senarai",
+      "noNodeSelected": "Tiada nod dipilih",
+      "noNodeDesc": "Pilih satu nod pada kanvas untuk menyunting konfigurasinya.",
+      "form": {
+        "advancesTo": "Beralih ke",
+        "textToCustomer": "Teks dihantar kepada pelanggan",
+        "promptToCustomer": "Gesaan dihantar kepada pelanggan",
+        "varKeyLabel": "Kunci pemboleh ubah (disimpan dalam flow_runs.vars; alfanumerik + garis bawah)",
+        "varKeyPlaceholder": "cth. name, email, company",
+        "varKeyHelp": "Selitkan dalam gesaan hiliran dan nota serahan dengan",
+        "advanceAfterCapture": "Selepas menangkap, beralih ke",
+        "internalNote": "Nota dalaman (untuk ejen yang mengambil alih)",
+        "endNodeHelp": "Nod tamat. Apabila pelari sampai ke nod ini, larian ditanda selesai. Tiada konfigurasi diperlukan.",
+        "bodyText": "Teks badan",
+        "footerText": "Footer (pilihan, 60 aksara)",
+        "buttonsHelp": "Butang (1–3) — setiap satu menghala ke nod seterusnya yang berbeza",
+        "optionTitlePlaceholder": "Tajuk yang dipaparkan (≤20 aksara)",
+        "nextNodePlaceholder": "Nod seterusnya…",
+        "addButton": "Tambah butang",
+        "buttonLabel": "Label butang tekan-untuk-kembang (≤20 aksara)",
+        "rowsHelp": "Baris (1–10 kesemuanya merentas semua bahagian)",
+        "sectionTitlePlaceholder": "Tajuk bahagian {count} (pilihan)",
+        "rowTitlePlaceholder": "Tajuk baris (≤24)",
+        "addRow": "Tambah baris",
+        "addSection": "Tambah bahagian",
+        "ifLabel": "Jika",
+        "capturedVariable": "Pemboleh ubah ditangkap",
+        "contactHasTag": "Kenalan mempunyai tag",
+        "contactField": "Medan kenalan",
+        "varName": "nama pemboleh ubah",
+        "tagLabel": "Tag",
+        "fieldLabel": "Medan",
+        "pickTag": "Pilih tag…",
+        "pickField": "Pilih medan…",
+        "operatorLabel": "Operator",
+        "isPresent": "hadir",
+        "isAbsent": "tiada",
+        "equals": "sama dengan",
+        "contains": "mengandungi",
+        "valueLabel": "Nilai",
+        "ifTrueAdvance": "Jika benar → beralih ke",
+        "ifFalseAdvance": "Jika palsu → beralih ke",
+        "actionLabel": "Tindakan",
+        "addTag": "Tambah tag",
+        "removeTag": "Buang tag",
+        "tagUuidPlaceholder": "UUID tag",
+        "thenAdvanceTo": "Kemudian beralih ke",
+        "mediaTypeLabel": "Jenis media",
+        "imageLabel": "Imej (PNG, JPEG, WebP)",
+        "videoLabel": "Video (MP4, 3GP)",
+        "documentLabel": "Dokumen (PDF, Word, Excel, PowerPoint, TXT)",
+        "fileLabel": "Fail",
+        "removeFile": "Buang fail",
+        "uploading": "Sedang memuat naik…",
+        "clickToUpload": "Klik untuk muat naik (maksimum 16 MB)",
+        "captionLabel": "Kapsyen (pilihan, dipaparkan di bawah media)",
+        "filenameLabel": "Nama fail yang dipaparkan kepada pelanggan (dokumen sahaja)",
+        "filenamePlaceholder": "invois.pdf",
+        "advanceAfterSending": "Selepas menghantar, beralih ke",
+        "pickNextNode": "Pilih nod seterusnya…",
+        "none": "— Tiada —"
+      },
+      "categories": {
+        "messaging": "Pemesejan",
+        "logic": "Logik & data",
+        "flow": "Kawalan flow"
+      },
+      "nodes": {
+        "start": {
+          "label": "Mula",
+          "blurb": "Titik masuk flow"
+        },
+        "send_message": {
+          "label": "Hantar mesej",
+          "blurb": "Menghantar mesej teks WhatsApp"
+        },
+        "send_buttons": {
+          "label": "Hantar butang",
+          "blurb": "Menghantar butang balasan pantas"
+        },
+        "send_list": {
+          "label": "Hantar senarai",
+          "blurb": "Menghantar senarai pilihan yang boleh ditekan"
+        },
+        "send_media": {
+          "label": "Hantar media",
+          "blurb": "Menghantar imej, video atau dokumen"
+        },
+        "collect_input": {
+          "label": "Kumpul input",
+          "blurb": "Bertanya soalan, menyimpan jawapan"
+        },
+        "condition": {
+          "label": "Jika / selainnya",
+          "blurb": "Bercabang mengikut peraturan"
+        },
+        "set_tag": {
+          "label": "Tag kenalan",
+          "blurb": "Menambah atau membuang tag kenalan"
+        },
+        "handoff": {
+          "label": "Serah kepada ejen",
+          "blurb": "Menyerahkan perbualan kepada manusia"
+        },
+        "end": {
+          "label": "Tamat",
+          "blurb": "Menamatkan flow"
+        }
+      }
+    },
+    "validation": {
+      "noIssues": "Tiada isu. Sedia untuk diaktifkan.",
+      "summary": "{errorCount} {errorCount, plural, =1 {ralat} other {ralat}}, {warningCount} {warningCount, plural, =1 {amaran} other {amaran}}",
+      "jumpToNode": "Lompat ke nod {key}"
+    },
+    "editorState": {
+      "saved": "Disimpan.",
+      "fixIssues": "Betulkan isu di bawah sebelum mengaktifkan.",
+      "statusActivated": "Flow diaktifkan.",
+      "statusArchived": "Diarkibkan.",
+      "statusDraft": "Disimpan sebagai draf."
+    },
+    "summary": {
+      "options": "{count} {count, plural, =1 {pilihan} other {pilihan}}",
+      "optionsAcrossSections": "{rowCount} {rowCount, plural, =1 {pilihan} other {pilihan}} merentas {sectionCount} {sectionCount, plural, =1 {bahagian} other {bahagian}}",
+      "noFile": "{label} (tiada fail dimuat naik)",
+      "media": "Media",
+      "image": "Imej",
+      "video": "Video",
+      "document": "Dokumen",
+      "audio": "Audio",
+      "hasTag": "mempunyai tag {tag}",
+      "opContains": "mengandungi",
+      "opExists": "wujud",
+      "opMissing": "tiada",
+      "modeAdd": "Tambah",
+      "modeRemove": "Buang",
+      "tagPicked": "{mode} tag {tag}…",
+      "tagNone": "{mode} tag (belum dipilih)"
+    }
+  },
   "Ops": {
     "unanswered": {
       "title": "Belum Dibalas",
