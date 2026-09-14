@@ -1076,7 +1076,8 @@
         "matchWord": "Perkataan penuh",
         "matchWordHint": "Memadankan kata kunci hanya sebagai perkataan berdiri sendiri, jadi \"ya\" tidak lagi tercetus pada \"saya\". Terbaik untuk kata kunci pendek dalam bahasa yang dipisah ruang; guna Mengandungi untuk bahasa yang ditulis tanpa ruang.",
         "matchExact": "Tepat",
-        "closeConversationHint": "Menetapkan status perbualan kepada \"closed\". Tiada konfigurasi diperlukan."
+        "closeConversationHint": "Menetapkan status perbualan kepada \"closed\". Tiada konfigurasi diperlukan.",
+        "schedulePlaceholder": "Ungkapan cron atau HH:mm"
       },
       "previewNoBody": "Belum ada teks mesej",
       "previewNoTemplate": "Pilih template",
@@ -1086,7 +1087,12 @@
       "previewWaitMinutes": "{amount, plural, =1 {# minit} other {# minit}}",
       "previewWaitHours": "{amount, plural, =1 {# jam} other {# jam}}",
       "previewWaitDays": "{amount, plural, =1 {# hari} other {# hari}}",
-      "previewWaitUnset": "Tempoh belum ditetapkan"
+      "previewWaitUnset": "Tempoh belum ditetapkan",
+      "kindCondition": "Syarat",
+      "kindWait": "Tunggu",
+      "kindAction": "Tindakan",
+      "moveUp": "Alih ke atas",
+      "moveDown": "Alih ke bawah"
     }
   },
   "Flows": {
@@ -1954,7 +1960,8 @@
     "unreadLabel": "Belum dibaca",
     "retry": "Cuba lagi",
     "toastMarkReadFailed": "Gagal menanda pemberitahuan sebagai dibaca",
-    "toastMarkAllFailed": "Gagal menanda semua sebagai dibaca"
+    "toastMarkAllFailed": "Gagal menanda semua sebagai dibaca",
+    "loading": "Memuatkan pemberitahuan"
   },
   "Interactive": {
     "emptyButtons": "Butang, tiada teks mesej",

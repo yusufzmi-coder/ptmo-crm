@@ -1076,7 +1076,8 @@
         "matchWord": "Whole word",
         "matchWordHint": "Matches the keyword only as a standalone word, so \"k\" no longer fires on \"thanks\". Best for short keywords in space-separated languages; use Contains for languages written without spaces.",
         "matchExact": "Exact",
-        "closeConversationHint": "Sets the conversation status to \"closed\". No configuration needed."
+        "closeConversationHint": "Sets the conversation status to \"closed\". No configuration needed.",
+        "schedulePlaceholder": "Cron expression or HH:mm"
       },
       "previewNoBody": "No message text yet",
       "previewNoTemplate": "Pick a template",
@@ -1086,7 +1087,12 @@
       "previewWaitMinutes": "{amount, plural, one {# minute} other {# minutes}}",
       "previewWaitHours": "{amount, plural, one {# hour} other {# hours}}",
       "previewWaitDays": "{amount, plural, one {# day} other {# days}}",
-      "previewWaitUnset": "Duration not set"
+      "previewWaitUnset": "Duration not set",
+      "kindCondition": "Condition",
+      "kindWait": "Wait",
+      "kindAction": "Action",
+      "moveUp": "Move up",
+      "moveDown": "Move down"
     }
   },
   "Flows": {
@@ -1954,7 +1960,8 @@
     "unreadLabel": "Unread",
     "retry": "Retry",
     "toastMarkReadFailed": "Failed to mark notification as read",
-    "toastMarkAllFailed": "Failed to mark all as read"
+    "toastMarkAllFailed": "Failed to mark all as read",
+    "loading": "Loading notifications"
   },
   "Interactive": {
     "emptyButtons": "Buttons, no message text",

@@ -157,7 +157,7 @@ export function QuickReplyPicker({
                             {qr.title}
                           </span>
                           {pinned && branch && (
-                            <span className="shrink-0 rounded-full border border-primary-soft-2 bg-primary-soft px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                            <span className="shrink-0 rounded-full border border-primary-soft-2 bg-primary-soft px-1.5 py-0.5 text-[10px] font-medium text-primary-on-soft">
                               {t("quickReplyPinned", { branch })}
                             </span>
                           )}

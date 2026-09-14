@@ -197,7 +197,7 @@ function NavRow({
         // Taller on mobile so fingers can hit the row reliably (≥44px).
         "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors lg:py-2",
         isActive
-          ? "bg-primary-soft text-primary"
+          ? "bg-primary-soft text-primary-on-soft"
           : "text-muted-foreground hover:bg-muted hover:text-foreground",
       )}
     >
