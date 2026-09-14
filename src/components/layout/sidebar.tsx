@@ -10,6 +10,7 @@ import { useUnreadNotifications } from "@/hooks/use-unread-notifications";
 import {
   Bell,
   Bot,
+  ClipboardList,
   Crown,
   GitBranch,
   LayoutDashboard,
@@ -123,6 +124,7 @@ const navGroups: NavGroup[] = [
     items: [
       { href: "/inbox", labelKey: "inbox", icon: MessageSquare },
       { href: "/ops/unanswered", labelKey: "ops", icon: MessageSquareWarning },
+      { href: "/issues", labelKey: "issues", icon: ClipboardList },
     ],
   },
   {
