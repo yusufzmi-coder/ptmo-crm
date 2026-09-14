@@ -1644,7 +1644,22 @@
       "qualityRed": "품질: 빨강 — 제한될 위험",
       "qualityRedHint": "Meta가 언제든 이 번호의 발송을 중단할 수 있습니다. 브로드캐스트를 일시 중지하고 최근 메시지를 확인하세요.",
       "qualityUnknown": "품질: 보고되지 않음",
-      "qualityUnknownHint": "Meta가 이 번호에 대한 평가를 반환하지 않았습니다."
+      "qualityUnknownHint": "Meta가 이 번호에 대한 평가를 반환하지 않았습니다.",
+      "toastLoadFailed": "WhatsApp 설정을 불러오지 못했습니다",
+      "toastPhoneRequired": "Phone Number ID가 필요합니다",
+      "toastTokenRequired": "초기 설정에는 액세스 토큰이 필요합니다",
+      "toastReenterToken": "변경사항을 저장하려면 액세스 토큰을 다시 입력하세요",
+      "toastSavedNotRegistered": "저장했지만 Meta가 번호를 등록하지 못했습니다: {error}",
+      "toastSavedNoPin": "자격 증명이 저장되고 확인되었습니다. PIN이 없어 수신 등록은 건너뛰었습니다 — 아래 등록 상태를 확인하세요.",
+      "toastSaveFailed": "설정을 저장하지 못했습니다",
+      "toastTestFailed": "연결 테스트에 실패했습니다. 네트워크를 확인하고 다시 시도하세요.",
+      "toastFullyWired": "번호가 완전히 연결되었습니다 — Meta가 이벤트를 전달하고 있습니다.",
+      "toastNotFullyRegistered": "번호가 완전히 등록되지 않았습니다. 아래 점검에서 실패한 단계를 확인하세요.",
+      "toastVerifyUnreachable": "확인 엔드포인트에 연결하지 못했습니다.",
+      "resetConfirm": "현재 WhatsApp 설정을 삭제하고 다시 입력할 수 있게 합니다. 계속할까요?",
+      "toastResetDone": "설정이 초기화되었습니다. 이제 자격 증명을 다시 입력할 수 있습니다.",
+      "toastResetFailed": "설정을 초기화하지 못했습니다",
+      "toastWebhookCopied": "Webhook URL이 클립보드에 복사되었습니다"
     },
     "sections": {
       "overview": "개요",
