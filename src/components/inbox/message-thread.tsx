@@ -536,7 +536,7 @@ export function MessageThread({
         onUpdateMessage(tempId, { status: "sent" });
       } catch (err) {
         console.error("Failed to send message:", err);
-        const reason = err instanceof Error ? err.message : "network error";
+        const reason = err instanceof Error ? err.message : t("reasonNetwork");
         toast.error(t("sendFailed", { reason }));
         onUpdateMessage(tempId, { status: "failed" });
       }
@@ -601,7 +601,7 @@ export function MessageThread({
         onUpdateMessage(tempId, { status: "sent" });
       } catch (err) {
         console.error("Failed to send media:", err);
-        const reason = err instanceof Error ? err.message : "network error";
+        const reason = err instanceof Error ? err.message : t("reasonNetwork");
         toast.error(t("sendFailed", { reason }));
         onUpdateMessage(tempId, { status: "failed" });
         void deleteAccountMedia(CHAT_MEDIA_BUCKET, payload.path).catch(() => {});
@@ -655,7 +655,7 @@ export function MessageThread({
         onUpdateMessage(tempId, { status: "sent" });
       } catch (err) {
         console.error("Failed to send interactive message:", err);
-        const reason = err instanceof Error ? err.message : "network error";
+        const reason = err instanceof Error ? err.message : t("reasonNetwork");
         toast.error(t("sendFailed", { reason }));
         onUpdateMessage(tempId, { status: "failed" });
       }
@@ -744,7 +744,7 @@ export function MessageThread({
         onUpdateMessage(tempId, { status: "sent" });
       } catch (err) {
         console.error("Failed to send template:", err);
-        const reason = err instanceof Error ? err.message : "network error";
+        const reason = err instanceof Error ? err.message : t("reasonNetwork");
         toast.error(t("sendTemplateFailed", { reason }));
         onUpdateMessage(tempId, { status: "failed" });
       }
@@ -855,7 +855,7 @@ export function MessageThread({
           throw new Error(payload?.error || `HTTP ${res.status}`);
         }
       } catch (err) {
-        const reason = err instanceof Error ? err.message : "network error";
+        const reason = err instanceof Error ? err.message : t("reasonNetwork");
         toast.error(t("reactionFailed", { reason }));
         setReactions(snapshot);
       }
