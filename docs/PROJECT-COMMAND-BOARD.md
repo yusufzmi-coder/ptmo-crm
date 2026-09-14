@@ -103,7 +103,7 @@ POKOK FAIL, bukan tema, supaya tiada dua terminal menulis fail sama.
 |---|---|---|---|---|
 | 1 Coordinator | ptmo-crm-fasa1-release-gate | `~/Projects/ptmo-crm` | `docs/**`, integrasi | - (pengadil) |
 | 2 Builder | create-worktree-gitignore | `.worktrees/f1-t2-mu0nanxd` | `src/components/inbox/**`, `src/lib/inbox/**` | `Inbox.*` |
-| 3 Builder | create-worktree-audit-workflow | `~/Projects/ptmo-crm-issues-ui` | `src/components/settings/**` (contacts/broadcasts siap) | `Settings.*` |
+| 3 Builder | create-worktree-audit-workflow | `~/Projects/ptmo-crm-issues-ui` | `quick-replies-manager.tsx` i18n panel penuh | `Settings.quickReplies.*` |
 | 4 Builder | notifications-page-i18n | worktree sendiri | `src/app/(dashboard)/notifications/**` | `Notifications.*` (baharu) |
 | 5 QA | uat-crm-phase-1-qa | `~/Projects/ptmo-crm-f1-t3-nav` | `src/components/layout/**` (nav siap) | `Sidebar.*`, `Header.*` |
 
@@ -122,6 +122,13 @@ yang akan terus terpesong — satu sumber kebenaran ialah pembetulan sebenar.
 ~110 spinner dalam tiga bentuk berbeza di seluruh repo tanpa
 `src/components/ui/spinner.tsx` wujud; penyatuan menyentuh `ui/` dan puluhan
 fail merentas pemilikan.
+
+Gate tempatan masih tercemar oleh `project-command-board/` dan `tools/` —
+dua salinan aplikasi board untracked dengan `dist/` dan `.next/` dibundel.
+Lint kini bersih (0 error) selepas `.worktrees/` dibuang, tetapi `tsc`
+masih melaporkan 145 ralat, tiada satu pun dari `src/`. Perlu diputuskan:
+abaikan dalam `.gitignore` + `tsconfig` + `eslint.config.mjs`, atau commit
+sebagai projek berasingan dengan konfigurasinya sendiri.
 
 `messages/en.json` + `ko.json` ialah satu-satunya fail yang dikongsi. Peraturan:
 tambah kunci baharu sahaja, dalam namespace sendiri sahaja. Kunci dalam objek
@@ -167,6 +174,8 @@ kongsi: guna, jangan ubah.
 | 2026-09-14 | UI batch 4: drag-drop dan paste lampiran dalam composer; konflik i18n diselesaikan sebagai kesatuan; 1160 ujian lulus | `843795d` | Coordinator |
 | 2026-09-14 | UI batch 5: 9 spinner contacts/broadcasts jadi skeleton, 12 dikekalkan dengan sebab (animate-spin 21 -> 12) | `6bef51f` | Coordinator |
 | 2026-09-14 | UI batch 6: nav 10 baris rata jadi 4 kluster, setiap tajuk melabel `<ul>` sendiri via aria-labelledby | `b21bbeb` | Coordinator |
+| 2026-09-14 | `.worktrees/` berhenti diabaikan dan folder dibuang; ketiga-tiga worktree bersarang pindah ke konvensyen adik-beradik. Lint tempatan 15 error -> 0 | `7ec777e` | Coordinator |
+| 2026-09-14 | UI batch 7: 10 panel settings jadi skeleton (39 -> 29), **plus pepijat menghadap pengguna**: panel AI papar "Failed to load AI configuration" setiap kali dibuka semasa memuat biasa | `78f06ff` | Coordinator |
 
 ---
 
