@@ -94,6 +94,28 @@
 | 4 | QA / security / migration audit | Tidak, kecuali diminta baiki | Worktree sendiri atau detached |
 | 5 | Research / docs / product decisions | Tidak | Mana-mana folder bukan branch utama |
 
+### Agihan aktif - batch UI/UX Fasa 1 (14 Sep 2026)
+
+Semua kerja release diparkir. Fasa semasa UI/UX sahaja. Pembahagian ikut
+POKOK FAIL, bukan tema, supaya tiada dua terminal menulis fail sama.
+
+| Terminal | Sesi | Worktree | Fail milik | Namespace i18n |
+|---|---|---|---|---|
+| 1 Coordinator | ptmo-crm-fasa1-release-gate | `~/Projects/ptmo-crm` | `docs/**`, integrasi | - (pengadil) |
+| 2 Builder | create-worktree-gitignore | `.worktrees/f1-t2-mu0nanxd` | `src/components/inbox/**`, `src/lib/inbox/**` | `Inbox.*` |
+| 3 Builder | yusufazmi-07 | `.worktrees/f1-t3-nav` | `src/components/layout/**` | `Sidebar.*`, `Header.*` |
+| 4 Builder | yusufazmi-2b | `.worktrees/f1-t4-notif` | `src/app/(dashboard)/notifications/**` | `Notifications.*` (baharu) |
+| 5 QA/audit | create-worktree-audit-workflow | read-only | tiada | - |
+| 6 Builder | yusufazmi-91 | `.worktrees/f1-t6-settings` | `src/components/settings/**` | `Settings.*` |
+
+`messages/en.json` + `ko.json` ialah satu-satunya fail yang dikongsi. Peraturan:
+tambah kunci baharu sahaja, dalam namespace sendiri sahaja. Kunci dalam objek
+berbeza mendarat pada baris berbeza, jadi merge kekal bersih. Coordinator
+mengesahkan dengan perbandingan kunci rata, bukan diff teks.
+
+`src/components/dashboard/skeleton.tsx` dan `empty-state.tsx` ialah komponen
+kongsi: guna, jangan ubah.
+
 ### Peraturan trafik
 
 1. Terminal 1 satu-satunya yang merge, rebase, push branch integrasi, atau susun release.
