@@ -182,7 +182,9 @@ kongsi: guna, jangan ubah.
 | 2026-09-14 | **049 dimasukkan semula** ke release selepas QA jumpa kod bergantung padanya; dokumen release dinamakan semula | `docs/release-phase1-migrations.md` | Coordinator |
 | 2026-09-14 | Senarai semak UAT ditulis semula untuk set 045/046/049/047 — zone/HQ susut kepada 4 kes negatif, bahagian 046 baharu untuk eskalasi keistimewaan viewer | `docs/uat-fasa1.md` | Coordinator |
 | 2026-09-14 | UI batch 12-13: 9 shell halaman jadi skeleton berbentuk; sentinel pratonton interaktif diterjemah pada masa render, bukan pada sumber | `d683ffa`, `33af54d` | Coordinator |
-| 2026-09-14 | Bahasa Melayu diluluskan Boss. `messages/ms.json` 1651 kunci ditulis, belum diintegrasi — 20 kunci di belakang kerana drift, sedang ditampal. **Belum diaktifkan** | - | Coordinator |
+| 2026-09-14 | UI batch 14-16: `dashboard-shell` i18n, pratonton langkah automation siap (unit wait dulu baca "5 hours" dalam SETIAP bahasa) | `521ea2e`, `92fc1e5` | Coordinator |
+| 2026-09-14 | **`messages/ms.json` diintegrasi — 1679 kunci, pariti en/ko/ms sempurna, 1170 ujian lulus. BELUM DIAKTIFKAN**: `request.ts` dan `NEXT_PUBLIC_APP_LOCALE` tidak disentuh | `2949ab7`, `d0487da`, `0dd39b9` | Coordinator |
+| 2026-09-14 | Lebar sidebar Melayu diukur dengan fon sebenar: lega 17px (9%) -> 56px (29%). Kaedah kiraan aksara dibuktikan tidak selamat | QA harness | Coordinator |
 
 ---
 
