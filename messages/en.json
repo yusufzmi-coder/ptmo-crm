@@ -27,7 +27,7 @@
     "automations": "Automations",
     "flows": "Flows",
     "aiAgents": "AI Agents",
-    "ops": "Belum Dibalas",
+    "ops": "Unanswered",
     "settings": "Settings",
     "groupConversations": "Conversations",
     "groupCustomers": "Customers",
@@ -56,7 +56,7 @@
     "automations": "Automations",
     "flows": "Flows",
     "aiAgents": "AI Agents",
-    "ops": "Belum Dibalas",
+    "ops": "Unanswered",
     "settings": "Settings",
     "openMenu": "Open menu",
     "openAccountMenu": "Open account menu",
@@ -2054,7 +2054,7 @@
   },
   "Ops": {
     "unanswered": {
-      "title": "Belum Dibalas",
+      "title": "Unanswered",
       "description": "Reply speed, failed sends, and every parent still waiting — most urgent first. The clock only runs during shift hours.",
       "stateBreached": "Late",
       "stateWarning": "Past target",
