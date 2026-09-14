@@ -1949,5 +1949,8 @@
   "Interactive": {
     "emptyButtons": "Butang, tiada teks mesej",
     "emptyList": "Senarai, tiada teks mesej"
+  },
+  "DashboardShell": {
+    "loading": "Memuat..."
   }
 }
