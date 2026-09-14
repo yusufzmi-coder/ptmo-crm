@@ -14,9 +14,10 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
-import { format, formatDistanceToNow } from "date-fns";
+import { format } from "date-fns";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { formatRunDuration } from "@/lib/time/duration";
 import { PageSkeleton, RowListSkeleton } from "../../../page-skeletons";
 
 import { Badge } from "@/components/ui/badge";
@@ -224,15 +225,19 @@ function RunCard({
   onToggle: () => void;
   t: ReturnType<typeof useTranslations>;
 }) {
+  const tRel = useTranslations("RelativeTime");
+  const locale = useLocale();
   const meta = STATUS_META[run.status];
   const StatusIcon = meta.icon;
   const contactLabel =
     run.contact?.name?.trim() || run.contact?.phone || t("unknownContact");
-  const duration = run.ended_at
-    ? formatDistanceToNow(new Date(run.ended_at), {
-        addSuffix: false,
-      })
-    : null;
+  // How long the run TOOK — ended_at minus started_at. This used to be
+  // formatDistanceToNow(ended_at), which is how long ago it finished, so
+  // a two-second run that ended yesterday read "ran for 1 day".
+  const duration = formatRunDuration(run.started_at, run.ended_at, {
+    locale,
+    underASecond: tRel("underASecond"),
+  });
   return (
     <div className="rounded-lg border border-border bg-card">
       <button
