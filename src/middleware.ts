@@ -112,6 +112,7 @@ export async function middleware(request: NextRequest) {
     '/dashboard',
     '/flows',
     '/inbox',
+    '/issues',
     '/notifications',
     '/ops',
     '/pipelines',
