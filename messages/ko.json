@@ -1700,7 +1700,9 @@
       "useMode": "{mode} 모드 사용",
       "active": "사용 중",
       "accentColor": "강조 색상",
-      "useTheme": "{name} 테마 사용"
+      "useTheme": "{name} 테마 사용",
+      "modeGroupLabel": "색상 모드",
+      "themeId": "테마 id: {id}"
     },
     "security": {
       "title": "로그인 & 보안",
@@ -2013,5 +2015,9 @@
     "confirmPasswordLabel": "새 비밀번호 확인",
     "updating": "변경 중...",
     "submit": "비밀번호 변경"
+  },
+  "ColorMode": {
+    "light": "라이트",
+    "dark": "다크"
   }
 }

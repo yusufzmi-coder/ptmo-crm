@@ -1700,7 +1700,9 @@
       "useMode": "Use {mode} mode",
       "active": "Active",
       "accentColor": "Accent color",
-      "useTheme": "Use {name} theme"
+      "useTheme": "Use {name} theme",
+      "modeGroupLabel": "Color mode",
+      "themeId": "Theme id: {id}"
     },
     "security": {
       "title": "Login & security",
@@ -2013,5 +2015,9 @@
     "confirmPasswordLabel": "Confirm new password",
     "updating": "Updating...",
     "submit": "Update password"
+  },
+  "ColorMode": {
+    "light": "Light",
+    "dark": "Dark"
   }
 }

@@ -1700,7 +1700,9 @@
       "useMode": "Guna mod {mode}",
       "active": "Aktif",
       "accentColor": "Warna aksen",
-      "useTheme": "Guna tema {name}"
+      "useTheme": "Guna tema {name}",
+      "modeGroupLabel": "Mod warna",
+      "themeId": "Id tema: {id}"
     },
     "security": {
       "title": "Log masuk & keselamatan",
@@ -2013,5 +2015,9 @@
     "confirmPasswordLabel": "Sahkan kata laluan baharu",
     "updating": "Sedang kemas kini...",
     "submit": "Kemas kini kata laluan"
+  },
+  "ColorMode": {
+    "light": "Terang",
+    "dark": "Gelap"
   }
 }
