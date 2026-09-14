@@ -194,6 +194,27 @@ VALUES ('88888888-0000-0000-0000-000000000001',
         'Kempen lama', 'peringatan_yuran', 'sent', 2)
 ON CONFLICT (id) DO NOTHING;
 
+-- ---- branches with keywords, the shape 050 constrains ---------
+-- 050 adds a UNIQUE index on (account_id, lower(code)). On an empty
+-- database that index is free; the only way it can fail is against rows
+-- that already exist, which is what this job is for.
+--
+-- Distinct codes, because production is ASSUMED to have distinct codes —
+-- and the assumption is exactly what APPLY-050.sql's first step makes
+-- Boss check by hand. Seeding a duplicate here would assert that the
+-- release breaks, which is not the claim.
+INSERT INTO centres (id, account_id, name, code)
+VALUES
+  ('77777777-0000-0000-0000-000000000001', (SELECT id FROM seed_zone),
+   'Batu Caves', 'batucaves'),
+  -- Mixed case on purpose: the index is on lower(code), and a row
+  -- written before centres-panel.tsx started lowercasing can look like
+  -- this. If the index were on bare `code` this row would pass and a
+  -- real collision would slip through.
+  ('77777777-0000-0000-0000-000000000002', (SELECT id FROM seed_zone),
+   'Rawang', 'Rawang')
+ON CONFLICT (id) DO NOTHING;
+
 -- ---- presence from the one-row-per-user era ------------------
 -- 045 must fold this onto the synthetic 'legacy' tab rather than
 -- failing on the primary-key swap.
