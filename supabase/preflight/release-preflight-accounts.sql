@@ -16,12 +16,14 @@
 -- What it is for, now
 -- -------------------
 -- 046 REVOKEs four SECURITY DEFINER functions by EXACT SIGNATURE and
--- narrows UPDATE on profiles to two columns. A REVOKE that names a
--- signature no function has is a no-op that reports success, so the
--- function stays open and nothing says so.
+-- narrows UPDATE on profiles to two columns.
 --
--- Section 9 is the one that can stop this release: an unexpected
--- overload means 046 revokes the wrong one.
+-- Section 9 is the one that can stop this release. A REVOKE naming a
+-- signature nothing has raises and aborts — Postgres protects us there.
+-- What it does not protect against is an EXTRA overload sharing the
+-- name: the REVOKE names one signature, succeeds, and the other stays
+-- callable by anon. CI now asserts the end state as well; this section
+-- tells you before you apply.
 --
 -- Run this, read sections 1, 2, 9 and 10, and only then proceed.
 --
@@ -189,8 +191,19 @@ ORDER BY a.name;
 
 
 -- === 9. Duplicate function overloads 046 will refuse ========
--- IN THIS RELEASE. 046 REVOKEs by exact signature; an unexpected
--- overload means the REVOKE misses and the function stays open.
+-- IN THIS RELEASE, and the one section here that can stop it.
+--
+-- 046 REVOKEs by exact signature. A signature that matches NOTHING does
+-- not slip through — Postgres raises and the migration aborts, and 046
+-- line 169 says so. The danger is the opposite shape: an EXTRA overload
+-- sharing the name. The REVOKE names one signature, succeeds, reports
+-- success, and the overload stays callable by anon with the definer's
+-- privileges.
+--
+-- An earlier version of this comment had that backwards. See PR #38:
+-- `REVOKE ... claim_ai_reply_slot(uuid, text)` errors, while adding
+-- `claim_ai_reply_slot(uuid)` leaves it open with every assertion in
+-- 046 still passing.
 -- 046 asserts there is exactly one recompute_broadcast_counts. Because
 -- 040 and 041 were applied by hand, a stray overload from an ad-hoc SQL
 -- session is possible, and it aborts the migration.
