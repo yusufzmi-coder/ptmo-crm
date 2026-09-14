@@ -39,7 +39,7 @@ export function AppearancePanel() {
 
         <div
           role="radiogroup"
-          aria-label="Color mode"
+          aria-label={t("modeGroupLabel")}
           className="grid max-w-md grid-cols-2 gap-3"
         >
           {MODES.map((m) => (
@@ -87,6 +87,11 @@ function ModeCard({
   onPick: () => void;
 }) {
   const t = useTranslations("Settings.appearance");
+  // `mode` is the stored identifier ("light" / "dark"), not a label —
+  // it lives in localStorage and is compared in code, so it is mapped
+  // to a translated name here at render rather than translated at the
+  // source. See src/lib/themes.ts.
+  const tMode = useTranslations("ColorMode");
   const isLight = mode === "light";
   const Icon = isLight ? Sun : Moon;
   return (
@@ -95,7 +100,7 @@ function ModeCard({
       role="radio"
       onClick={onPick}
       aria-checked={isActive}
-      aria-label={t("useMode", { mode })}
+      aria-label={t("useMode", { mode: tMode(mode) })}
       className={cn(
         "flex items-center gap-3 rounded-lg border bg-card p-4 text-left transition-colors",
         isActive
@@ -109,8 +114,8 @@ function ModeCard({
       >
         <Icon className="h-4 w-4" />
       </span>
-      <span className="flex-1 text-sm font-semibold capitalize text-foreground">
-        {mode}
+      <span className="flex-1 text-sm font-semibold text-foreground">
+        {tMode(mode)}
       </span>
       {isActive && (
         <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-medium text-primary">
@@ -182,7 +187,7 @@ function ThemeCard({
         <span className="w-3 bg-muted" />
         <span className="w-3 bg-card" />
       </div>
-      <span className="sr-only">Theme id: {id}</span>
+      <span className="sr-only">{t("themeId", { id })}</span>
     </button>
   );
 }
