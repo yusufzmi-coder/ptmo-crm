@@ -105,7 +105,7 @@ function LoginPageInner() {
         <CardContent>
           <form onSubmit={handleLogin} className="flex flex-col gap-4">
             {error && (
-              <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+              <div className="rounded-lg border border-destructive/70 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                 {error}
               </div>
             )}
