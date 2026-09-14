@@ -27,7 +27,6 @@ interface ContactSidebarProps {
 
 export function ContactSidebar({ contact }: ContactSidebarProps) {
   const tSidebar = useTranslations("Inbox.sidebar");
-  const tThread = useTranslations("Inbox.messageThread");
 
   const { accountId } = useAuth();
   const [copied, setCopied] = useState(false);
@@ -120,9 +119,23 @@ export function ContactSidebar({ contact }: ContactSidebarProps) {
   }, [contact, newNote, accountId]);
 
   if (!contact) {
+    // Says what THIS panel is missing, not what the thread pane already
+    // says. Both used to render Inbox.messageThread.selectConversation,
+    // so an empty inbox told the agent to pick a conversation twice on
+    // one screen — once as the thread pane's full empty state, once as a
+    // bare line over here.
+    //
+    // Blanking the panel instead would read as broken: it is desktop
+    // only and only rendered when the agent has deliberately opened it,
+    // so an empty box is a panel they asked for and did not get.
     return (
-      <div className="flex h-full w-70 items-center justify-center border-l border-border bg-card">
-        <p className="text-sm text-muted-foreground">{tThread("selectConversation")}</p>
+      <div className="flex h-full w-70 flex-col items-center justify-center gap-2 border-l border-border bg-card px-4 text-center">
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted">
+          <User className="h-4 w-4 text-muted-foreground" />
+        </div>
+        <p className="text-sm text-muted-foreground">
+          {tSidebar("noContact")}
+        </p>
       </div>
     );
   }

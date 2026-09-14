@@ -338,7 +338,8 @@
       "deals": "Deal",
       "noTags": "Tiada tag",
       "noDeals": "Tiada deal",
-      "addNotePlaceholder": "Tambah nota..."
+      "addNotePlaceholder": "Tambah nota...",
+      "noContact": "Tiada kenalan dipilih"
     },
     "aiBanner": {
       "pausedTitle": "Pembantu AI dijeda di sini",
