@@ -1333,3 +1333,68 @@ pangkalan data untuk kesemuanya.
 Tiada apa dalam repo mengatakannya, dan tiada apa menghalangnya.
 Sesiapa yang memegang data ujian tempatan hendaklah menganggapnya fana
 selagi lebih daripada satu sesi berjalan.
+
+## Job upgrade: lima sekatan, bukan satu — kini semuanya hilang
+
+Sambungan kepada bahagian di atas. Selepas psql menggantikan
+`db query --file` (8562120), job berjalan lebih jauh dan mendedahkan
+tiga sekatan lagi yang tiada siapa pernah lihat, atas sebab yang sama:
+setiap satu tersembunyi di belakang yang sebelumnya.
+
+Senarai penuh, mengikut urutan job menemuinya:
+
+1. **`db query --file` menolak seed** — lapan INSERT, satu prepared
+   statement. Dibetulkan dalam 8562120 dengan `psql -f`.
+2. **Seed melawan `handle_new_user`** — `ON CONFLICT (id)` tidak
+   menangkap perlanggaran pada `owner_user_id`. Seed kini membaca akaun
+   yang trigger cipta (`seed_zone`) dan meng-UPDATE profil ke dalamnya.
+3. **049 berada dalam baseline** — langkah split memindahkan 042-048
+   sahaja, jadi "baseline (001-041)" sebenarnya berakhir pada 049. Dengan
+   049 sudah direkod, `migration up` menolak keseluruhan langkah: 045-047
+   ialah "local migration files to be inserted before the last migration
+   on remote database". 049 kini dipindahkan bersama release.
+4. **`verify-schema.sql` menegaskan 044 tanpa syarat** — enam penegasan,
+   termasuk bahawa `idx_accounts_one_per_owner` telah DIGUGURKAN, yang
+   hanya benar selepas 044. Dalam job upgrade 044 diparkir, jadi fail itu
+   gagal dengan "migration 044 did not apply" — kenyataan yang benar,
+   disengajakan, dan bukan kecacatan. Kini dibungkus dalam
+   `IF v_has_044`, dibaca daripada `supabase_migrations.schema_migrations`.
+5. **`verify-upgrade.sql` menegaskan tentang tiga migration yang
+   diparkir** — dibuang dalam a503493.
+
+### Corak yang menghubungkan kesemuanya
+
+Tiada satu pun daripada lima ini ialah pepijat dalam migration. Semuanya
+pepijat dalam **perancah yang sepatutnya menguji migration** — dan
+kerana perancah gagal awal, setiap kegagalan menyembunyikan yang
+berikutnya. Job yang gagal pada langkah 1 kelihatan sama seperti job yang
+lulus langkah 1-4 dan gagal pada langkah 5: kedua-duanya merah.
+
+Itulah sebabnya laporan "kedua-dua job gagal pada null_role" boleh
+bertahan begitu lama. Ia bukan salah baca; ia bacaan yang munasabah bagi
+satu-satunya isyarat yang ada.
+
+### Penegasan media kini membayar sewa
+
+Empat baris `messages` dalam seed sekali lagi mempunyai pembaca, dan
+penegasannya ialah **negatif**: selepas 042-049, `messages.media_url`
+mesti kekal bait demi bait seperti yang diseed.
+
+Itu bukan kemasan. Backfill yang akan menulis semula lajur itu ditarik
+balik kerana SQL tidak dapat mengesahkan hos storan; pemetaan hidup
+dalam `resolveStoredMediaUrl()` pada masa render. "Tiada migration
+menyentuh lajur ini" ialah jaminan yang keputusan itu bersandar padanya,
+dan penegasan ialah satu-satunya perkara yang mengekalkan jaminan benar
+selepas orang yang membuatnya pergi.
+
+Disahkan dengan tiga mutasi, bukan dengan pemerhatian bahawa ia hijau:
+
+| mutasi | hasil |
+|--------|-------|
+| satu `media_url` ditulis semula | merah, menamakan baris dan kedua-dua nilai |
+| satu baris `messages` dipadam | merah, `-> ` kosong |
+| `member_presence.tab_id` diubah | merah pada penegasan 045 |
+
+Dan pembungkusan `IF v_has_044` diuji dalam KEDUA-DUA arah: job upgrade
+melangkaunya, job bersih masih pergi merah bila `account_members`
+dinamakan semula.

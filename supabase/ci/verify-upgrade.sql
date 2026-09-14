@@ -13,10 +13,8 @@
 -- ============================================================
 DO $$
 DECLARE
-  v_role      account_role_enum;
   v_count     INT;
   v_url       TEXT;
-  v_config    UUID;
   v_tab       TEXT;
 BEGIN
   -- ==========================================================
@@ -72,6 +70,46 @@ BEGIN
   SELECT count(*) INTO v_count FROM storage.buckets WHERE public;
   IF v_count > 0 THEN
     RAISE EXCEPTION '047: % bucket(s) are still public after the upgrade', v_count;
+  END IF;
+
+  -- ==========================================================
+  -- media — the assertion that is a NEGATIVE, and the only one here
+  -- ==========================================================
+  -- Every other block asks whether a migration did its job. This one
+  -- asks whether any migration did something it was never asked to.
+  --
+  -- It exists because a backfill rewriting `messages.media_url` was
+  -- WITHDRAWN from this release: SQL cannot resolve the storage host,
+  -- so the mapping lives in `resolveStoredMediaUrl()` at render time.
+  -- The guarantee that decision rests on is "nothing in 042-049 touches
+  -- this column", and an assertion is the only thing that keeps a
+  -- guarantee true after the person who made it has gone.
+  --
+  -- Compared against literals, not against a recomputed expression: the
+  -- check is byte equality with what seed-legacy-state.sql wrote. If the
+  -- seed changes a URL, this must be updated to match, and the failure
+  -- will say exactly which row moved.
+  SELECT string_agg(format('%s (%s -> %s)', e.id, e.url, m.media_url), '; ')
+    INTO v_url
+    FROM (VALUES
+      ('99999999-0000-0000-0000-000000000001'::uuid,
+       'https://demo.supabase.co/storage/v1/object/public/chat-media/account-bbbbbbbb-0000-0000-0000-000000000001/1736-foto.jpg'),
+      ('99999999-0000-0000-0000-000000000002'::uuid,
+       'https://demo.supabase.co/storage/v1/object/public/chat-media/account-bbbbbbbb-0000-0000-0000-000000000001/surat%20ibu%20bapa.pdf'),
+      ('99999999-0000-0000-0000-000000000003'::uuid,
+       '/api/whatsapp/media/wamid-abc'),
+      ('99999999-0000-0000-0000-000000000004'::uuid,
+       'https://cdn.example.com/brosur.png')
+    ) AS e(id, url)
+    LEFT JOIN messages m ON m.id = e.id
+   WHERE m.media_url IS DISTINCT FROM e.url;
+
+  IF v_url IS NOT NULL THEN
+    -- A deleted row lands here too, as `-> <NULL>`, which is the other
+    -- way this release could break media without editing a URL.
+    RAISE EXCEPTION
+      'media: 042-049 modified messages.media_url, which no migration in '
+      'this release may do: %', v_url;
   END IF;
 
   RAISE NOTICE 'upgrade path: 042-049 applied cleanly over production-shaped data';
