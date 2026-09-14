@@ -72,11 +72,6 @@ interface GatedButtonProps extends Omit<ComponentProps<typeof Button>, "title"> 
    *  sentence — "createFlows", "sendMessages", "manageContacts".
    *  See the note above on why this is a key and not a phrase. */
   gateReasonKey?: string;
-  /** @deprecated The old verb-phrase form. Kept for one commit so the
-   *  signature change and the sixteen call-site updates can land
-   *  separately and each stay green under bisect. Removed in the
-   *  follow-up that migrates the callers. */
-  gateReason?: string;
   /** Optional fallback title for the non-gated case. */
   title?: string;
   children?: ReactNode;
@@ -85,7 +80,6 @@ interface GatedButtonProps extends Omit<ComponentProps<typeof Button>, "title"> 
 export function GatedButton({
   canAct = true,
   gateReasonKey,
-  gateReason,
   title,
   disabled,
   className,
@@ -94,13 +88,7 @@ export function GatedButton({
 }: GatedButtonProps) {
   const t = useTranslations("Gated");
   const effectivelyDisabled = disabled || !canAct;
-  const tooltip = !canAct
-    ? gateReasonKey
-      ? t(gateReasonKey)
-      : gateReason
-        ? `Read-only — your role can't ${gateReason}`
-        : title
-    : title;
+  const tooltip = !canAct && gateReasonKey ? t(gateReasonKey) : title;
 
   return (
     <span
