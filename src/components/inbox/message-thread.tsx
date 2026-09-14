@@ -142,10 +142,16 @@ function groupMessagesByDate(messages: Message[]) {
   return groups;
 }
 
-const STATUS_OPTIONS: { label: string; value: ConversationStatus; color: string }[] = [
-  { label: "Open", value: "open", color: "text-primary" },
-  { label: "Pending", value: "pending", color: "text-warning" },
-  { label: "Closed", value: "closed", color: "text-muted-foreground" },
+// `labelKey` is the catalogue key, written out rather than assembled.
+// It used to be `label: "Open"` with both call sites doing
+// t(`status${opt.label}`) — which worked, but meant the key existed
+// nowhere greppable and the English word sat here looking like display
+// text. Writing the key makes it findable and stops the scanner
+// flagging a string that was never shown.
+const STATUS_OPTIONS: { labelKey: string; value: ConversationStatus; color: string }[] = [
+  { labelKey: "statusOpen", value: "open", color: "text-primary" },
+  { labelKey: "statusPending", value: "pending", color: "text-warning" },
+  { labelKey: "statusClosed", value: "closed", color: "text-muted-foreground" },
 ];
 
 /**
@@ -252,7 +258,7 @@ export function MessageThread({
       .reverse()
       .find((m) => m.sender_type === "customer");
 
-    if (!lastCustomerMsg) return { expired: true, remaining: "No customer messages" };
+    if (!lastCustomerMsg) return { expired: true, remaining: t("noCustomerMessages") };
 
     const hoursSince = differenceInHours(new Date(), new Date(lastCustomerMsg.created_at));
     const expired = hoursSince >= 24;
@@ -268,7 +274,7 @@ export function MessageThread({
         : tTimer("xmRemaining", { minutes: Math.floor(hoursLeft * 60) });
 
     return { expired, remaining };
-  }, [messages, tTimer]);
+  }, [messages, tTimer, t]);
 
   // Store latest callback in a ref so fetchMessages doesn't need to
   // depend on `onMessagesLoaded` — otherwise parent re-renders cause
@@ -775,7 +781,7 @@ export function MessageThread({
     return map;
   }, [reactions]);
 
-  const contactDisplayName = contact?.name || contact?.phone || "Customer";
+  const contactDisplayName = contact?.name || contact?.phone || t("unnamedContact");
 
   // Author label for a quoted message: "You" when we sent the parent,
   // contact name when the customer sent it.
@@ -783,9 +789,9 @@ export function MessageThread({
     (m: Message): string => {
       const isAgentMsg =
         m.sender_type === "agent" || m.sender_type === "bot";
-      return isAgentMsg ? "You" : contactDisplayName;
+      return isAgentMsg ? t("authorYou") : contactDisplayName;
     },
-    [contactDisplayName],
+    [contactDisplayName, t],
   );
 
   const handleStartReply = useCallback(
@@ -1058,7 +1064,7 @@ export function MessageThread({
                   "inline-flex items-center justify-center h-7 gap-1 px-2 text-xs rounded-md hover:bg-muted",
                   currentStatus?.color ?? "text-muted-foreground"
                 )}>
-                {currentStatus ? t(`status${currentStatus.label}`) : t("status")}
+                {currentStatus ? t(currentStatus.labelKey) : t("status")}
                 <ChevronDown className="h-3 w-3" />
             </DropdownMenuTrigger>
             <DropdownMenuContent
@@ -1071,7 +1077,7 @@ export function MessageThread({
                   onClick={() => handleStatusChange(opt.value)}
                   className={cn("text-sm", opt.color)}
                 >
-                  {t(`status${opt.label}`)}
+                  {t(opt.labelKey)}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
@@ -1220,7 +1226,7 @@ export function MessageThread({
                           authorLabel:
                             parent.sender_type === "agent" || parent.sender_type === "bot"
                               ? t("me") 
-                              : contact?.name || contact?.phone || "Unknown",
+                              : contact?.name || contact?.phone || t("unknownAuthor"),
                           preview: buildReplyPreview(parent, tQuote),
                         }
                       : null;

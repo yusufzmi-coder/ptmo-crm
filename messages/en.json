@@ -216,7 +216,11 @@
       "waitForSend": "Wait for the message to finish sending",
       "reactionFailed": "Reaction failed: {reason}",
       "assignFailed": "Failed to update assignment",
-      "reasonNetwork": "network error"
+      "reasonNetwork": "network error",
+      "noCustomerMessages": "No customer messages",
+      "authorYou": "You",
+      "unknownAuthor": "Unknown",
+      "unnamedContact": "Customer"
     },
     "sessionTimer": {
       "expired": "Expired",
@@ -345,7 +349,10 @@
       "back": "Back",
       "cancel": "Cancel",
       "send": "Send template",
-      "loadingTemplates": "Loading templates"
+      "loadingTemplates": "Loading templates",
+      "headerVarLabel": "Header {placeholder}",
+      "bodyVarLabel": "Body {placeholder}",
+      "urlButtonVarLabel": "URL button \"{button}\" — value for {placeholder}"
     },
     "sidebar": {
       "contactInfo": "Contact info",

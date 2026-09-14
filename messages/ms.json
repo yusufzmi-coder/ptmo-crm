@@ -216,7 +216,11 @@
       "waitForSend": "Tunggu mesej selesai dihantar",
       "reactionFailed": "Reaksi gagal: {reason}",
       "assignFailed": "Gagal kemas kini tugasan",
-      "reasonNetwork": "ralat rangkaian"
+      "reasonNetwork": "ralat rangkaian",
+      "noCustomerMessages": "Tiada mesej pelanggan",
+      "authorYou": "Anda",
+      "unknownAuthor": "Tidak diketahui",
+      "unnamedContact": "Pelanggan"
     },
     "sessionTimer": {
       "expired": "Tamat tempoh",
@@ -345,7 +349,10 @@
       "back": "Kembali",
       "cancel": "Batal",
       "send": "Hantar template",
-      "loadingTemplates": "Memuat template"
+      "loadingTemplates": "Memuat template",
+      "headerVarLabel": "Pengepala {placeholder}",
+      "bodyVarLabel": "Kandungan {placeholder}",
+      "urlButtonVarLabel": "Butang URL \"{button}\" — nilai untuk {placeholder}"
     },
     "sidebar": {
       "contactInfo": "Maklumat kenalan",

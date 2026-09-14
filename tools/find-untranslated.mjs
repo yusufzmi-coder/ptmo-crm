@@ -16,6 +16,11 @@
  * That 26 is a human count of strings worth fixing, not this tool's hit
  * count — see DO NOT CALIBRATE ON THE TOTAL below.
  *
+ * (Those are the hand-audit numbers. This detector reports the same tree
+ * differently — see the benchmark below for its own figures. Do not
+ * calibrate against 26/1; that pair describes what a human found, not
+ * what this script prints.)
+ *
  * So this walks the TypeScript AST instead and looks at every string the
  * program can produce, wherever it sits.
  *
@@ -60,9 +65,41 @@
  *
  * DO NOT CALIBRATE ON THE TOTAL. Two detectors that both find every real
  * string will still report very different totals, because the count is
- * dominated by how much harmless noise each one lets through. This one
- * reports 134 hits at a800140^, of which roughly thirty are the strings
- * that matter. A total is not a result; the named hits above are.
+ * dominated by how much harmless noise each one lets through. Three
+ * detectors run against this same archive returned 26, 29 and 138; none
+ * of them was broken. Check the SHAPE — the per-arm counts below — and
+ * the named hits above. A total is not a result.
+ *
+ * This detector reports ~138 hits at a800140^, split:
+ *
+ *   toast            29     the arm that matters most
+ *   attr:placeholder  5
+ *   assigned-string   4
+ *   jsx-text          3
+ *   attr:title        3
+ *   attr:aria-label   2
+ *
+ * If `toast` collapses, the filters are too aggressive. If `jsx-text`
+ * reaches zero, the JSX arm is broken. Counting only the total would
+ * hide either failure behind the noise.
+ *
+ * ---------------------------------------------------------------------
+ * WHAT IT STILL CANNOT SEE
+ *
+ * A literal assigned to a variable and interpolated into a translator or
+ * toast a line later. The call site holds no literal at all:
+ *
+ *   const reason = err instanceof Error ? err.message : "network error";
+ *   toast.error(t("sendFailed", { reason }));
+ *
+ * Six of these hid in an inbox tree that this detector had just reported
+ * on, and they were found by reading the code, not by scanning. The
+ * `assigned-string` arm below catches the common shape — a prose string
+ * in a ternary or `||` fallback assigned to a local — but a value routed
+ * through a function or a second variable still escapes it.
+ *
+ * Treat an empty result as "no literal at the call site", never as "no
+ * English reaches the user".
  *
  * ---------------------------------------------------------------------
  * WHAT IS FILTERED OUT, AND WHY EACH FILTER EXISTS
@@ -153,6 +190,18 @@ function isTechnical(s) {
   if (/^#[0-9a-fA-F]{3,8}$/.test(v)) return true;
   if (/^(oklch|rgb|hsl|var)\(/.test(v)) return true;
   if (/^[\d\s.,%+()-]+$/.test(v)) return true;
+  // A Tailwind class list. Tested on EVERY token carrying a utility
+  // marker (- : [ /), not merely on being lowercase: "network error" is
+  // two lowercase words and an earlier version of this filter swallowed
+  // it, which is the exact failure the assigned-string arm exists to
+  // prevent. A filter that hides a real hit is worse than one that lets
+  // a class list through.
+  if (
+    /\s/.test(v) &&
+    v.split(/\s+/).every((t) => /^[a-z0-9]+[-:[\]/][\S]*$/.test(t))
+  ) {
+    return true;
+  }
   return false;
 }
 
@@ -246,6 +295,31 @@ function analyse(file) {
         hits.push([lineOf(n), "template", head + "${…}"]);
       }
     }
+    // assigned-string: a prose literal handed to a local that a
+    // translator or toast reads a line later. The call site holds no
+    // literal, so every arm above walks past it — this is the shape that
+    // hid six "network error" strings in an already-audited tree.
+    if (ts.isVariableDeclaration(n) && n.initializer) {
+      const lits = [];
+      const collect = (e) => {
+        if (!e) return;
+        if (ts.isStringLiteral(e)) lits.push(e);
+        else if (ts.isConditionalExpression(e)) { collect(e.whenTrue); collect(e.whenFalse); }
+        else if (ts.isBinaryExpression(e) &&
+                 (e.operatorToken.kind === ts.SyntaxKind.BarBarToken ||
+                  e.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken)) {
+          collect(e.left); collect(e.right);
+        }
+      };
+      collect(n.initializer);
+      for (const lit of lits) {
+        const text = lit.text.trim();
+        if (text && !isTechnical(text) && !insideTranslator(lit) && /\s/.test(text)) {
+          hits.push([lineOf(lit), "assigned-string", text]);
+        }
+      }
+    }
+
     ts.forEachChild(n, visit);
   };
   visit(src);
