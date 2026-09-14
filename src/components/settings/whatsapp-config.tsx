@@ -15,6 +15,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { Skeleton } from '@/components/dashboard/skeleton';
+import { normalizeQuality, type QualityRating } from './branch-link';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { useTranslations } from 'next-intl';
@@ -69,6 +70,24 @@ export function WhatsAppConfig() {
   const [renameValue, setRenameValue] = useState('');
   const [savingRename, setSavingRename] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('unknown');
+  /**
+   * Live metadata for the PRIMARY number, straight from Meta.
+   *
+   * The config route has always returned this — it calls verifyPhoneNumber
+   * and hands back `phone_info` — but the component only ever read
+   * `verified_name`, for two toasts, and dropped the rest. The real number
+   * and the quality rating were arriving and being thrown away.
+   *
+   * Primary only, deliberately: route.ts explains that verifying all
+   * sixteen numbers would turn opening Settings into sixteen round trips.
+   * The other rows show their stored status instead; a rating we do not
+   * have is not a rating to invent.
+   */
+  const [phoneInfo, setPhoneInfo] = useState<{
+    display_phone_number?: string;
+    verified_name?: string;
+    quality_rating?: string;
+  } | null>(null);
   const [resetReason, setResetReason] = useState<ResetReason>(null);
   const [statusMessage, setStatusMessage] = useState<string>('');
   // Guards against re-hydrating the form when the load effect below
@@ -176,6 +195,8 @@ export function WhatsAppConfig() {
         try {
           const res = await fetch('/api/whatsapp/config', { method: 'GET' });
           const payload = await res.json();
+
+          setPhoneInfo(payload.phone_info ?? null);
 
           if (payload.connected) {
             setConnectionStatus('connected');
@@ -563,6 +584,41 @@ export function WhatsAppConfig() {
                 t('notConnectedDesc')}
           </AlertDescription>
         </Alert>
+
+        {/* Number health — the real number, the name parents see, and the
+            quality rating. The rating is the only early warning before Meta
+            restricts a number, so Yellow and Red carry a filled background
+            rather than small grey text: it has to register from across a
+            room, not reward close reading. Never cached — Meta moves it on
+            its own schedule and a stale rating is worse than none. */}
+        {connectionStatus === 'connected' && phoneInfo && (
+          <Card className="border-border bg-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">{t('healthTitle')}</CardTitle>
+              <CardDescription>{t('healthDesc')}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="text-xs text-muted-foreground">{t('healthNumber')}</p>
+                  <p className="mt-0.5 font-mono text-sm font-medium text-foreground">
+                    {phoneInfo.display_phone_number || t('healthUnknownValue')}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">{t('healthVerifiedName')}</p>
+                  <p className="mt-0.5 text-sm font-medium text-foreground">
+                    {phoneInfo.verified_name || t('healthUnknownValue')}
+                  </p>
+                </div>
+              </div>
+              <QualityBanner rating={normalizeQuality(phoneInfo.quality_rating)} t={t} />
+              {numbers.length > 1 && (
+                <p className="text-xs text-muted-foreground">{t('healthPrimaryOnly')}</p>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Registration Status — the "is it actually live?" check.
             Credentials being valid is necessary but not sufficient;
@@ -1143,5 +1199,64 @@ export function WhatsAppConfig() {
       </div>
     </div>
     </section>
+  );
+}
+
+/**
+ * Quality rating, stated plainly.
+ *
+ * Meta reports GREEN / YELLOW / RED, and it is the only signal that arrives
+ * BEFORE a number gets restricted — by the time messages start failing, the
+ * damage is done. So the two ratings that mean "act now" get a filled
+ * background and a sentence saying what to do, while GREEN stays quiet.
+ * Colour is never the only carrier: each state has its own icon and its own
+ * words, which is what makes it work in greyscale and for a colourblind
+ * reader.
+ */
+function QualityBanner({
+  rating,
+  t,
+}: {
+  rating: QualityRating;
+  t: ReturnType<typeof useTranslations<'Settings.whatsapp'>>;
+}) {
+  const style: Record<QualityRating, { box: string; icon: typeof CheckCircle2; label: string; hint: string }> = {
+    GREEN: {
+      box: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+      icon: CheckCircle2,
+      label: t('qualityGreen'),
+      hint: t('qualityGreenHint'),
+    },
+    YELLOW: {
+      box: 'border-amber-500 bg-amber-500/20 text-amber-900 dark:text-amber-100',
+      icon: AlertTriangle,
+      label: t('qualityYellow'),
+      hint: t('qualityYellowHint'),
+    },
+    RED: {
+      box: 'border-red-500 bg-red-500/20 text-red-900 dark:text-red-100',
+      icon: AlertTriangle,
+      label: t('qualityRed'),
+      hint: t('qualityRedHint'),
+    },
+    UNKNOWN: {
+      box: 'border-border bg-muted text-muted-foreground',
+      icon: XCircle,
+      label: t('qualityUnknown'),
+      hint: t('qualityUnknownHint'),
+    },
+  };
+
+  const { box, icon: Icon, label, hint } = style[rating];
+  const loud = rating === 'YELLOW' || rating === 'RED';
+
+  return (
+    <div className={`rounded-lg border-2 p-3 ${box}`} role="status">
+      <div className="flex items-center gap-2">
+        <Icon className={loud ? 'size-5 shrink-0' : 'size-4 shrink-0'} aria-hidden />
+        <span className={loud ? 'text-base font-bold' : 'text-sm font-semibold'}>{label}</span>
+      </div>
+      <p className="mt-1 text-xs opacity-90">{hint}</p>
+    </div>
   );
 }

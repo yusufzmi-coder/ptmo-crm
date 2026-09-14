@@ -2,7 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { Building2, Loader2, MapPin, Phone, Plus, Trash2 } from 'lucide-react';
+import {
+  Building2,
+  Check,
+  Copy,
+  Link2,
+  Loader2,
+  MapPin,
+  Phone,
+  Plus,
+  Trash2,
+} from 'lucide-react';
 import { SettingsPanelSkeleton } from './settings-panel-skeleton';
 import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
@@ -32,7 +42,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { Centre, Region } from '@/types';
+import type { Automation, Centre, Region, Tag } from '@/types';
+import {
+  branchBlocker,
+  buildBranchAutomation,
+  buildWaLink,
+  findBranchAutomation,
+  isValidCode,
+  suggestCode,
+} from './branch-link';
 
 /** Sentinel for "no zone" -- Radix Select cannot hold an empty value. */
 const NO_ZONE = '__none__';
@@ -45,6 +63,7 @@ interface PendingDelete {
 
 const EMPTY_FORM = {
   name: '',
+  code: '',
   region_id: NO_ZONE,
   phone: '',
   address: '',
@@ -79,11 +98,27 @@ export function CentresPanel() {
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  /**
+   * The one number every parent now writes to, as Meta formats it. Comes
+   * from the config route's `phone_info`, which verifies the PRIMARY number
+   * only — which is exactly the number the links must point at.
+   */
+  const [waNumber, setWaNumber] = useState<string | null>(null);
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [automations, setAutomations] = useState<
+    Pick<Automation, 'id' | 'trigger_type' | 'trigger_config'>[]
+  >([]);
+
+  /** Per-centre transient UI: the code being edited, and what is in flight. */
+  const [codeDraft, setCodeDraft] = useState<Record<string, string>>({});
+  const [busyCentre, setBusyCentre] = useState<string | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
+
   const load = useCallback(async () => {
     if (!accountId) return;
     try {
       setLoading(true);
-      const [r, c] = await Promise.all([
+      const [r, c, tg, au] = await Promise.all([
         supabase
           .from('regions')
           .select('*')
@@ -95,11 +130,35 @@ export function CentresPanel() {
           .select('*')
           .eq('account_id', accountId)
           .order('name'),
+        supabase.from('tags').select('*').eq('account_id', accountId).order('name'),
+        supabase
+          .from('automations')
+          .select('id, trigger_type, trigger_config')
+          .eq('account_id', accountId),
       ]);
       if (r.error) throw r.error;
       if (c.error) throw c.error;
       setRegions((r.data ?? []) as Region[]);
       setCentres((c.data ?? []) as Centre[]);
+      // Tags and automations decide whether a branch is already wired; a
+      // failure to read them is not fatal to the panel, it just means the
+      // setup button cannot tell you the answer yet.
+      if (!tg.error) setTags((tg.data ?? []) as Tag[]);
+      if (!au.error) {
+        setAutomations(
+          (au.data ?? []) as Pick<Automation, 'id' | 'trigger_type' | 'trigger_config'>[],
+        );
+      }
+
+      // The number the links point at. Best-effort: if WhatsApp is not
+      // connected the rows say so rather than showing a broken link.
+      try {
+        const res = await fetch('/api/whatsapp/config');
+        const payload = await res.json();
+        setWaNumber(payload?.phone_info?.display_phone_number ?? null);
+      } catch {
+        setWaNumber(null);
+      }
     } catch {
       toast.error(t('loadFailed'));
     } finally {
@@ -163,6 +222,9 @@ export function CentresPanel() {
       const { error } = await supabase.from('centres').insert({
         account_id: accountId,
         name,
+        // Blank is allowed: the admin can fill it in from the list, where
+        // they can see the link it produces.
+        code: form.code.trim() || null,
         region_id: form.region_id === NO_ZONE ? null : form.region_id,
         phone: form.phone.trim() || null,
         address: form.address.trim() || null,
@@ -177,6 +239,110 @@ export function CentresPanel() {
       toast.error(t('saveFailed'));
     } finally {
       setSavingCentre(false);
+    }
+  }
+
+  /** Persist a branch's link keyword. */
+  async function saveCode(centre: Centre) {
+    const code = (codeDraft[centre.id] ?? '').trim().toLowerCase();
+    if (!isValidCode(code)) {
+      toast.error(t('codeInvalid'));
+      return;
+    }
+    // Two branches sharing a keyword means every message lands on both
+    // tags, which is worse than a branch with no keyword at all.
+    const clash = centres.find((c) => c.id !== centre.id && c.code === code);
+    if (clash) {
+      toast.error(t('codeTaken', { name: clash.name }));
+      return;
+    }
+    setBusyCentre(centre.id);
+    try {
+      const { error } = await supabase.from('centres').update({ code }).eq('id', centre.id);
+      if (error) throw error;
+      toast.success(t('codeSaved'));
+      await load();
+    } catch {
+      toast.error(t('saveFailed'));
+    } finally {
+      setBusyCentre(null);
+    }
+  }
+
+  /**
+   * Wire a branch up: a tag named after it, and an automation that applies
+   * that tag when a message carries the branch keyword.
+   *
+   * Idempotent by necessity, not by politeness. Sixteen branches means this
+   * runs sixteen times, by hand, and a double-tap must not produce a second
+   * automation on the same keyword — two automations matching one keyword
+   * both fire, and the thread ends up double-tagged.
+   */
+  async function setupBranch(centre: Centre) {
+    if (!accountId || !centre.code) return;
+    const code = centre.code;
+
+    setBusyCentre(centre.id);
+    try {
+      const existing = findBranchAutomation(automations, code);
+      if (existing) {
+        toast.info(t('setupAlreadyDone'));
+        return;
+      }
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error(t('setupFailed'));
+        return;
+      }
+
+      // Reuse a tag of the same name rather than creating a duplicate —
+      // the admin may well have made it by hand already.
+      let tag = tags.find((x) => x.name.toLowerCase() === centre.name.toLowerCase());
+      if (!tag) {
+        const { data, error } = await supabase
+          .from('tags')
+          .insert({
+            user_id: user.id,
+            account_id: accountId,
+            name: centre.name,
+            color: '#0a77bb',
+          })
+          .select('*')
+          .single();
+        if (error) throw error;
+        tag = data as Tag;
+      }
+
+      const res = await fetch('/api/automations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...buildBranchAutomation(centre.name, code, tag.id), is_active: true }),
+      });
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        toast.error(payload.error ?? t('setupFailed'));
+        return;
+      }
+
+      toast.success(t('setupDone', { name: centre.name }));
+      await load();
+    } catch {
+      toast.error(t('setupFailed'));
+    } finally {
+      setBusyCentre(null);
+    }
+  }
+
+  async function copyLink(centre: Centre, link: string) {
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(centre.id);
+      setTimeout(() => setCopied(null), 2000);
+    } catch {
+      toast.error(t('copyFailed'));
     }
   }
 
@@ -300,10 +466,8 @@ export function CentresPanel() {
                   ) : (
                     <ul className="divide-y divide-border rounded-lg border border-border">
                       {rows.map((centre) => (
-                        <li
-                          key={centre.id}
-                          className="flex items-center gap-3 px-3 py-2.5"
-                        >
+                        <li key={centre.id} className="px-3 py-2.5">
+                        <div className="flex items-center gap-3">
                           <Building2 className="size-4 flex-shrink-0 text-primary" />
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium text-foreground">
@@ -338,6 +502,20 @@ export function CentresPanel() {
                           >
                             <Trash2 className="size-4" />
                           </button>
+                        </div>
+                        <BranchWiring
+                          centre={centre}
+                          waNumber={waNumber}
+                          wired={Boolean(centre.code && findBranchAutomation(automations, centre.code))}
+                          draft={codeDraft[centre.id] ?? ''}
+                          onDraft={(v) => setCodeDraft((d) => ({ ...d, [centre.id]: v }))}
+                          busy={busyCentre === centre.id}
+                          copied={copied === centre.id}
+                          onSaveCode={() => saveCode(centre)}
+                          onSetup={() => setupBranch(centre)}
+                          onCopy={(link) => copyLink(centre, link)}
+                          t={t}
+                        />
                         </li>
                       ))}
                     </ul>
@@ -365,6 +543,17 @@ export function CentresPanel() {
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 placeholder={t('namePlaceholder')}
               />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>{t('codeLabel')}</Label>
+              <Input
+                value={form.code}
+                onChange={(e) => setForm({ ...form, code: e.target.value.toLowerCase() })}
+                placeholder={form.name ? suggestCode(form.name) : t('codePlaceholder')}
+                className="font-mono"
+              />
+              <p className="text-xs text-muted-foreground">{t('codeHint')}</p>
             </div>
 
             <div className="space-y-1.5">
@@ -462,6 +651,112 @@ export function CentresPanel() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+/**
+ * The branch's half of the consolidation: its link keyword, the link it
+ * produces, and whether the automation behind it exists yet.
+ *
+ * Every state that stops a branch being usable says WHY. A blank space
+ * where a link should be tells nobody what to do next, and with sixteen
+ * branches to get through, "what is missing here" has to be answerable at
+ * a glance.
+ */
+function BranchWiring({
+  centre,
+  waNumber,
+  wired,
+  draft,
+  onDraft,
+  busy,
+  copied,
+  onSaveCode,
+  onSetup,
+  onCopy,
+  t,
+}: {
+  centre: Centre;
+  waNumber: string | null;
+  wired: boolean;
+  draft: string;
+  onDraft: (value: string) => void;
+  busy: boolean;
+  copied: boolean;
+  onSaveCode: () => void;
+  onSetup: () => void;
+  onCopy: (link: string) => void;
+  t: ReturnType<typeof useTranslations<'Settings.centres'>>;
+}) {
+  const blocker = branchBlocker(centre.code, waNumber);
+
+  // No keyword yet: offer one derived from the name, but let the admin
+  // overwrite it — they are the one who has to read it off a printed banner.
+  if (blocker === 'no-code') {
+    return (
+      <div className="mt-2 flex flex-wrap items-center gap-2 pl-7">
+        <Label htmlFor={`code-${centre.id}`} className="text-xs text-muted-foreground">
+          {t('codeLabel')}
+        </Label>
+        <Input
+          id={`code-${centre.id}`}
+          value={draft || suggestCode(centre.name)}
+          onChange={(e) => onDraft(e.target.value.toLowerCase())}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') onSaveCode();
+          }}
+          className="h-8 w-40 font-mono text-sm"
+          placeholder={t('codePlaceholder')}
+        />
+        <Button size="sm" variant="outline" onClick={onSaveCode} disabled={busy}>
+          {busy ? <Loader2 className="size-3.5 animate-spin" /> : null}
+          {t('codeSave')}
+        </Button>
+        <span className="text-xs text-muted-foreground">{t('codeHint')}</span>
+      </div>
+    );
+  }
+
+  if (blocker === 'no-number') {
+    return (
+      <p className="mt-2 pl-7 text-xs text-amber-700 dark:text-amber-400">
+        {t('noNumberYet')}
+      </p>
+    );
+  }
+
+  const link = buildWaLink(waNumber!, centre.code!);
+
+  return (
+    <div className="mt-2 space-y-2 pl-7">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="inline-flex items-center gap-1.5 rounded-md border border-border bg-muted px-2 py-0.5 font-mono text-xs text-foreground">
+          <Link2 className="size-3" aria-hidden />
+          {centre.code}
+        </span>
+        <code className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{link}</code>
+        <Button size="sm" variant="outline" onClick={() => onCopy(link)}>
+          {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+          {copied ? t('copied') : t('copyLink')}
+        </Button>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        {wired ? (
+          <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+            <Check className="size-3.5" aria-hidden />
+            {t('setupReady')}
+          </span>
+        ) : (
+          <>
+            <Button size="sm" onClick={onSetup} disabled={busy}>
+              {busy ? <Loader2 className="size-3.5 animate-spin" /> : null}
+              {t('setupButton')}
+            </Button>
+            <span className="text-xs text-muted-foreground">{t('setupHint')}</span>
+          </>
+        )}
+      </div>
     </div>
   );
 }
