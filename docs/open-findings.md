@@ -481,3 +481,26 @@ yang disengajakan pada alamat panjang, bukan kesan terjemahan.
 
 Risiko panjang teks yang ditandakan berulang kali sepanjang batch ini
 kini ditutup dengan pengukuran, bukan anggaran.
+
+### P0 — `SUPABASE_SERVICE_ROLE_KEY` sebenarnya kunci publishable
+
+`.env.local` menyimpan kunci yang bermula dengan `sb_publisha…` dalam slot
+`SUPABASE_SERVICE_ROLE_KEY`. Itu kunci **publishable** (awam), bukan kunci
+rahsia. Disahkan: ia bukan JWT (satu bahagian, bukan tiga), dan
+`/auth/v1/admin/users` menolaknya dengan `401 no_authorization`.
+
+Kesannya bukan kosmetik. Setiap laluan server yang menganggap keistimewaan
+service-role sedang berjalan dengan keistimewaan awam, dan RLS akan
+menyekatnya secara senyap. Itu termasuk penghantaran webhook
+(`src/lib/webhooks/deliver.ts`), dan ia juga sebab kenapa 046 GRANT kepada
+`service_role` — fungsi itu dipanggil dari laluan yang sepatutnya
+service-role.
+
+Hanya `.env.local` yang boleh diperiksa dari sini. **Kalau production
+membawa kunci yang sama, laluan server itu rosak di production dan
+kerosakannya senyap.** Perlu disemak sebelum deploy.
+
+Ia juga menyekat kerja coordinator: preflight dan migration memerlukan
+akses DB yang naik taraf, dan tiada satu pun tersedia di sini — tiada
+`supabase` CLI, tiada `psql`, tiada `DATABASE_URL`, dan `pooler-url`
+tidak membawa kata laluan.
