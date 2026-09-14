@@ -1372,7 +1372,8 @@
       "cancel": "Batal",
       "removing": "Sedang membuang...",
       "removeBtn": "Buang ahli",
-      "loading": "Memuat ahli"
+      "loading": "Memuat ahli",
+      "networkError": "Gagal menghubungi pelayan"
     },
     "invite": {
       "inviteCreated": "Jemputan dicipta",
@@ -1400,7 +1401,8 @@
       "labelTooLong": "Label mesti {max} aksara atau kurang",
       "copied": "Pautan jemputan disalin",
       "clipboardBlocked": "Papan klip disekat — salin pautan secara manual",
-      "whatsappMessage": "Sertai {accountName} di CRM PTMO Operation Dept menggunakan pautan ini (sah selama {expiresInDays} hari): {url}"
+      "whatsappMessage": "Sertai {accountName} di CRM PTMO Operation Dept menggunakan pautan ini (sah selama {expiresInDays} hari): {url}",
+      "networkError": "Gagal menghubungi pelayan. Cuba lagi?"
     },
     "tagsAndFields": {
       "title": "Medan & tag",
@@ -1533,7 +1535,10 @@
       "toastImageTooLarge": "Imej {size} MB — had Meta ialah 5 MB.",
       "toastUploadSuccess": "Imej dimuat naik.",
       "toastUploadFailed": "Gagal memuat naik.",
-      "loading": "Memuat template"
+      "loading": "Memuat template",
+      "qualityScoreTitle": "Skor kualiti Meta",
+      "headerTextAria": "Teks header",
+      "headerSampleAlt": "Contoh header"
     },
     "roles": {
       "admin": "Admin",
@@ -1728,7 +1733,8 @@
       "cancel": "Batal",
       "signingOut": "Sedang log keluar…",
       "signOutEverywhere": "Log keluar di mana-mana",
-      "signOutFailed": "Gagal log keluar: {message}"
+      "signOutFailed": "Gagal log keluar: {message}",
+      "namePlaceholder": "Siti Aminah"
     },
     "appearance": {
       "title": "Rupa",
@@ -1945,7 +1951,8 @@
       "saveFailed": "Gagal menyimpan balasan pantas.",
       "deleteConfirm": "Padam balasan pantas ini?",
       "deleteFailed": "Gagal memadam balasan pantas."
-    }
+    },
+    "railLabel": "Bahagian tetapan"
   },
   "Ops": {
     "unanswered": {

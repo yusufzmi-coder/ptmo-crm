@@ -1372,7 +1372,8 @@
       "cancel": "Cancel",
       "removing": "Removing...",
       "removeBtn": "Remove member",
-      "loading": "Loading members"
+      "loading": "Loading members",
+      "networkError": "Could not reach the server"
     },
     "invite": {
       "inviteCreated": "Invite created",
@@ -1400,7 +1401,8 @@
       "labelTooLong": "Label must be {max} characters or fewer",
       "copied": "Invite link copied",
       "clipboardBlocked": "Clipboard blocked — copy the link manually",
-      "whatsappMessage": "Join {accountName} on CRM PTMO Operation Dept using this link (valid for {expiresInDays} days): {url}"
+      "whatsappMessage": "Join {accountName} on CRM PTMO Operation Dept using this link (valid for {expiresInDays} days): {url}",
+      "networkError": "Could not reach the server. Try again?"
     },
     "tagsAndFields": {
       "title": "Fields & tags",
@@ -1533,7 +1535,10 @@
       "toastImageTooLarge": "Image is {size} MB — Meta's limit is 5 MB.",
       "toastUploadSuccess": "Image uploaded.",
       "toastUploadFailed": "Upload failed.",
-      "loading": "Loading templates"
+      "loading": "Loading templates",
+      "qualityScoreTitle": "Meta quality score",
+      "headerTextAria": "Header text",
+      "headerSampleAlt": "Header sample"
     },
     "roles": {
       "admin": "Admin",
@@ -1728,7 +1733,8 @@
       "cancel": "Cancel",
       "signingOut": "Signing out…",
       "signOutEverywhere": "Sign out everywhere",
-      "signOutFailed": "Sign-out failed: {message}"
+      "signOutFailed": "Sign-out failed: {message}",
+      "namePlaceholder": "Siti Aminah"
     },
     "appearance": {
       "title": "Appearance",
@@ -1945,7 +1951,8 @@
       "saveFailed": "Couldn't save the quick reply.",
       "deleteConfirm": "Delete this quick reply?",
       "deleteFailed": "Couldn't delete the quick reply."
-    }
+    },
+    "railLabel": "Settings sections"
   },
   "Ops": {
     "unanswered": {

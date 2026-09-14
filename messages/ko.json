@@ -1372,7 +1372,8 @@
       "cancel": "취소",
       "removing": "제거 중...",
       "removeBtn": "멤버 제거",
-      "loading": "구성원 불러오는 중"
+      "loading": "구성원 불러오는 중",
+      "networkError": "서버에 연결하지 못했습니다"
     },
     "invite": {
       "inviteCreated": "초대가 생성되었습니다",
@@ -1400,7 +1401,8 @@
       "labelTooLong": "라벨은 {max}자 이하여야 합니다",
       "copied": "초대 링크가 복사되었습니다",
       "clipboardBlocked": "클립보드 접근이 차단되었습니다 — 링크를 직접 복사하세요",
-      "whatsappMessage": "이 링크(유효 기간 {expiresInDays}일)로 CRM PTMO Operation Dept의 {accountName}에 참여하세요: {url}"
+      "whatsappMessage": "이 링크(유효 기간 {expiresInDays}일)로 CRM PTMO Operation Dept의 {accountName}에 참여하세요: {url}",
+      "networkError": "서버에 연결하지 못했습니다. 다시 시도할까요?"
     },
     "tagsAndFields": {
       "title": "필드 & 태그",
@@ -1533,7 +1535,10 @@
       "toastImageTooLarge": "이미지 크기가 {size}MB입니다 — Meta 제한은 5MB입니다.",
       "toastUploadSuccess": "이미지가 업로드되었습니다.",
       "toastUploadFailed": "업로드에 실패했습니다.",
-      "loading": "템플릿 불러오는 중"
+      "loading": "템플릿 불러오는 중",
+      "qualityScoreTitle": "Meta 품질 점수",
+      "headerTextAria": "헤더 텍스트",
+      "headerSampleAlt": "헤더 샘플"
     },
     "roles": {
       "admin": "관리자",
@@ -1728,7 +1733,8 @@
       "cancel": "취소",
       "signingOut": "로그아웃 중…",
       "signOutEverywhere": "모든 곳에서 로그아웃",
-      "signOutFailed": "로그아웃 실패: {message}"
+      "signOutFailed": "로그아웃 실패: {message}",
+      "namePlaceholder": "홍길동"
     },
     "appearance": {
       "title": "화면 설정",
@@ -1945,7 +1951,8 @@
       "saveFailed": "빠른 답장을 저장하지 못했습니다.",
       "deleteConfirm": "이 빠른 답장을 삭제할까요?",
       "deleteFailed": "빠른 답장을 삭제하지 못했습니다."
-    }
+    },
+    "railLabel": "설정 섹션"
   },
   "Ops": {
     "unanswered": {
