@@ -859,7 +859,9 @@
           "name": "Name",
           "phone": "Phone",
           "email": "Email"
-        }
+        },
+        "headerPreviewAlt": "Header preview",
+        "valuePlaceholder": "Enter value..."
       },
       "scheduleSend": {
         "title": "Review & Send",
@@ -1124,9 +1126,6 @@
       "beta": "Beta",
       "description": "Build branching, button-driven WhatsApp conversations. Useful for menus, FAQs, and triage before a human steps in.",
       "newFlow": "New flow",
-      "statusDraft": "Draft",
-      "statusActive": "Active",
-      "statusArchived": "Archived",
       "loadError": "Couldn't load flows.",
       "createError": "Couldn't create flow.",
       "cloneError": "Clone failed",
@@ -1262,7 +1261,10 @@
         "filenamePlaceholder": "invoice.pdf",
         "advanceAfterSending": "After sending, advance to",
         "pickNextNode": "Pick a next node…",
-        "none": "— None —"
+        "none": "— None —",
+        "removeSection": "Remove section",
+        "uploadFailed": "Upload failed.",
+        "fileUploaded": "File uploaded."
       },
       "categories": {
         "messaging": "Messaging",
@@ -1310,7 +1312,8 @@
           "label": "End",
           "blurb": "Ends the flow"
         }
-      }
+      },
+      "editorView": "Editor view"
     },
     "validation": {
       "noIssues": "No issues. Ready to activate.",
@@ -1322,7 +1325,10 @@
       "fixIssues": "Fix the issues below before activating.",
       "statusActivated": "Flow activated.",
       "statusArchived": "Archived.",
-      "statusDraft": "Saved as draft."
+      "statusDraft": "Saved as draft.",
+      "saveFailed": "Save failed",
+      "statusUpdateFailed": "Status update failed",
+      "deleteFailed": "Delete failed"
     },
     "summary": {
       "options": "{count} {count, plural, =1 {option} other {options}}",
@@ -1354,10 +1360,12 @@
       "save": "Save",
       "fixIssuesFirst": "Fix the issues below before activating",
       "descriptionPlaceholder": "Add a short description (internal — customers don't see this)",
-      "descriptionLabel": "Flow description",
-      "statusDraft": "Draft",
-      "statusActive": "Active",
-      "statusArchived": "Archived"
+      "descriptionLabel": "Flow description"
+    },
+    "status": {
+      "draft": "Draft",
+      "active": "Active",
+      "archived": "Archived"
     }
   },
   "Settings": {

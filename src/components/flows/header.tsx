@@ -177,21 +177,25 @@ export function EditorHeader() {
 }
 
 function StatusChip({ status }: { status: BuilderState["status"] }) {
-  const t = useTranslations("Flows.header");
+  // Flows.status, not Flows.header: a flow's status is one fact shown in
+  // two places. The list page renders the same three labels, and if the
+  // two namespaces drifted the app would name the same state two ways on
+  // adjacent screens.
+  const t = useTranslations("Flows.status");
   const cfg = {
     draft: {
       // Neutral, not amber — amber is reserved for the adjacent
       // "Edited" dirty signal, so the two don't read as the same alert.
       cls: "border-border bg-muted text-muted-foreground",
-      label: t("statusDraft"),
+      label: t("draft"),
     },
     active: {
       cls: "border-emerald-600/40 bg-emerald-500/10 text-emerald-300",
-      label: t("statusActive"),
+      label: t("active"),
     },
     archived: {
       cls: "border-border bg-muted/50 text-muted-foreground",
-      label: t("statusArchived"),
+      label: t("archived"),
     },
   }[status];
   return (

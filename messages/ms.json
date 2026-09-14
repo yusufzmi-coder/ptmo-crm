@@ -859,7 +859,9 @@
           "name": "Nama",
           "phone": "Telefon",
           "email": "E-mel"
-        }
+        },
+        "headerPreviewAlt": "Pratonton pengepala",
+        "valuePlaceholder": "Masukkan nilai..."
       },
       "scheduleSend": {
         "title": "Semak & Hantar",
@@ -1124,9 +1126,6 @@
       "beta": "Beta",
       "description": "Bina perbualan WhatsApp bercabang yang dipandu butang. Berguna untuk menu, FAQ dan triaj sebelum manusia mengambil alih.",
       "newFlow": "Flow baharu",
-      "statusDraft": "Draf",
-      "statusActive": "Aktif",
-      "statusArchived": "Diarkibkan",
       "loadError": "Gagal memuat flow.",
       "createError": "Gagal mencipta flow.",
       "cloneError": "Gagal menyalin",
@@ -1262,7 +1261,10 @@
         "filenamePlaceholder": "invois.pdf",
         "advanceAfterSending": "Selepas menghantar, beralih ke",
         "pickNextNode": "Pilih nod seterusnya…",
-        "none": "— Tiada —"
+        "none": "— Tiada —",
+        "removeSection": "Buang bahagian",
+        "uploadFailed": "Gagal memuat naik.",
+        "fileUploaded": "Fail dimuat naik."
       },
       "categories": {
         "messaging": "Pemesejan",
@@ -1310,7 +1312,8 @@
           "label": "Tamat",
           "blurb": "Menamatkan flow"
         }
-      }
+      },
+      "editorView": "Paparan editor"
     },
     "validation": {
       "noIssues": "Tiada isu. Sedia untuk diaktifkan.",
@@ -1322,7 +1325,10 @@
       "fixIssues": "Betulkan isu di bawah sebelum mengaktifkan.",
       "statusActivated": "Flow diaktifkan.",
       "statusArchived": "Diarkibkan.",
-      "statusDraft": "Disimpan sebagai draf."
+      "statusDraft": "Disimpan sebagai draf.",
+      "saveFailed": "Gagal menyimpan",
+      "statusUpdateFailed": "Gagal mengemas kini status",
+      "deleteFailed": "Gagal memadam"
     },
     "summary": {
       "options": "{count} {count, plural, =1 {pilihan} other {pilihan}}",
@@ -1354,10 +1360,12 @@
       "save": "Simpan",
       "fixIssuesFirst": "Betulkan isu di bawah sebelum mengaktifkan",
       "descriptionPlaceholder": "Tambah penerangan ringkas (dalaman — pelanggan tidak nampak ini)",
-      "descriptionLabel": "Penerangan Flow",
-      "statusDraft": "Draf",
-      "statusActive": "Aktif",
-      "statusArchived": "Diarkibkan"
+      "descriptionLabel": "Penerangan Flow"
+    },
+    "status": {
+      "draft": "Draf",
+      "active": "Aktif",
+      "archived": "Diarkibkan"
     }
   },
   "Settings": {
