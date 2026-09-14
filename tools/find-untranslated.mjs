@@ -2,8 +2,35 @@
 /**
  * Find user-visible strings that never reach the message catalogue.
  *
- *   node tools/find-untranslated.mjs "src/components/ops/**\/*.tsx"
  *   node tools/find-untranslated.mjs src/components/settings/*.tsx
+ *   node tools/find-untranslated.mjs src/app/\(dashboard\)/*\/page.tsx
+ *
+ * THE TOOL DOES NOT EXPAND GLOBS — THE SHELL DOES. It reads argv and
+ * opens each argument as a file. That single fact explains both ways the
+ * command fails, and they fail in opposite directions:
+ *
+ *   QUOTING A GLOB BREAKS IT. "src/components/ops/**\/*.tsx" reaches the
+ *   tool literally, it tries to open a file by that name, and it dies
+ *   with ENOENT. Leave globs unquoted so the shell expands them.
+ *
+ *   LEAVING PARENTHESES BARE BREAKS IT. src/app/(dashboard)/… is a
+ *   grouping expression in zsh, so the shell rejects the line before the
+ *   tool runs at all ("no matches found"). Escape them — \( \) — or, for
+ *   a single literal path containing no glob, quote the whole path.
+ *
+ *   The two rules collide on one case: a glob inside a parenthesised
+ *   directory. Escape the parentheses and leave the star bare:
+ *
+ *       node tools/find-untranslated.mjs src/app/\(dashboard\)/*\/page.tsx
+ *
+ *   This matters more than it looks. Every dashboard page in this repo
+ *   sits under a parenthesised route group, so the obvious command for
+ *   the largest tree is precisely the one that fails.
+ *
+ * Neither failure can report a tree falsely clean: a quoted glob crashes,
+ * and an unexpanded pattern never reaches the tool. If the shell expands
+ * to nothing, the zero-result guidance prints instead of a quiet
+ * "Total: 0". This bug class is loud, not dangerous.
  *
  * WHY THIS EXISTS — a text search is not good enough here.
  *
@@ -14,12 +41,8 @@
  * called that tree clean.
  *
  * That 26 is a human count of strings worth fixing, not this tool's hit
- * count — see DO NOT CALIBRATE ON THE TOTAL below.
- *
- * (Those are the hand-audit numbers. This detector reports the same tree
- * differently — see the benchmark below for its own figures. Do not
- * calibrate against 26/1; that pair describes what a human found, not
- * what this script prints.)
+ * count. Do not calibrate against 26/1 — see DO NOT CALIBRATE ON THE
+ * TOTAL below.
  *
  * So this walks the TypeScript AST instead and looks at every string the
  * program can produce, wherever it sits.
@@ -65,12 +88,19 @@
  *
  * DO NOT CALIBRATE ON THE TOTAL. Two detectors that both find every real
  * string will still report very different totals, because the count is
- * dominated by how much harmless noise each one lets through. Three
- * detectors run against this same archive returned 26, 29 and 138; none
- * of them was broken. Check the SHAPE — the per-arm counts below — and
- * the named hits above. A total is not a result.
+ * dominated by how much harmless noise each one lets through. Runs
+ * against this same archive have returned 26 (a hand audit), 29 and 113;
+ * none was broken. Check the SHAPE — the per-arm counts below — and the
+ * named hits above. A total is not a result.
  *
- * This detector reports ~138 hits at a800140^, split:
+ * The 113 is this script, measured on the commit that added this line.
+ * Re-measure rather than trusting it: the figure moved from 134 to 113
+ * when the assigned-string arm landed and the filters were retuned, and
+ * the docstring kept quoting the old number for a while. The per-arm
+ * shape below survived that change untouched, which is the whole reason
+ * the shape is the thing to compare.
+ *
+ * This detector reports 113 hits at a800140^, split:
  *
  *   toast            29     the arm that matters most
  *   attr:placeholder  5
