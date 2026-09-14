@@ -161,9 +161,22 @@ are present on `main`, but no run has ever been recorded. So the sentence
 above states a requirement that has never once been met. Investigate
 before treating CI as a gate.
 
-The upgrade-path job also still replays `042`–`049` as one set, which is
-no longer the set that will actually be applied. It needs changing to
-`045`, `046`, `047` before its result means anything.
+The upgrade-path job replayed `042`–`049` as one set until 14 Sep 2026,
+which was never the set that would be applied. It now builds the baseline
+production actually has — `001`–`041` **plus `049`** — and applies only
+`045`, `046`, `047` on top.
+
+`042`, `043`, `044` and `048` are parked by that job and never applied.
+They are in this repository and no database has run them, and nothing
+plans to. The CLI applies in filename order, so leaving them in place
+would put them in front of `045` and the job would quietly test a schema
+three migrations ahead of production.
+
+Parking them is what keeps the run honest. It is also what makes the
+divergence visible, and the divergence is the thing to look at: **the
+gap widens every time someone writes `050` on top of a tree whose
+`042`–`048` were never applied.** Decide what happens to those four
+before the next migration is written.
 
 ## 049 is not pilot-ready, and must not be counted as such
 
