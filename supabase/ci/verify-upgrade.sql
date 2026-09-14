@@ -112,6 +112,31 @@ BEGIN
       'this release may do: %', v_url;
   END IF;
 
-  RAISE NOTICE 'upgrade path: 042-049 applied cleanly over production-shaped data';
+  -- ==========================================================
+  -- 050 — the unique index landed on a POPULATED centres table
+  -- ==========================================================
+  -- The only part of 050 that can fail on real data. Everything else it
+  -- creates is a new empty table, which cannot conflict with anything.
+  IF to_regclass('public.idx_centres_account_code') IS NULL THEN
+    RAISE EXCEPTION '050: idx_centres_account_code is missing — the unique index did not apply';
+  END IF;
+
+  -- Existence is not enforcement. Prove the index actually refuses a
+  -- duplicate, and that it does so case-insensitively — the collision
+  -- the JavaScript check in centres-panel.tsx cannot see, because it
+  -- compares an already-lowercased string against a list in the browser.
+  BEGIN
+    INSERT INTO centres (account_id, name, code)
+    VALUES ((SELECT account_id FROM centres
+              WHERE id = '77777777-0000-0000-0000-000000000001'),
+            'Kembar Batu Caves', 'BATUCAVES');
+    RAISE EXCEPTION
+      '050: a duplicate branch code was ACCEPTED — two branches can share '
+      'a keyword and a parent''s message would tag the wrong one';
+  EXCEPTION WHEN unique_violation THEN
+    NULL;  -- what must happen
+  END;
+
+  RAISE NOTICE 'upgrade path: 050 applied cleanly over production-shaped data';
 END
 $$;

@@ -174,27 +174,34 @@ jobs:
       - name: Split the tree into baseline, release, and not-in-release
         run: |
           mkdir -p /tmp/release /tmp/parked
-          mv supabase/migrations/045_*.sql \
-             supabase/migrations/046_*.sql \
-             supabase/migrations/047_*.sql \
-             supabase/migrations/049_*.sql /tmp/release/
+          mv supabase/migrations/050_*.sql /tmp/release/
           mv supabase/migrations/042_*.sql \
              supabase/migrations/043_*.sql \
              supabase/migrations/044_*.sql \
              supabase/migrations/048_*.sql /tmp/parked/
-          echo "baseline (ends at 041):"; ls supabase/migrations | tail -3
+          echo "baseline (ends at 049):"; ls supabase/migrations | tail -3
           echo "release:";               ls /tmp/release
           echo "parked, never applied:"; ls /tmp/parked
 
       - name: Start Postgres
         run: supabase db start
 
-      # 049 belongs to the RELEASE, not the baseline. Left here it made
-      # `migration up` refuse the entire step: with 049 already recorded,
-      # 045-047 are "local migration files to be inserted before the last
-      # migration on remote database". The job never reached this far to
-      # show it, because the seed failed first.
-      - name: Build the production baseline (001-041)
+      # WHAT "BASELINE" MEANS HERE, AND WHY IT MOVES
+      #
+      # The baseline is what production ALREADY HAS. 045, 046, 047 and
+      # 049 have now landed there, so they are baseline and no longer
+      # release; 050 is the only thing this job tests the arrival of.
+      # Leaving them in /tmp/release would replay a release that has
+      # already happened and test nothing about the next one.
+      #
+      # This line moves with every release: when 050 lands it joins the
+      # baseline, and whatever follows becomes the release set.
+      #
+      # The release number must also stay AHEAD of the baseline's last.
+      # With 049 recorded, a 045-047 release made `migration up` refuse
+      # the whole step -- "local migration files to be inserted before
+      # the last migration on remote database".
+      - name: Build the production baseline (001-049)
         run: supabase db reset --local --no-seed
 
       - name: Seed production-shaped rows
@@ -217,7 +224,7 @@ jobs:
       # `migration up` applies only what the baseline has not seen, which
       # is exactly the upgrade production will perform. A reset here
       # would throw the seeded rows away and prove nothing.
-      - name: Apply 045, 046, 047 and 049 on top
+      - name: Apply 050 on top
         run: supabase migration up --local
 
       - name: Verify the resulting schema
