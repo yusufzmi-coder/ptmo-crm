@@ -1111,9 +1111,6 @@
       "beta": "Beta",
       "description": "Build branching, button-driven WhatsApp conversations. Useful for menus, FAQs, and triage before a human steps in.",
       "newFlow": "New flow",
-      "statusDraft": "Draft",
-      "statusActive": "Active",
-      "statusArchived": "Archived",
       "loadError": "Couldn't load flows.",
       "createError": "Couldn't create flow.",
       "cloneError": "Clone failed",
@@ -1341,10 +1338,12 @@
       "save": "Save",
       "fixIssuesFirst": "Fix the issues below before activating",
       "descriptionPlaceholder": "Add a short description (internal — customers don't see this)",
-      "descriptionLabel": "Flow description",
-      "statusDraft": "Draft",
-      "statusActive": "Active",
-      "statusArchived": "Archived"
+      "descriptionLabel": "Flow description"
+    },
+    "status": {
+      "draft": "Draft",
+      "active": "Active",
+      "archived": "Archived"
     }
   },
   "Settings": {

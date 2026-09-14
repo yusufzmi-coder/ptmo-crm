@@ -1111,9 +1111,6 @@
       "beta": "베타",
       "description": "분기하는 버튼 기반 WhatsApp 대화를 만드세요. 메뉴, FAQ, 사람이 개입하기 전 1차 응대에 유용합니다.",
       "newFlow": "새 플로우",
-      "statusDraft": "초안",
-      "statusActive": "활성",
-      "statusArchived": "보관됨",
       "loadError": "플로우를 불러올 수 없습니다.",
       "createError": "플로우를 만들 수 없습니다.",
       "cloneError": "복제 실패",
@@ -1341,10 +1338,12 @@
       "save": "저장",
       "fixIssuesFirst": "활성화하기 전에 아래 문제를 해결하세요",
       "descriptionPlaceholder": "간단한 설명을 추가하세요 (내부용 — 고객에게는 보이지 않습니다)",
-      "descriptionLabel": "플로우 설명",
-      "statusDraft": "초안",
-      "statusActive": "활성",
-      "statusArchived": "보관됨"
+      "descriptionLabel": "플로우 설명"
+    },
+    "status": {
+      "draft": "초안",
+      "active": "활성",
+      "archived": "보관됨"
     }
   },
   "Settings": {
