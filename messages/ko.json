@@ -215,7 +215,8 @@
       "sendTemplateFailed": "템플릿 전송 실패: {reason}",
       "waitForSend": "메시지 전송이 끝날 때까지 기다려 주세요",
       "reactionFailed": "반응 실패: {reason}",
-      "assignFailed": "담당자를 변경하지 못했습니다"
+      "assignFailed": "담당자를 변경하지 못했습니다",
+      "reasonNetwork": "네트워크 오류"
     },
     "sessionTimer": {
       "expired": "만료됨",
@@ -508,7 +509,8 @@
       "loadingContact": "연락처 불러오는 중",
       "loadingNotes": "메모 불러오는 중",
       "loadingCustomFields": "맞춤 필드 불러오는 중",
-      "loadingDeals": "거래 불러오는 중"
+      "loadingDeals": "거래 불러오는 중",
+      "reasonNetwork": "네트워크 오류"
     },
     "importModal": {
       "title": "연락처 가져오기",
