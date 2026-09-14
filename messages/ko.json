@@ -1076,7 +1076,8 @@
         "matchWord": "단어 단위 일치",
         "matchWordHint": "키워드가 독립된 단어일 때만 일치하므로 \"k\"가 \"thanks\"에서 실행되지 않습니다. 공백으로 단어를 구분하는 언어의 짧은 키워드에 적합하며, 공백 없이 표기하는 언어에는 \"포함\"을 사용하세요.",
         "matchExact": "정확히 일치",
-        "closeConversationHint": "대화 상태를 \"닫힘\"으로 설정합니다. 추가 설정이 필요 없습니다."
+        "closeConversationHint": "대화 상태를 \"닫힘\"으로 설정합니다. 추가 설정이 필요 없습니다.",
+        "schedulePlaceholder": "Cron 표현식 또는 HH:mm"
       },
       "previewNoBody": "메시지 내용 없음",
       "previewNoTemplate": "템플릿 선택",
@@ -1086,7 +1087,12 @@
       "previewWaitMinutes": "{amount, plural, other {#분}}",
       "previewWaitHours": "{amount, plural, other {#시간}}",
       "previewWaitDays": "{amount, plural, other {#일}}",
-      "previewWaitUnset": "기간 미설정"
+      "previewWaitUnset": "기간 미설정",
+      "kindCondition": "조건",
+      "kindWait": "대기",
+      "kindAction": "작업",
+      "moveUp": "위로 이동",
+      "moveDown": "아래로 이동"
     }
   },
   "Flows": {
