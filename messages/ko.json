@@ -115,11 +115,7 @@
       "noActivity": "아직 활동이 없습니다",
       "noActivityHint": "메시지, 딜, 브로드캐스트, 자동화 관련 활동이 여기에 표시됩니다.",
       "showingOf": "{totalLoaded}개 중 {visible}개 표시{plus}",
-      "show": "표시",
-      "timeS": "{sec}초 전",
-      "timeM": "{min}분 전",
-      "timeH": "{hr}시간 전",
-      "timeD": "{day}일 전"
+      "show": "표시"
     },
     "conversationsChart": {
       "title": "기간별 대화 추이",
@@ -2074,12 +2070,9 @@
       "tierOffice": "office",
       "tierClass": "class",
       "tierOffDuty": "off duty",
-      "sentJustNow": "sent just now",
-      "sentMinutesAgo": "sent {count} min ago",
-      "sentHoursAgo": "sent {count, plural, =1 {1 hour} other {# hours}} ago",
-      "sentDaysAgo": "sent {count, plural, =1 {1 day} other {# days}} ago",
       "boardHeading": "Waiting for a reply",
-      "loadingBoard": "보드 불러오는 중"
+      "loadingBoard": "보드 불러오는 중",
+      "sentAt": "{time}에 발송"
     },
     "responseTime": {
       "withinTargetToday": "Within target today",
@@ -2209,5 +2202,19 @@
     "createAutomations": "읽기 전용 — 자동화를 만들 권한이 없습니다",
     "createFlows": "읽기 전용 — 플로우를 만들 권한이 없습니다",
     "sendMessages": "읽기 전용 — 메시지를 보낼 권한이 없습니다"
+  },
+  "RelativeTime": {
+    "terse": {
+      "seconds": "{count}초 전",
+      "minutes": "{count}분 전",
+      "hours": "{count}시간 전",
+      "days": "{count}일 전"
+    },
+    "full": {
+      "justNow": "방금",
+      "minutes": "{count}분 전",
+      "hours": "{count}시간 전",
+      "days": "{count}일 전"
+    }
   }
 }

@@ -115,11 +115,7 @@
       "noActivity": "Belum ada aktiviti",
       "noActivityHint": "Aktiviti daripada mesej, deal, broadcast dan automasi akan muncul di sini.",
       "showingOf": "Memaparkan {visible} daripada {totalLoaded}{plus}",
-      "show": "Papar",
-      "timeS": "{sec}s lalu",
-      "timeM": "{min}m lalu",
-      "timeH": "{hr}j lalu",
-      "timeD": "{day}h lalu"
+      "show": "Papar"
     },
     "conversationsChart": {
       "title": "Perbualan Mengikut Masa",
@@ -2074,12 +2070,9 @@
       "tierOffice": "office",
       "tierClass": "class",
       "tierOffDuty": "luar tugas",
-      "sentJustNow": "baru dihantar",
-      "sentMinutesAgo": "dihantar {count} min lalu",
-      "sentHoursAgo": "dihantar {count, plural, =1 {1 jam} other {# jam}} lalu",
-      "sentDaysAgo": "dihantar {count, plural, =1 {1 hari} other {# hari}} lalu",
       "boardHeading": "Menunggu balasan",
-      "loadingBoard": "Memuatkan papan"
+      "loadingBoard": "Memuatkan papan",
+      "sentAt": "dihantar {time}"
     },
     "responseTime": {
       "withinTargetToday": "Dalam sasaran hari ini",
@@ -2209,5 +2202,19 @@
     "createAutomations": "Baca sahaja — peranan anda tidak boleh mencipta automasi",
     "createFlows": "Baca sahaja — peranan anda tidak boleh mencipta aliran",
     "sendMessages": "Baca sahaja — peranan anda tidak boleh menghantar mesej"
+  },
+  "RelativeTime": {
+    "terse": {
+      "seconds": "{count}s lalu",
+      "minutes": "{count}m lalu",
+      "hours": "{count}j lalu",
+      "days": "{count}h lalu"
+    },
+    "full": {
+      "justNow": "baru sahaja",
+      "minutes": "{count} minit lalu",
+      "hours": "{count} jam lalu",
+      "days": "{count} hari lalu"
+    }
   }
 }
