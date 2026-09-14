@@ -19,10 +19,10 @@ import {
   ArrowLeft,
   ChevronRight,
   LayoutTemplate,
-  Loader2,
 } from "lucide-react";
 import { extractVariableIndices } from "@/lib/whatsapp/template-validators";
 import { useTranslations } from "next-intl";
+import { Skeleton } from "@/components/dashboard/skeleton";
 
 export interface TemplateSendValues {
   body: string[];
@@ -205,8 +205,16 @@ export function TemplatePicker({
         {!selected ? (
           <div className="max-h-[60vh] space-y-2 overflow-y-auto">
             {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <div aria-busy="true" aria-label={t("loadingTemplates")}>
+                {Array.from({ length: 3 }, (_, i) => (
+                  <div
+                    key={i}
+                    className="mb-2 rounded-md border border-border p-3"
+                  >
+                    <Skeleton className="h-3.5 w-36" />
+                    <Skeleton className="mt-2 h-3 w-full max-w-72" />
+                  </div>
+                ))}
               </div>
             ) : templates.length === 0 ? (
               <div className="rounded-md border border-border bg-background/50 p-6 text-center">

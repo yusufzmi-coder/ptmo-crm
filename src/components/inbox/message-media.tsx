@@ -93,7 +93,7 @@ function MediaActionButton({
       // Own surface rather than inheriting the bubble's, so the same button
       // reads on the muted inbound fill, the primary outbound fill, and on
       // top of an arbitrary photo.
-      className="flex h-7 w-7 items-center justify-center rounded-full border border-border/60 bg-background/85 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-background disabled:opacity-60"
+      className="flex h-9 w-9 items-center justify-center rounded-full border border-border/60 bg-background/85 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-background disabled:opacity-60 lg:h-7 lg:w-7"
     >
       {busy ? (
         <Loader2 className="h-3.5 w-3.5 animate-spin" />
