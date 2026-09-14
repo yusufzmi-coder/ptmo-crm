@@ -35,23 +35,19 @@
 --     benefit until either an assertion comes back or they go. See
 --     docs/open-findings.md, "Job \"upgrade path\" tidak pernah lulus".
 --
--- WARNING — THIS FILE DOES NOT RUN AS WRITTEN
--- -------------------------------------------
--- Two faults, both reached before any row is written, both documented
--- in docs/open-findings.md:
+-- HOW THIS FILE GETS ITS ACCOUNT
+-- ------------------------------
+-- It does not create one. `on_auth_user_created` -> `handle_new_user`
+-- (017:...) already provisions an account and an `owner` profile for
+-- every auth.users row, so an INSERT here would be the SECOND account
+-- for the same owner and trips `idx_accounts_one_per_owner` —
+-- `ON CONFLICT (id)` does not catch a clash on `owner_user_id`.
 --
---   1. migrations.yml:195 calls `db query --file`, which sends the file
---      as ONE prepared statement and rejects the eight INSERTs below.
---      verify-schema.sql and grant-platform-privileges.sql are single
---      `DO $$` blocks for exactly this reason; this file is not.
---   2. `on_auth_user_created` -> `handle_new_user` already provisions an
---      account and a profile for every auth.users row. The accounts
---      INSERT below then trips `idx_accounts_one_per_owner`, because
---      `ON CONFLICT (id)` does not catch a clash on `owner_user_id`.
---      zone_isolation_test.sql:45 works WITH that trigger; this does not.
---
--- Fixing either changes more than this file, so both are left for a
--- scoped decision rather than patched in passing.
+-- An earlier version of this file did exactly that, and took the
+-- upgrade job down with it. zone_isolation_test.sql:45 had the shape
+-- right all along: insert the users, then read what the trigger made.
+-- That is what happens below, and everything downstream addresses the
+-- account through `seed_zone` rather than a literal UUID.
 --
 -- Everything here is fixture data with fixed UUIDs so that
 -- verify-upgrade.sql can assert against it by name. It is never run
@@ -60,56 +56,77 @@
 -- ============================================================
 
 -- ---- identities ---------------------------------------------
--- auth.users is owned by Supabase; inserting directly is what the
--- pgTAP suites already do, and it is the only way to get a foreign key
--- target for profiles without booting GoTrue.
-INSERT INTO auth.users (id, instance_id, aud, role, email, created_at, updated_at)
+-- auth.users is owned by Supabase; inserting directly is what the pgTAP
+-- suites already do, and it is the only way to get a foreign key target
+-- for profiles without booting GoTrue.
+--
+-- `full_name` goes in the metadata rather than into a later UPDATE,
+-- because that is the channel the trigger reads — the same one a real
+-- signup uses. Only the two facts the trigger cannot know, account and
+-- role, are corrected afterwards.
+INSERT INTO auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 VALUES
   ('aaaaaaaa-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000',
-   'authenticated', 'authenticated', 'owner@example.test', NOW(), NOW()),
+   'authenticated', 'authenticated', 'owner@example.test',
+   '{"full_name":"Pemilik HQ"}', NOW(), NOW()),
   ('aaaaaaaa-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000000',
-   'authenticated', 'authenticated', 'agent@example.test', NOW(), NOW()),
-  -- THE CASE THIS FILE EXISTS FOR: a real member whose role was never set.
+   'authenticated', 'authenticated', 'agent@example.test',
+   '{"full_name":"Kakitangan Cawangan"}', NOW(), NOW()),
+  -- The floor of the role hierarchy. This row carried a NULL
+  -- account_role until a503493, on the belief that 017 left the column
+  -- nullable; 017 adds it nullable at :122 and makes it NOT NULL at
+  -- :275, in the same file. See verify-schema.sql for the invariant.
   ('aaaaaaaa-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000000',
-   'authenticated', 'authenticated', 'viewer@example.test', NOW(), NOW())
+   'authenticated', 'authenticated', 'viewer@example.test',
+   '{"full_name":"Peranan Paling Rendah"}', NOW(), NOW())
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO accounts (id, name, owner_user_id)
-VALUES ('bbbbbbbb-0000-0000-0000-000000000001', 'Zon Lembah Klang',
-        'aaaaaaaa-0000-0000-0000-000000000001')
-ON CONFLICT (id) DO NOTHING;
+-- The zone under test: the account the trigger built for the owner.
+-- Held in a temp table so the statements below read like the fixture
+-- they are, instead of repeating the same subquery nine times. It lives
+-- for this psql session only and is invisible to every later step.
+CREATE TEMPORARY TABLE seed_zone AS
+SELECT account_id AS id
+  FROM profiles
+ WHERE user_id = 'aaaaaaaa-0000-0000-0000-000000000001';
 
-INSERT INTO profiles (id, user_id, full_name, email, account_id, account_role)
-VALUES
-  ('cccccccc-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001',
-   'Pemilik HQ', 'owner@example.test',
-   'bbbbbbbb-0000-0000-0000-000000000001', 'owner'),
-  ('cccccccc-0000-0000-0000-000000000002', 'aaaaaaaa-0000-0000-0000-000000000002',
-   'Kakitangan Cawangan', 'agent@example.test',
-   'bbbbbbbb-0000-0000-0000-000000000001', 'agent'),
-  -- Was NULL, on the belief that "017 made the column nullable with no
-  -- default, so this row is legal today". It is not: 017 adds the column
-  -- nullable at :122 and then makes it NOT NULL at :275, in the same
-  -- file. The INSERT failed, and took the upgrade job down with it.
-  --
-  -- A NULL-role profile cannot exist at all. SET NOT NULL fails if any
-  -- row is NULL, so 017 succeeding on production proves none existed
-  -- then, and the constraint has forbidden one since. The invariant is
-  -- asserted directly in verify-schema.sql now.
-  --
-  -- `viewer` instead: the real floor of the hierarchy, and the shape
-  -- this row was reaching for — an account member with the least
-  -- privilege the schema allows.
-  ('cccccccc-0000-0000-0000-000000000003', 'aaaaaaaa-0000-0000-0000-000000000003',
-   'Peranan Paling Rendah', 'viewer@example.test',
-   'bbbbbbbb-0000-0000-0000-000000000001', 'viewer')
-ON CONFLICT (id) DO NOTHING;
+-- A trigger that fails only RAISEs a WARNING (017: EXCEPTION WHEN
+-- OTHERS), so a missing account would otherwise surface much later as a
+-- confusing NOT NULL violation on some unrelated INSERT. Fail here.
+DO $seed$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM seed_zone WHERE id IS NOT NULL) THEN
+    RAISE EXCEPTION
+      'handle_new_user did not provision an account for the owner — the '
+      'trigger swallows its own errors, so check the WARNING above this line';
+  END IF;
+END $seed$;
+
+-- Fold the other two into that zone. The trigger makes everyone the
+-- owner of their own account, which is the shape 044 describes; this
+-- seed needs the pre-044 shape instead — one zone, three members at
+-- three privilege levels.
+UPDATE profiles
+   SET account_id = (SELECT id FROM seed_zone), account_role = 'agent'
+ WHERE user_id = 'aaaaaaaa-0000-0000-0000-000000000002';
+
+UPDATE profiles
+   SET account_id = (SELECT id FROM seed_zone), account_role = 'viewer'
+ WHERE user_id = 'aaaaaaaa-0000-0000-0000-000000000003';
+
+-- Their now-empty personal accounts would leave `accounts` holding three
+-- rows for a fixture that describes one zone, which makes any later
+-- count assertion read wrong. Nothing references them once the profiles
+-- have moved.
+DELETE FROM accounts
+ WHERE owner_user_id IN ('aaaaaaaa-0000-0000-0000-000000000002',
+                         'aaaaaaaa-0000-0000-0000-000000000003');
 
 -- ---- one connected number (the production shape today) -------
 INSERT INTO whatsapp_config (id, user_id, account_id, phone_number_id, access_token, status)
 VALUES ('dddddddd-0000-0000-0000-000000000001',
         'aaaaaaaa-0000-0000-0000-000000000001',
-        'bbbbbbbb-0000-0000-0000-000000000001',
+        (SELECT id FROM seed_zone),
         '100000000000001', 'test-token', 'connected')
 ON CONFLICT (id) DO NOTHING;
 
@@ -117,14 +134,14 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO contacts (id, user_id, account_id, phone, name)
 VALUES ('eeeeeeee-0000-0000-0000-000000000001',
         'aaaaaaaa-0000-0000-0000-000000000001',
-        'bbbbbbbb-0000-0000-0000-000000000001',
+        (SELECT id FROM seed_zone),
         '+60123456789', 'Ibu Bapa Ujian')
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO conversations (id, user_id, account_id, contact_id, whatsapp_config_id)
 VALUES ('ffffffff-0000-0000-0000-000000000001',
         'aaaaaaaa-0000-0000-0000-000000000001',
-        'bbbbbbbb-0000-0000-0000-000000000001',
+        (SELECT id FROM seed_zone),
         'eeeeeeee-0000-0000-0000-000000000001',
         'dddddddd-0000-0000-0000-000000000001')
 ON CONFLICT (id) DO NOTHING;
@@ -133,6 +150,19 @@ ON CONFLICT (id) DO NOTHING;
 -- there is no media backfill in this release. The first two are the
 -- legacy rows that depend on render-time compatibility; the last two
 -- are shapes that must never be touched by anything.
+--
+-- verify-upgrade.sql asserts these four are byte-identical afterwards.
+-- That negative is the point of the rows: the backfill that would have
+-- rewritten media_url was withdrawn because SQL cannot resolve the
+-- storage host, and the mapping lives in resolveStoredMediaUrl() at
+-- render time instead. "No migration touches this column" is the
+-- assertion that protects that decision.
+--
+-- The `account-bbbbbbbb-...` inside the first two URLs is deliberately
+-- NOT the account this seed builds. It is opaque legacy text: no
+-- migration parses it, the assertion is byte equality, and computing it
+-- from the live account on both sides would only prove the expression
+-- matches itself.
 INSERT INTO messages (id, conversation_id, sender_type, content_type, media_url, content_text)
 VALUES
   -- 1. legacy public chat-media URL, plain filename
@@ -160,7 +190,7 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO broadcasts (id, user_id, account_id, name, template_name, status, total_recipients)
 VALUES ('88888888-0000-0000-0000-000000000001',
         'aaaaaaaa-0000-0000-0000-000000000001',
-        'bbbbbbbb-0000-0000-0000-000000000001',
+        (SELECT id FROM seed_zone),
         'Kempen lama', 'peringatan_yuran', 'sent', 2)
 ON CONFLICT (id) DO NOTHING;
 
@@ -169,5 +199,5 @@ ON CONFLICT (id) DO NOTHING;
 -- failing on the primary-key swap.
 INSERT INTO member_presence (user_id, account_id, status, last_seen_at)
 VALUES ('aaaaaaaa-0000-0000-0000-000000000001',
-        'bbbbbbbb-0000-0000-0000-000000000001', 'online', NOW())
+        (SELECT id FROM seed_zone), 'online', NOW())
 ON CONFLICT DO NOTHING;
