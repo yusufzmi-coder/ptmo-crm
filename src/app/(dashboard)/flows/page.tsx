@@ -56,10 +56,14 @@ interface FlowRow {
   updated_at: string;
 }
 
-const STATUS_LABELS = (t: ReturnType<typeof useTranslations>): Record<FlowRow["status"], string> => ({
-  draft: t("statusDraft"),
-  active: t("statusActive"),
-  archived: t("statusArchived"),
+// Takes the Flows.status translator, not this page's own — the flow
+// editor's toolbar renders the same three labels from the same block.
+const STATUS_LABELS = (
+  tStatus: ReturnType<typeof useTranslations>,
+): Record<FlowRow["status"], string> => ({
+  draft: tStatus("draft"),
+  active: tStatus("active"),
+  archived: tStatus("archived"),
 });
 
 const STATUS_COLORS: Record<FlowRow["status"], string> = {
@@ -368,6 +372,7 @@ function FlowCard({
   onDelete: () => void;
   t: ReturnType<typeof useTranslations>;
 }) {
+  const tStatus = useTranslations("Flows.status");
   const triggerSummary = describeTrigger(flow, t);
   const StatusIcon =
     flow.status === "active"
@@ -392,7 +397,7 @@ function FlowCard({
           )}
         >
           <StatusIcon className="h-3 w-3" />
-          {STATUS_LABELS(t)[flow.status]}
+          {STATUS_LABELS(tStatus)[flow.status]}
         </Badge>
       </div>
 

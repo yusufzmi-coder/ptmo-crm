@@ -1124,9 +1124,6 @@
       "beta": "Beta",
       "description": "Bina perbualan WhatsApp bercabang yang dipandu butang. Berguna untuk menu, FAQ dan triaj sebelum manusia mengambil alih.",
       "newFlow": "Flow baharu",
-      "statusDraft": "Draf",
-      "statusActive": "Aktif",
-      "statusArchived": "Diarkibkan",
       "loadError": "Gagal memuat flow.",
       "createError": "Gagal mencipta flow.",
       "cloneError": "Gagal menyalin",
@@ -1354,10 +1351,12 @@
       "save": "Simpan",
       "fixIssuesFirst": "Betulkan isu di bawah sebelum mengaktifkan",
       "descriptionPlaceholder": "Tambah penerangan ringkas (dalaman — pelanggan tidak nampak ini)",
-      "descriptionLabel": "Penerangan Flow",
-      "statusDraft": "Draf",
-      "statusActive": "Aktif",
-      "statusArchived": "Diarkibkan"
+      "descriptionLabel": "Penerangan Flow"
+    },
+    "status": {
+      "draft": "Draf",
+      "active": "Aktif",
+      "archived": "Diarkibkan"
     }
   },
   "Settings": {
