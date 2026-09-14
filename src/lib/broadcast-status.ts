@@ -5,7 +5,8 @@
  * /broadcasts/page.tsx and /broadcasts/[id]/page.tsx with slight
  * drift risk. One source of truth now.
  *
- * Badge shape: bg-<token>/10 + text-<token> + border-<token>/70.
+ * Badge shape: bg-<token>/10 + text-<token> + border-<token>/70,
+ * except for the primary statuses, which take --primary-readable.
  *
  * The tokens carry their own light/dark values, so a status no longer
  * needs a hand-picked shade per mode. Borders are /70 rather than the
@@ -46,7 +47,7 @@ export const broadcastStatusConfig: Record<BroadcastStatus, StatusDisplay> = {
   },
   sent: {
     label: "sent",
-    classes: "bg-primary/10 text-primary border-primary/70",
+    classes: "bg-primary/10 text-primary-readable border-primary/70",
   },
   failed: {
     label: "failed",
@@ -65,11 +66,11 @@ export const recipientStatusConfig: Record<RecipientStatus, StatusDisplay> = {
   },
   delivered: {
     label: "delivered",
-    classes: "bg-primary/10 text-primary border-primary/70",
+    classes: "bg-primary/10 text-primary-readable border-primary/70",
   },
   read: {
     label: "read",
-    classes: "bg-primary/10 text-primary border-primary/70",
+    classes: "bg-primary/10 text-primary-readable border-primary/70",
   },
   replied: {
     label: "replied",
