@@ -29,10 +29,10 @@ import {
   Trash2,
   MessageSquare,
   DollarSign,
-  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { Spinner } from "@/components/ui/spinner";
 
 interface DealFormProps {
   open: boolean;
@@ -389,13 +389,11 @@ export function DealForm({
                     className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                   >
                     {statusAction === "won" ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <Spinner size="sm" className="mr-1" />
                     ) : (
-                      <>
-                        <Check className="mr-1 h-4 w-4" />
-                        {t("markAsWon")}
-                      </>
+                      <Check className="mr-1 h-4 w-4" />
                     )}
+                    {t("markAsWon")}
                   </Button>
                   <Button
                     type="button"
@@ -404,13 +402,11 @@ export function DealForm({
                     className="flex-1 bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
                   >
                     {statusAction === "lost" ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <Spinner size="sm" className="mr-1" />
                     ) : (
-                      <>
-                        <X className="mr-1 h-4 w-4" />
-                        {t("markAsLost")}
-                      </>
+                      <X className="mr-1 h-4 w-4" />
                     )}
+                    {t("markAsLost")}
                   </Button>
                 </div>
                 {deal.status && deal.status !== "open" && (

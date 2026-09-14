@@ -31,13 +31,13 @@ import { Button } from '@/components/ui/button';
 import {
   Upload,
   FileText,
-  Loader2,
   CheckCircle,
   XCircle,
   AlertTriangle,
   Tag,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { Spinner } from '@/components/ui/spinner';
 
 const DEFAULT_TAG_COLOR = '#3b82f6';
 const PREVIEW_LIMIT = 5;
@@ -613,7 +613,7 @@ export function ImportModal({
               onClick={handleImport}
               className="bg-primary hover:bg-primary/90 text-primary-foreground"
             >
-              {importing && <Loader2 className="size-4 animate-spin" />}
+              {importing && <Spinner size="sm" />}
               {parsedRows.length > 0 ? t('importBtn', { count: parsedRows.length }) : t('importBtn', { count: 0 })}
             </Button>
           )}

@@ -12,8 +12,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, ArrowRight, Eye, ImageIcon, Loader2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Eye, ImageIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { Spinner } from '@/components/ui/spinner';
 
 type VariableType = 'static' | 'field' | 'custom_field';
 
@@ -408,7 +409,7 @@ export function Step3Personalize({
           <p className="text-sm font-medium text-foreground">{t('personalize.preview')}</p>
           <span className="text-xs text-muted-foreground">({previewLabel})</span>
           {loadingPreview && (
-            <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+            <Spinner size="sm" className="text-primary" />
           )}
         </div>
         <div className="rounded-lg bg-[#0e1a12] p-3">
