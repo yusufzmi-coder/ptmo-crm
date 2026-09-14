@@ -1682,7 +1682,22 @@
       "qualityRed": "Quality: Red — at risk of being restricted",
       "qualityRedHint": "Meta may stop this number sending at any time. Pause broadcasts and review recent messages now.",
       "qualityUnknown": "Quality: not reported",
-      "qualityUnknownHint": "Meta returned no rating for this number."
+      "qualityUnknownHint": "Meta returned no rating for this number.",
+      "toastLoadFailed": "Failed to load WhatsApp configuration",
+      "toastPhoneRequired": "Phone Number ID is required",
+      "toastTokenRequired": "Access Token is required for initial setup",
+      "toastReenterToken": "Please re-enter the Access Token to save changes",
+      "toastSavedNotRegistered": "Saved, but Meta couldn't register the number: {error}",
+      "toastSavedNoPin": "Credentials saved and verified. Inbound registration was skipped (no PIN) — see Registration status below.",
+      "toastSaveFailed": "Failed to save configuration",
+      "toastTestFailed": "Connection test failed. Check network and try again.",
+      "toastFullyWired": "Number is fully wired — Meta is delivering events.",
+      "toastNotFullyRegistered": "Number is not fully registered. See the checks below for which step failed.",
+      "toastVerifyUnreachable": "Could not reach the verification endpoint.",
+      "resetConfirm": "This will delete the current WhatsApp config so you can re-enter it. Continue?",
+      "toastResetDone": "Configuration cleared. You can now re-enter your credentials.",
+      "toastResetFailed": "Failed to reset configuration",
+      "toastWebhookCopied": "Webhook URL copied to clipboard"
     },
     "sections": {
       "overview": "Overview",
