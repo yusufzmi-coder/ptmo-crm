@@ -579,7 +579,7 @@ export function TemplateManager() {
                         onClick={() => openEdit(template)}
                         title={t('editTitle')}
                         aria-label={t('editLabel')}
-                        className="text-muted-foreground hover:text-primary hover:bg-primary/10 h-8 px-2"
+                        className="text-muted-foreground hover:text-primary-on-soft hover:bg-primary/10 h-8 px-2"
                       >
                         <Pencil className="size-3.5" />
                         {t('edit')}
@@ -592,7 +592,7 @@ export function TemplateManager() {
                         onClick={() => openEdit(template)}
                         title={t('resubmitTitle')}
                         aria-label={t('resubmitLabel')}
-                        className="text-muted-foreground hover:text-primary hover:bg-primary/10 h-8 px-2"
+                        className="text-muted-foreground hover:text-primary-on-soft hover:bg-primary/10 h-8 px-2"
                       >
                         <RotateCcw className="size-3.5" />
                         {t('resubmit')}

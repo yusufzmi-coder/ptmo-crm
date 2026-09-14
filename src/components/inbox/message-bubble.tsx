@@ -145,7 +145,7 @@ function MessageContent({
               "mb-1 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium",
               isAgent
                 ? "bg-primary-foreground/20 text-primary-foreground"
-                : "bg-primary/20 text-primary",
+                : "bg-primary/20 text-primary-on-soft",
             )}
           >
             <LayoutTemplate className="h-3 w-3" />

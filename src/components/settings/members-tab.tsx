@@ -359,7 +359,7 @@ export function MembersTab() {
                                 alt={member.full_name || 'Member'}
                               />
                             ) : null}
-                            <AvatarFallback className="bg-primary/10 text-sm font-medium text-primary">
+                            <AvatarFallback className="bg-primary/10 text-sm font-medium text-primary-on-soft">
                               {(member.full_name || member.email || 'U')
                                 .charAt(0)
                                 .toUpperCase()}
