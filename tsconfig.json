@@ -30,5 +30,15 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    // Two untracked vendored copies of the command-board app, each with
+    // its own deps and its own bundled dist/ and .next/. They are not
+    // part of this project's build; without these excludes `tsc` reports
+    // 145 errors from them and none from src/, which forced every
+    // release gate in phase 1 to run against a clean archive instead of
+    // the working checkout.
+    "project-command-board",
+    "tools"
+  ]
 }
