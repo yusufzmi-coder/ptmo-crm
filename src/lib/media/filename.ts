@@ -190,6 +190,11 @@ function preferKnownMime(mediaType?: string | null): string | null {
 }
 
 function formatStamp(createdAt: string): string {
+  // NOT display text — this becomes part of a filename written to object
+  // storage, so it must read the same for every viewer and outlive the
+  // session that made it. Never pass a locale here, and never swap the
+  // pattern for a localised preset: both would make the stored name
+  // depend on who happened to upload the file.
   const date = new Date(createdAt);
   if (Number.isNaN(date.getTime())) return "";
   return format(date, "yyyyMMdd-HHmmss");

@@ -130,6 +130,10 @@ function groupMessagesByDate(messages: Message[]) {
   let currentDate = "";
 
   for (const msg of messages) {
+    // NOT display text — this is a grouping key, compared against the
+    // previous message's to decide where a date separator goes. A locale
+    // would change what counts as the same day. The separator the reader
+    // actually sees is formatDateSeparator() above.
     const day = format(new Date(msg.created_at), "yyyy-MM-dd");
     if (day !== currentDate) {
       currentDate = day;

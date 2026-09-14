@@ -115,11 +115,7 @@
       "noActivity": "No activity yet",
       "noActivityHint": "Activity from messages, deals, broadcasts, and automations will appear here.",
       "showingOf": "Showing {visible} of {totalLoaded}{plus}",
-      "show": "Show",
-      "timeS": "{sec}s ago",
-      "timeM": "{min}m ago",
-      "timeH": "{hr}h ago",
-      "timeD": "{day}d ago"
+      "show": "Show"
     },
     "conversationsChart": {
       "title": "Conversations Over Time",
@@ -2074,12 +2070,9 @@
       "tierOffice": "office",
       "tierClass": "class",
       "tierOffDuty": "off duty",
-      "sentJustNow": "sent just now",
-      "sentMinutesAgo": "sent {count} min ago",
-      "sentHoursAgo": "sent {count, plural, =1 {1 hour} other {# hours}} ago",
-      "sentDaysAgo": "sent {count, plural, =1 {1 day} other {# days}} ago",
       "boardHeading": "Waiting for a reply",
-      "loadingBoard": "Loading the board"
+      "loadingBoard": "Loading the board",
+      "sentAt": "sent {time}"
     },
     "responseTime": {
       "withinTargetToday": "Within target today",
@@ -2209,5 +2202,19 @@
     "createAutomations": "Read-only — your role can't create automations",
     "createFlows": "Read-only — your role can't create flows",
     "sendMessages": "Read-only — your role can't send messages"
+  },
+  "RelativeTime": {
+    "terse": {
+      "seconds": "{count}s ago",
+      "minutes": "{count}m ago",
+      "hours": "{count}h ago",
+      "days": "{count}d ago"
+    },
+    "full": {
+      "justNow": "just now",
+      "minutes": "{count, plural, =1 {1 minute} other {# minutes}} ago",
+      "hours": "{count, plural, =1 {1 hour} other {# hours}} ago",
+      "days": "{count, plural, =1 {1 day} other {# days}} ago"
+    }
   }
 }
