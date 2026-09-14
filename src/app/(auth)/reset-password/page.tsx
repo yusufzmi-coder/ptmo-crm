@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +39,7 @@ const MIN_PASSWORD = 8;
 type SessionState = "checking" | "valid" | "missing";
 
 export default function ResetPasswordPage() {
+  const t = useTranslations("ResetPasswordPage");
   const supabase = createClient();
 
   const [sessionState, setSessionState] = useState<SessionState>("checking");
@@ -66,11 +68,11 @@ export default function ResetPasswordPage() {
     setError(null);
 
     if (password.length < MIN_PASSWORD) {
-      setError(`Password must be at least ${MIN_PASSWORD} characters.`);
+      setError(t("errorTooShort", { min: MIN_PASSWORD }));
       return;
     }
     if (password !== confirm) {
-      setError("Passwords do not match.");
+      setError(t("errorMismatch"));
       return;
     }
 
@@ -104,17 +106,16 @@ export default function ResetPasswordPage() {
           <CardHeader className="items-center text-center">
             <BrandAuthHeader />
             <CardTitle className="text-[1.35rem] font-semibold leading-tight tracking-tight text-foreground">
-              This link has expired
+              {t("expiredTitle")}
             </CardTitle>
             <CardDescription className="text-[0.9375rem] leading-relaxed text-muted-foreground">
-              Password reset links can only be used once, and they expire after
-              a short while. Request a new one to continue.
+              {t("expiredDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Link href="/forgot-password">
               <Button className="h-10 w-full bg-primary text-primary-foreground hover:bg-primary/90">
-                Request a new link
+                {t("requestNewLink")}
               </Button>
             </Link>
             <Link
@@ -122,7 +123,7 @@ export default function ResetPasswordPage() {
               className="mt-6 flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back to sign in
+              {t("backToSignIn")}
             </Link>
           </CardContent>
         </Card>
@@ -139,16 +140,16 @@ export default function ResetPasswordPage() {
               <CheckCircle className="h-6 w-6 text-primary" />
             </div>
             <CardTitle className="text-[1.35rem] font-semibold leading-tight tracking-tight text-foreground">
-              Password updated
+              {t("successTitle")}
             </CardTitle>
             <CardDescription className="text-[0.9375rem] leading-relaxed text-muted-foreground">
-              Your new password is active. You&apos;re already signed in.
+              {t("successDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Link href="/dashboard">
               <Button className="h-10 w-full bg-primary text-primary-foreground hover:bg-primary/90">
-                Continue to dashboard
+                {t("continueToDashboard")}
               </Button>
             </Link>
           </CardContent>
@@ -163,10 +164,10 @@ export default function ResetPasswordPage() {
         <CardHeader className="items-center text-center">
           <BrandAuthHeader />
           <CardTitle className="text-[1.35rem] font-semibold leading-tight tracking-tight text-foreground">
-            Choose a new password
+            {t("title")}
           </CardTitle>
           <CardDescription className="text-[0.9375rem] leading-relaxed text-muted-foreground">
-            Must be at least {MIN_PASSWORD} characters
+            {t("desc", { min: MIN_PASSWORD })}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -179,7 +180,7 @@ export default function ResetPasswordPage() {
 
             <div className="flex flex-col gap-2">
               <Label htmlFor="password" className="text-muted-foreground">
-                New password
+                {t("newPasswordLabel")}
               </Label>
               <Input
                 id="password"
@@ -196,7 +197,7 @@ export default function ResetPasswordPage() {
 
             <div className="flex flex-col gap-2">
               <Label htmlFor="confirm-password" className="text-muted-foreground">
-                Confirm new password
+                {t("confirmPasswordLabel")}
               </Label>
               <Input
                 id="confirm-password"
@@ -216,7 +217,7 @@ export default function ResetPasswordPage() {
               disabled={saving || !password || !confirm}
               className="mt-2 h-10 w-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
-              {saving ? "Updating..." : "Update password"}
+              {saving ? t("updating") : t("submit")}
             </Button>
           </form>
 
@@ -225,7 +226,7 @@ export default function ResetPasswordPage() {
             className="mt-6 flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to sign in
+            {t("backToSignIn")}
           </Link>
         </CardContent>
       </Card>

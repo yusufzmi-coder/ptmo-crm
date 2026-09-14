@@ -1959,5 +1959,58 @@
   },
   "DashboardShell": {
     "loading": "Memuat..."
+  },
+  "SignupPage": {
+    "errorPasswordMismatch": "Kata laluan tidak sepadan",
+    "errorPasswordTooShort": "Kata laluan mesti sekurang-kurangnya 6 aksara",
+    "checkEmailTitle": "Semak e-mel anda",
+    "checkEmailDesc": "Kami telah menghantar pautan pengesahan ke <strong>{email}</strong>. Sila semak peti masuk anda dan klik pautan itu untuk mengesahkan akaun anda.",
+    "backToSignIn": "Kembali ke log masuk",
+    "titleJoin": "Cipta akaun & sertai",
+    "title": "Cipta akaun",
+    "descJoin": "Sahkan e-mel anda, kemudian terima jemputan untuk menyertai pasukan anda.",
+    "desc": "Mulakan dengan CRM PTMO Operation Dept",
+    "fullNameLabel": "Nama penuh",
+    "fullNamePlaceholder": "John Doe",
+    "emailLabel": "E-mel",
+    "emailPlaceholder": "anda@contoh.com",
+    "passwordLabel": "Kata laluan",
+    "passwordPlaceholder": "Sekurang-kurangnya 6 aksara",
+    "confirmPasswordLabel": "Sahkan kata laluan",
+    "confirmPasswordPlaceholder": "Ulang kata laluan anda",
+    "creatingAccount": "Sedang cipta akaun...",
+    "submit": "Cipta akaun",
+    "or": "atau",
+    "continueWithGoogle": "Teruskan dengan Google",
+    "haveAccount": "Sudah ada akaun?",
+    "signIn": "Log masuk"
+  },
+  "ForgotPasswordPage": {
+    "checkEmailTitle": "Semak e-mel anda",
+    "checkEmailDesc": "Kami telah menghantar pautan tetapan semula kata laluan ke <strong>{email}</strong>. Sila semak peti masuk anda.",
+    "backToSignIn": "Kembali ke log masuk",
+    "title": "Tetapkan semula kata laluan",
+    "desc": "Masukkan e-mel anda dan kami akan hantar pautan tetapan semula",
+    "emailLabel": "E-mel",
+    "emailPlaceholder": "anda@contoh.com",
+    "sending": "Sedang hantar...",
+    "submit": "Hantar pautan tetapan semula"
+  },
+  "ResetPasswordPage": {
+    "errorTooShort": "Kata laluan mesti sekurang-kurangnya {min} aksara.",
+    "errorMismatch": "Kata laluan tidak sepadan.",
+    "expiredTitle": "Pautan ini telah luput",
+    "expiredDesc": "Pautan tetapan semula kata laluan hanya boleh digunakan sekali, dan ia luput selepas seketika. Minta pautan baharu untuk teruskan.",
+    "requestNewLink": "Minta pautan baharu",
+    "backToSignIn": "Kembali ke log masuk",
+    "successTitle": "Kata laluan dikemas kini",
+    "successDesc": "Kata laluan baharu anda sudah aktif. Anda sudah log masuk.",
+    "continueToDashboard": "Teruskan ke Dashboard",
+    "title": "Pilih kata laluan baharu",
+    "desc": "Mesti sekurang-kurangnya {min} aksara",
+    "newPasswordLabel": "Kata laluan baharu",
+    "confirmPasswordLabel": "Sahkan kata laluan baharu",
+    "updating": "Sedang kemas kini...",
+    "submit": "Kemas kini kata laluan"
   }
 }
