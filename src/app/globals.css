@@ -312,3 +312,24 @@ html[data-theme="rose"] {
     font-variant-numeric: tabular-nums;
   }
 }
+/* Respect the OS "reduce motion" setting.
+   The app leans on motion in a few places that repeat forever — the
+   inbox unread ping in the sidebar, skeleton pulses, the spinners on
+   every fetch — and a looping animation is exactly what triggers
+   vestibular discomfort. We collapse duration rather than removing
+   the rules: transitions still *settle*, they just do it in one
+   frame, so nothing that depends on a transitionend breaks.
+
+   `!important` is deliberate. Almost all of this motion comes from
+   utility classes on individual elements, which would otherwise win
+   on specificity over a bare selector here. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

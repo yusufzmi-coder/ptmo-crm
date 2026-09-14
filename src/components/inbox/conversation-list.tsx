@@ -6,11 +6,14 @@ import {
   CONVERSATION_SELECT,
   matchesContactFilters,
   normalizeConversations,
+  statusLabelKey,
 } from "@/lib/inbox/conversations";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import { Skeleton } from "@/components/dashboard/skeleton";
 import { cn } from "@/lib/utils";
 import { configDisplayName } from "@/lib/whatsapp/resolve-config";
 import type { Conversation, ConversationStatus, Tag } from "@/types";
-import { Search, ChevronDown, X, Eye } from "lucide-react";
+import { Search, ChevronDown, X, Eye, MessageSquareDashed } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
@@ -253,7 +256,7 @@ export function ConversationList({
 
         <div className="flex flex-wrap items-center gap-1">
           <DropdownMenu>
-            <DropdownMenuTrigger className="inline-flex items-center justify-center h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground rounded-md hover:bg-muted">
+            <DropdownMenuTrigger className="inline-flex items-center justify-center h-8 gap-1 lg:h-7 px-2 text-xs text-muted-foreground hover:text-foreground rounded-md hover:bg-muted">
                 {activeFilter?.label ?? t("filterAll")}
                 <ChevronDown className="h-3 w-3" />
             </DropdownMenuTrigger>
@@ -282,7 +285,7 @@ export function ConversationList({
             <DropdownMenu>
               <DropdownMenuTrigger
                 className={cn(
-                  "inline-flex items-center justify-center h-7 gap-1 px-2 text-xs rounded-md hover:bg-muted",
+                  "inline-flex items-center justify-center h-8 gap-1 lg:h-7 px-2 text-xs rounded-md hover:bg-muted",
                   selectedTagIds.length > 0
                     ? "text-primary"
                     : "text-muted-foreground hover:text-foreground"
@@ -324,7 +327,7 @@ export function ConversationList({
             <DropdownMenu>
               <DropdownMenuTrigger
                 className={cn(
-                  "inline-flex max-w-40 items-center justify-center h-7 gap-1 px-2 text-xs rounded-md hover:bg-muted",
+                  "inline-flex max-w-40 items-center justify-center h-8 gap-1 lg:h-7 px-2 text-xs rounded-md hover:bg-muted",
                   selectedCompany
                     ? "text-primary"
                     : "text-muted-foreground hover:text-foreground"
@@ -413,13 +416,33 @@ export function ConversationList({
           parent's overflow-hidden with no scrollbar (issue #229). */}
       <ScrollArea className="min-h-0 flex-1">
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          // Skeleton rows rather than a lone spinner: they occupy the
+          // shape the list is about to take, so the pane doesn't jump
+          // when the rows land, and they match how the dashboard and
+          // the ops cards already signal "loading".
+          <div
+            className="flex flex-col"
+            aria-busy="true"
+            aria-label={t("searchPlaceholder")}
+          >
+            {Array.from({ length: 6 }, (_, i) => (
+              <div key={i} className="flex items-start gap-3 px-3 py-3">
+                <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
+                <div className="min-w-0 flex-1">
+                  <Skeleton className="h-3.5 w-32" />
+                  <Skeleton className="mt-2 h-3 w-full max-w-48" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="px-4 py-12 text-center">
-            <p className="text-sm text-muted-foreground">{t("noConversations")}</p>
-          </div>
+          // Same panel the dashboard's charts use, so an empty inbox
+          // reads as a deliberate state rather than a failed fetch.
+          <EmptyState
+            icon={MessageSquareDashed}
+            title={t("noConversations")}
+            className="m-3 min-h-48"
+          />
         ) : (
           <div className="flex flex-col">
             {filtered.map((conv) => (
@@ -533,12 +556,19 @@ function ConversationItem({
                 {conversation.unread_count}
               </span>
             )}
+            {/* Status is otherwise carried by hue alone. `title` gave
+                sighted mouse users the raw English enum and gave screen
+                readers nothing; the label reuses the filter dropdown's
+                own wording so the dot and the filter that selects it
+                always agree. */}
             <span
               className={cn(
                 "h-2 w-2 rounded-full",
                 STATUS_COLORS[conversation.status]
               )}
-              title={conversation.status}
+              role="img"
+              title={t(statusLabelKey(conversation.status))}
+              aria-label={t(statusLabelKey(conversation.status))}
             />
           </div>
         </div>
