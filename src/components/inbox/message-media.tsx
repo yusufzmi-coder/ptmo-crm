@@ -5,7 +5,6 @@ import {
   Download,
   FileText,
   ImageOff,
-  Loader2,
   Maximize2,
   type LucideIcon,
 } from "lucide-react";
@@ -16,6 +15,7 @@ import type { Message } from "@/types";
 import { downloadMediaMessage } from "@/lib/media/download";
 import { resolveStoredMediaUrl } from "@/lib/media/proxy-url";
 import { useMediaBlobUrl } from "@/hooks/use-media-blob-url";
+import { Spinner } from "@/components/ui/spinner";
 
 /**
  * The media renderers behind `<MessageBubble>`'s image / video / audio /
@@ -96,7 +96,7 @@ function MediaActionButton({
       className="flex h-9 w-9 items-center justify-center rounded-full border border-border/60 bg-background/85 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-background disabled:opacity-60 lg:h-7 lg:w-7"
     >
       {busy ? (
-        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        <Spinner className="size-3.5" />
       ) : (
         <Icon className="h-3.5 w-3.5" />
       )}
@@ -138,7 +138,7 @@ export function MediaImageBubble({
   if (status !== "ready" || !src) {
     return (
       <MediaPlaceholder>
-        <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <Spinner label={t("loadingMedia")} className="size-5 text-primary" />
       </MediaPlaceholder>
     );
   }

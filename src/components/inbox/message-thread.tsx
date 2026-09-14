@@ -59,6 +59,7 @@ import { buildReplyPreview } from "./reply-quote";
 import { renderTemplateBody } from "@/lib/whatsapp/template-body";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/dashboard/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 
 interface ReplyDraft {
   id: string;
@@ -1044,9 +1045,11 @@ export function MessageThread({
                 "inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-60",
               )}
             >
-              <RefreshCw
-                className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")}
-              />
+              {isRefreshing ? (
+                <Spinner className="size-3.5" />
+              ) : (
+                <RefreshCw className="h-3.5 w-3.5" />
+              )}
             </button>
           )}
 
