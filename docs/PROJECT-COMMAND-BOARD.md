@@ -6,7 +6,11 @@
 **Produk:** CRM PTMO Operation Dept  
 **Status keseluruhan:** Fasa 1 - release gate  
 **Dikemas kini:** 14 Sep 2026
-**Branch kerja bersepadu:** `feat/multi-number` @ `841db55` lokal / `bd4366b` origin (3 commit belum push)
+**Branch kerja bersepadu:** `feat/multi-number` = `origin/main` = `019e722` — semua diserap
+**Gate:** lint 0 error / 35 warning · typecheck 0 · 1195 ujian lulus · build berjaya
+**Katalog:** en/ko/ms 1737 kunci setiap satu. Bahasa Melayu **belum diaktifkan** — `NEXT_PUBLIC_APP_LOCALE` pada Vercel masih `en`
+**Live:** `crm.ptmostaff.com` menyajikan `019e722` melalui Vercel projek `crmfinal_ptmo`
+**Baseline production:** skema **041 + 049** (diprobe, bukan diandaikan). Set release tinggal **045, 046, 047**
 
 ---
 
@@ -20,7 +24,8 @@
 | P1 | Semak hasil preflight, betulkan blocker jika ada | Coordinator | [ ] tunggu P0 |
 | P1 | Final QA branch: tests, type-check, lint | Coordinator + QA | [x] 14 Sep - 4 gate hijau pada `841db55` |
 | P1 | PR/merge ke `main` | Coordinator | [ ] tunggu arahan |
-| P1 | Deploy dan UAT aplikasi tanpa WhatsApp sebenar dahulu | Yusuf + Coordinator | [ ] |
+| P1 | Deploy | Coordinator | [x] 14 Sep - auto-deploy Vercel pada setiap merge ke `main` |
+| P1 | UAT tanpa WhatsApp sebenar | Yusuf + Coordinator | [ ] sebahagian - 10 halaman disahkan, 7 item perlukan data sebenar |
 | P2 | Pilih satu nombor WhatsApp **baharu** dan satu Centre untuk pilot | Yusuf | [ ] |
 | P2 | Cleanup locale Korea: sahkan `NEXT_PUBLIC_APP_LOCALE` production bukan `ko`, kemudian buang `messages/ko.json` dan `TRANSLATED_LOCALES` dalam `src/i18n/messages.test.ts` | Coordinator | [ ] |
 
@@ -103,7 +108,7 @@ POKOK FAIL, bukan tema, supaya tiada dua terminal menulis fail sama.
 |---|---|---|---|---|
 | 1 Coordinator | ptmo-crm-fasa1-release-gate | `~/Projects/ptmo-crm` | `docs/**`, integrasi | - (pengadil) |
 | 2 Builder | create-worktree-gitignore | `.worktrees/f1-t2-mu0nanxd` | `src/components/inbox/**`, `src/lib/inbox/**` | `Inbox.*` |
-| 3 Builder | create-worktree-audit-workflow | `~/Projects/ptmo-crm-issues-ui` | `quick-replies-manager.tsx` i18n panel penuh | `Settings.quickReplies.*` |
+| 3 Builder | create-worktree-audit-workflow | `~/Projects/ptmo-crm-issues-ui` | migrasi WhatsApp: `settings/**` | kesihatan nombor, link cawangan |
 | 4 Builder | notifications-page-i18n | worktree sendiri | `src/app/(dashboard)/notifications/**` | `Notifications.*` (baharu) |
 | 5 QA | uat-crm-phase-1-qa | `~/Projects/ptmo-crm-f1-t3-nav` | `src/components/layout/**` (nav siap) | `Sidebar.*`, `Header.*` |
 
@@ -190,6 +195,12 @@ kongsi: guna, jangan ubah.
 | 2026-09-14 | Ujian ICU tiga-locale: 1679 kunci x 3 locale x 4 semakan, disahkan dengan suntikan kerosakan bukan dengan lulus | `5dd2d38` | Coordinator |
 | 2026-09-14 | Keempat-empat halaman auth kini diterjemah — 47 rentetan, 3 namespace baharu. `signup` dan `forgot-password` disahkan render bersih dalam Melayu dengan screenshot | `9218ba7` | Coordinator |
 | 2026-09-14 | Katalog: 1726 kunci x 3 locale, pariti bersih | `2d34b04` | Coordinator |
+| 2026-09-14 | **PR #2 di-merge dan di-deploy.** `main` `4b04cff` -> `1b3247d`. Domain `crm.ptmostaff.com` disahkan hidup dan menyajikan kod baharu (`/reset-password` = 200) | `1b3247d` | Coordinator |
+| 2026-09-14 | **Ledger dibetulkan: 049 SUDAH diapply.** Probe REST menunjukkan `centres`/`regions`/`contacts.centre_id` wujud. Set release susut kepada 045/046/047 | `93edf3e` | Coordinator |
+| 2026-09-14 | `my_accounts` dipagar - 044 tiada, jadi RPC 404 pada setiap page load. Kini `unavailable` dan diam; kegagalan sebenar masih log | `583d501` | Coordinator |
+| 2026-09-14 | **Template seed tidak lagi mereka fakta** - harga `$9/mo` dan dasar refund palsu dikeluarkan. Sifar fakta dicipta sebagai ganti | `b83dafa` | Coordinator |
+| 2026-09-14 | **Locale tidak lagi gagal senyap** - `.env.local` membawa `"en "` dengan ruang sejak 10 Sep; hari `ms ` ditulis, pengaktifan akan gagal tanpa sebarang isyarat | `b19fa2a` | Coordinator |
+| 2026-09-14 | PR #3 di-merge dan di-deploy | `019e722` | Coordinator |
 
 ---
 
