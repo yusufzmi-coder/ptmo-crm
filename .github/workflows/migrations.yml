@@ -99,6 +99,16 @@ jobs:
       # `supabase test db` takes it as a required argument, and naming the
       # directory also means a test file added outside it fails loudly
       # instead of being skipped silently.
+
+      # The local CLI does not grant anon/authenticated the table
+      # privileges the hosted platform grants, so the suite below failed
+      # on `permission denied` before reaching a single policy. This
+      # closes that gap and re-applies the two column narrowings a
+      # blanket grant would undo. See the file for the measurements on
+      # both sides.
+      - name: Grant the privileges the hosted platform grants
+        run: supabase db query --local --file supabase/ci/grant-platform-privileges.sql
+
       - name: Prove zone isolation under RLS
         run: supabase test db --local supabase/tests
 
@@ -201,6 +211,16 @@ jobs:
       # rows they were not meant to touch?
       - name: Verify what happened to the existing data
         run: supabase db query --local --file supabase/ci/verify-upgrade.sql
+
+
+      # The local CLI does not grant anon/authenticated the table
+      # privileges the hosted platform grants, so the suite below failed
+      # on `permission denied` before reaching a single policy. This
+      # closes that gap and re-applies the two column narrowings a
+      # blanket grant would undo. See the file for the measurements on
+      # both sides.
+      - name: Grant the privileges the hosted platform grants
+        run: supabase db query --local --file supabase/ci/grant-platform-privileges.sql
 
       - name: Prove zone isolation still holds
         run: supabase test db --local supabase/tests
