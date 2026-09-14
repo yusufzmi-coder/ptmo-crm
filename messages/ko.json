@@ -1410,7 +1410,8 @@
       "cancel": "취소",
       "removing": "제거 중...",
       "removeBtn": "멤버 제거",
-      "loading": "구성원 불러오는 중"
+      "loading": "구성원 불러오는 중",
+      "networkError": "서버에 연결하지 못했습니다"
     },
     "invite": {
       "inviteCreated": "초대가 생성되었습니다",
@@ -1438,7 +1439,8 @@
       "labelTooLong": "라벨은 {max}자 이하여야 합니다",
       "copied": "초대 링크가 복사되었습니다",
       "clipboardBlocked": "클립보드 접근이 차단되었습니다 — 링크를 직접 복사하세요",
-      "whatsappMessage": "이 링크(유효 기간 {expiresInDays}일)로 CRM PTMO Operation Dept의 {accountName}에 참여하세요: {url}"
+      "whatsappMessage": "이 링크(유효 기간 {expiresInDays}일)로 CRM PTMO Operation Dept의 {accountName}에 참여하세요: {url}",
+      "networkError": "서버에 연결하지 못했습니다. 다시 시도할까요?"
     },
     "tagsAndFields": {
       "title": "필드 & 태그",
@@ -1571,7 +1573,10 @@
       "toastImageTooLarge": "이미지 크기가 {size}MB입니다 — Meta 제한은 5MB입니다.",
       "toastUploadSuccess": "이미지가 업로드되었습니다.",
       "toastUploadFailed": "업로드에 실패했습니다.",
-      "loading": "템플릿 불러오는 중"
+      "loading": "템플릿 불러오는 중",
+      "qualityScoreTitle": "Meta 품질 점수",
+      "headerTextAria": "헤더 텍스트",
+      "headerSampleAlt": "헤더 샘플"
     },
     "roles": {
       "admin": "관리자",
@@ -1682,7 +1687,22 @@
       "qualityRed": "품질: 빨강 — 제한될 위험",
       "qualityRedHint": "Meta가 언제든 이 번호의 발송을 중단할 수 있습니다. 브로드캐스트를 일시 중지하고 최근 메시지를 확인하세요.",
       "qualityUnknown": "품질: 보고되지 않음",
-      "qualityUnknownHint": "Meta가 이 번호에 대한 평가를 반환하지 않았습니다."
+      "qualityUnknownHint": "Meta가 이 번호에 대한 평가를 반환하지 않았습니다.",
+      "toastLoadFailed": "WhatsApp 설정을 불러오지 못했습니다",
+      "toastPhoneRequired": "Phone Number ID가 필요합니다",
+      "toastTokenRequired": "초기 설정에는 액세스 토큰이 필요합니다",
+      "toastReenterToken": "변경사항을 저장하려면 액세스 토큰을 다시 입력하세요",
+      "toastSavedNotRegistered": "저장했지만 Meta가 번호를 등록하지 못했습니다: {error}",
+      "toastSavedNoPin": "자격 증명이 저장되고 확인되었습니다. PIN이 없어 수신 등록은 건너뛰었습니다 — 아래 등록 상태를 확인하세요.",
+      "toastSaveFailed": "설정을 저장하지 못했습니다",
+      "toastTestFailed": "연결 테스트에 실패했습니다. 네트워크를 확인하고 다시 시도하세요.",
+      "toastFullyWired": "번호가 완전히 연결되었습니다 — Meta가 이벤트를 전달하고 있습니다.",
+      "toastNotFullyRegistered": "번호가 완전히 등록되지 않았습니다. 아래 점검에서 실패한 단계를 확인하세요.",
+      "toastVerifyUnreachable": "확인 엔드포인트에 연결하지 못했습니다.",
+      "resetConfirm": "현재 WhatsApp 설정을 삭제하고 다시 입력할 수 있게 합니다. 계속할까요?",
+      "toastResetDone": "설정이 초기화되었습니다. 이제 자격 증명을 다시 입력할 수 있습니다.",
+      "toastResetFailed": "설정을 초기화하지 못했습니다",
+      "toastWebhookCopied": "Webhook URL이 클립보드에 복사되었습니다"
     },
     "sections": {
       "overview": "개요",
@@ -1751,7 +1771,8 @@
       "cancel": "취소",
       "signingOut": "로그아웃 중…",
       "signOutEverywhere": "모든 곳에서 로그아웃",
-      "signOutFailed": "로그아웃 실패: {message}"
+      "signOutFailed": "로그아웃 실패: {message}",
+      "namePlaceholder": "홍길동"
     },
     "appearance": {
       "title": "화면 설정",
@@ -1968,7 +1989,8 @@
       "saveFailed": "빠른 답장을 저장하지 못했습니다.",
       "deleteConfirm": "이 빠른 답장을 삭제할까요?",
       "deleteFailed": "빠른 답장을 삭제하지 못했습니다."
-    }
+    },
+    "railLabel": "설정 섹션"
   },
   "Ops": {
     "unanswered": {

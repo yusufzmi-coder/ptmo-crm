@@ -1410,7 +1410,8 @@
       "cancel": "Batal",
       "removing": "Sedang membuang...",
       "removeBtn": "Buang ahli",
-      "loading": "Memuat ahli"
+      "loading": "Memuat ahli",
+      "networkError": "Gagal menghubungi pelayan"
     },
     "invite": {
       "inviteCreated": "Jemputan dicipta",
@@ -1438,7 +1439,8 @@
       "labelTooLong": "Label mesti {max} aksara atau kurang",
       "copied": "Pautan jemputan disalin",
       "clipboardBlocked": "Papan klip disekat — salin pautan secara manual",
-      "whatsappMessage": "Sertai {accountName} di CRM PTMO Operation Dept menggunakan pautan ini (sah selama {expiresInDays} hari): {url}"
+      "whatsappMessage": "Sertai {accountName} di CRM PTMO Operation Dept menggunakan pautan ini (sah selama {expiresInDays} hari): {url}",
+      "networkError": "Gagal menghubungi pelayan. Cuba lagi?"
     },
     "tagsAndFields": {
       "title": "Medan & tag",
@@ -1571,7 +1573,10 @@
       "toastImageTooLarge": "Imej {size} MB — had Meta ialah 5 MB.",
       "toastUploadSuccess": "Imej dimuat naik.",
       "toastUploadFailed": "Gagal memuat naik.",
-      "loading": "Memuat template"
+      "loading": "Memuat template",
+      "qualityScoreTitle": "Skor kualiti Meta",
+      "headerTextAria": "Teks header",
+      "headerSampleAlt": "Contoh header"
     },
     "roles": {
       "admin": "Admin",
@@ -1682,7 +1687,22 @@
       "qualityRed": "Kualiti: Merah — berisiko dihadkan",
       "qualityRedHint": "Meta boleh menghentikan nombor ini daripada menghantar pada bila-bila masa. Jeda broadcast dan semak mesej terkini sekarang.",
       "qualityUnknown": "Kualiti: tidak dilaporkan",
-      "qualityUnknownHint": "Meta tidak memulangkan sebarang rating untuk nombor ini."
+      "qualityUnknownHint": "Meta tidak memulangkan sebarang rating untuk nombor ini.",
+      "toastLoadFailed": "Gagal memuat konfigurasi WhatsApp",
+      "toastPhoneRequired": "Phone Number ID diperlukan",
+      "toastTokenRequired": "Token Akses diperlukan untuk persediaan awal",
+      "toastReenterToken": "Sila masukkan semula Token Akses untuk menyimpan perubahan",
+      "toastSavedNotRegistered": "Disimpan, tetapi Meta gagal mendaftarkan nombor itu: {error}",
+      "toastSavedNoPin": "Kelayakan disimpan dan disahkan. Pendaftaran mesej masuk dilangkau (tiada PIN) — lihat status Pendaftaran di bawah.",
+      "toastSaveFailed": "Gagal menyimpan konfigurasi",
+      "toastTestFailed": "Ujian sambungan gagal. Semak rangkaian dan cuba lagi.",
+      "toastFullyWired": "Nombor bersambung sepenuhnya — Meta sedang menghantar peristiwa.",
+      "toastNotFullyRegistered": "Nombor belum berdaftar sepenuhnya. Lihat semakan di bawah untuk mengetahui langkah mana yang gagal.",
+      "toastVerifyUnreachable": "Gagal menghubungi endpoint pengesahan.",
+      "resetConfirm": "Ini akan memadam konfigurasi WhatsApp semasa supaya anda boleh memasukkannya semula. Teruskan?",
+      "toastResetDone": "Konfigurasi dikosongkan. Anda boleh memasukkan semula kelayakan anda sekarang.",
+      "toastResetFailed": "Gagal menetapkan semula konfigurasi",
+      "toastWebhookCopied": "URL Webhook disalin ke papan klip"
     },
     "sections": {
       "overview": "Gambaran keseluruhan",
@@ -1751,7 +1771,8 @@
       "cancel": "Batal",
       "signingOut": "Sedang log keluar…",
       "signOutEverywhere": "Log keluar di mana-mana",
-      "signOutFailed": "Gagal log keluar: {message}"
+      "signOutFailed": "Gagal log keluar: {message}",
+      "namePlaceholder": "Siti Aminah"
     },
     "appearance": {
       "title": "Rupa",
@@ -1968,7 +1989,8 @@
       "saveFailed": "Gagal menyimpan balasan pantas.",
       "deleteConfirm": "Padam balasan pantas ini?",
       "deleteFailed": "Gagal memadam balasan pantas."
-    }
+    },
+    "railLabel": "Bahagian tetapan"
   },
   "Ops": {
     "unanswered": {
