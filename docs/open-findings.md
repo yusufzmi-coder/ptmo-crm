@@ -1572,3 +1572,50 @@ kira berapa banyak baris ditulis untuk mencubanya.
 **Tambahan:** kedua-dua kunci bukan JWT — tiada struktur tiga-bahagian
 berpisah-titik. Jadi ini bukan *"JWT yang salah di slot yang salah"*; ia
 **satu** kunci publishable gaya baharu disalin ke **kedua-dua** slot.
+
+## Langkah `wait` dalam automasi tidak akan pernah berjalan
+
+`engine.ts:282` menulis baris ke `automation_pending_executions` apabila
+langkah `wait` dicapai. Baris itu diproses oleh
+`GET /api/automations/cron`, dan **tiada apa memanggil laluan itu**.
+
+Tiada `vercel.json` dalam repo, jadi tiada cron Vercel dikonfigurasi.
+Automasi dengan langkah kelewatan berhenti di situ secara kekal — bukan
+gagal, **berhenti**, tanpa ralat dan tanpa apa-apa pada skrin.
+
+**Dan laluan itu tidak serasi dengan Vercel Cron seperti ditulis.**
+Ia menjangka header `x-cron-secret`. Vercel Cron menghantar
+`Authorization: Bearer $CRON_SECRET` dan **tidak boleh menghantar header
+tersuai**. Jadi menambah `vercel.json` sahaja tidak mencukupi — laluan
+itu perlu menerima kedua-dua bentuk, atau penjadual luar diperlukan.
+
+Sama untuk `GET /api/flows/cron`.
+
+**Kesan kepada migrasi WhatsApp:** automasi auto-tag cawangan
+(`keyword_match` → `add_tag`) **tiada langkah wait**, jadi migrasi itu
+sendiri tidak terjejas. Ini menggigit pada automasi kedua yang sesiapa
+bina dengan kelewatan — susulan, peringatan, apa-apa yang berkata
+*"tunggu sejam kemudian"*.
+
+## `WHATSAPP_TEMPLATES_DRY_RUN` ialah perangkap senyap dalam production
+
+Apabila ditetapkan kepada `true` atau `1`, penyerahan templat **tidak
+pernah sampai kepada Meta**. Ia menerima ID rekaan
+(`dry-run-<uuid>`) dan status `PENDING`.
+
+Jadi UI menunjukkan templat diserahkan dan menunggu kelulusan, dan Meta
+tidak pernah mendengar tentangnya. Ia akan kekal `PENDING` selama-lamanya
+dan tiada apa akan mengatakan sebabnya.
+
+Pembolehubah itu mesti **tidak ditetapkan** pada production, bukan
+ditetapkan kepada `false`. Nilai lain daripada `true`/`1` selamat, tetapi
+kehadirannya menjemput seseorang menukarnya.
+
+## `META_APP_ID` hanya diperlukan untuk templat berkepala imej
+
+`template-header-handle.ts:37` **melempar** dengan mesej yang
+menerangkan dirinya kalau ia hilang — tetapi hanya untuk templat dengan
+kepala imej. Templat teks tidak menyentuhnya.
+
+Gagal lantang dengan arahan ialah tingkah laku yang betul; direkod supaya
+tiada siapa menganggapnya pembolehubah wajib.
