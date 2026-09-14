@@ -2,8 +2,9 @@ import { describe, it, expect } from "vitest";
 import {
   matchesContactFilters,
   normalizeConversation,
+  statusLabelKey,
 } from "./conversations";
-import type { Conversation } from "@/types";
+import type { Conversation, ConversationStatus } from "@/types";
 
 function makeConversation(
   contact: Partial<Conversation["contact"]> | null,
@@ -141,5 +142,23 @@ describe("normalizeConversation", () => {
     };
     // A contactless row passes through untouched (consumers use `?.`).
     expect(normalizeConversation(raw).contact).toBeNull();
+  });
+});
+
+describe("statusLabelKey", () => {
+  it("maps every status onto the filter dropdown's own key", () => {
+    // The point of reusing these keys is that the status dot and the
+    // filter that selects it can never drift apart in wording — so the
+    // mapping is pinned rather than left to a future refactor.
+    expect(statusLabelKey("open")).toBe("filterOpen");
+    expect(statusLabelKey("pending")).toBe("filterPending");
+    expect(statusLabelKey("closed")).toBe("filterClosed");
+  });
+
+  it("covers every ConversationStatus, so no status falls back to raw enum", () => {
+    const all: ConversationStatus[] = ["open", "pending", "closed"];
+    for (const status of all) {
+      expect(statusLabelKey(status)).toMatch(/^filter[A-Z]/);
+    }
   });
 });
