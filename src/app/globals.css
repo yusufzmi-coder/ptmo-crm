@@ -81,8 +81,15 @@
  * hovered primary buttons and tinted-primary surfaces (sidebar
  * active pill, validation badges).
  *
- * Token shapes come straight from the design handoff at
- * project/Color Themes.html — change one, change the other.
+ * Token shapes came from a design handoff at project/Color Themes.html.
+ * That file NO LONGER EXISTS — not on disk, not in any worktree, and not
+ * anywhere in git history. Searched 14 Sep 2026 after this comment sent
+ * someone looking for it.
+ *
+ * So there is no second place to change, and no reference to check a
+ * value against. Every accent value outside ptmo has since been chosen
+ * by measurement alone — see the --primary-on-soft block below. If the
+ * handoff ever comes back, reconcile against it; until then, measure.
  * ============================================================ */
 
 /* ---- MODE: neutral surfaces ---- */
