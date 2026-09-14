@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { AlertTriangle, Loader2, MessageSquare, Zap } from "lucide-react";
+import { AlertTriangle, MessageSquare, Zap } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import {
@@ -14,6 +14,7 @@ import {
 import type { BranchedQuickReply, QuickReply } from "@/types";
 import { interactivePayloadPreviewText } from "@/lib/whatsapp/interactive";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/dashboard/skeleton";
 
 interface QuickReplyPickerProps {
   open: boolean;
@@ -92,8 +93,20 @@ export function QuickReplyPicker({
         </DialogHeader>
         <div className="max-h-[60vh] overflow-y-auto">
           {loading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            // Skeleton rows, not a spinner: this is a list arriving, so
+            // the placeholder should hold the shape it will take. Same
+            // treatment the conversation list uses.
+            <div
+              className="space-y-2 p-2"
+              aria-busy="true"
+              aria-label={t("loadingQuickReplies")}
+            >
+              {Array.from({ length: 4 }, (_, i) => (
+                <div key={i} className="rounded-md border border-border p-3">
+                  <Skeleton className="h-3.5 w-28" />
+                  <Skeleton className="mt-2 h-3 w-full max-w-64" />
+                </div>
+              ))}
             </div>
           ) : items.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">

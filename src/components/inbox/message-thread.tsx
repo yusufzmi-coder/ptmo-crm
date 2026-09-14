@@ -58,6 +58,7 @@ import { AiThreadBanner } from "./ai-thread-banner";
 import { buildReplyPreview } from "./reply-quote";
 import { renderTemplateBody } from "@/lib/whatsapp/template-body";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/dashboard/skeleton";
 
 interface ReplyDraft {
   id: string;
@@ -1164,8 +1165,30 @@ export function MessageThread({
       {/* Messages Area */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4">
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          // Alternating bubble-shaped blocks, so the thread reads as a
+          // conversation arriving rather than a blank pane with a dot
+          // spinning in it.
+          <div
+            className="space-y-3"
+            aria-busy="true"
+            aria-label={t("loadingMessages")}
+          >
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className={cn(
+                  "flex",
+                  i % 2 === 0 ? "justify-start" : "justify-end",
+                )}
+              >
+                <Skeleton
+                  className={cn(
+                    "h-10 rounded-2xl",
+                    i % 3 === 0 ? "w-48" : i % 3 === 1 ? "w-64" : "w-40",
+                  )}
+                />
+              </div>
+            ))}
           </div>
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12">

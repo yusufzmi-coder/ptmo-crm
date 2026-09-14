@@ -204,7 +204,8 @@
       "yesterday": "Yesterday",
       "replyingAsBranch": "replying as {branch}",
       "aTeammate": "A teammate",
-      "alsoViewing": "{names} {count, plural, one {is} other {are}} also in this chat right now — check before you reply."
+      "alsoViewing": "{names} {count, plural, one {is} other {are}} also in this chat right now — check before you reply.",
+      "loadingMessages": "Loading messages"
     },
     "sessionTimer": {
       "expired": "Expired",
@@ -248,7 +249,8 @@
       "quickReplyForeignBranch": "Names {branches}",
       "replyingAsBranch": "Replying as {branch}",
       "typeMessageAsBranch": "Type a message as {branch}... (Shift+Enter for new line)",
-      "alsoViewing": "{names} {count, plural, one {is} other {are}} also in this chat — check before you reply."
+      "alsoViewing": "{names} {count, plural, one {is} other {are}} also in this chat — check before you reply.",
+      "loadingQuickReplies": "Loading quick replies"
     },
     "bubble": {
       "photo": "Photo",
@@ -316,7 +318,8 @@
       "finalUrl": "Final URL: {url}",
       "back": "Back",
       "cancel": "Cancel",
-      "send": "Send template"
+      "send": "Send template",
+      "loadingTemplates": "Loading templates"
     },
     "sidebar": {
       "contactInfo": "Contact info",

@@ -66,7 +66,7 @@ export function ReplyQuote({
           type="button"
           onClick={onDismiss}
           aria-label={t("cancelReply")}
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground lg:h-6 lg:w-6"
         >
           <X className="h-3.5 w-3.5" />
         </button>

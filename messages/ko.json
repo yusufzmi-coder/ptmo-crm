@@ -204,7 +204,8 @@
       "yesterday": "어제",
       "replyingAsBranch": "replying as {branch}",
       "aTeammate": "팀원",
-      "alsoViewing": "지금 {names}님도 이 대화를 보고 있습니다 — 답장 전에 확인하세요."
+      "alsoViewing": "지금 {names}님도 이 대화를 보고 있습니다 — 답장 전에 확인하세요.",
+      "loadingMessages": "메시지를 불러오는 중"
     },
     "sessionTimer": {
       "expired": "만료됨",
@@ -248,7 +249,8 @@
       "quickReplyForeignBranch": "{branches} 언급",
       "replyingAsBranch": "{branch}(으)로 답장",
       "typeMessageAsBranch": "{branch}(으)로 메시지 입력... (줄바꿈은 Shift+Enter)",
-      "alsoViewing": "{names}님도 이 대화를 보고 있습니다 — 답장 전에 확인하세요."
+      "alsoViewing": "{names}님도 이 대화를 보고 있습니다 — 답장 전에 확인하세요.",
+      "loadingQuickReplies": "빠른 답장을 불러오는 중"
     },
     "bubble": {
       "photo": "사진",
@@ -316,7 +318,8 @@
       "finalUrl": "최종 URL: {url}",
       "back": "뒤로",
       "cancel": "취소",
-      "send": "템플릿 보내기"
+      "send": "템플릿 보내기",
+      "loadingTemplates": "템플릿을 불러오는 중"
     },
     "sidebar": {
       "contactInfo": "연락처 정보",
