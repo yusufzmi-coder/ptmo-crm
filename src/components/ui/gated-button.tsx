@@ -25,15 +25,13 @@
 //
 //   Five list pages had near-identical
 //   `READ_ONLY_TITLE = "Read-only — your role can't ..."`
-//   constants. GatedButton takes a single `gateReason` prop
-//   and centralises the tooltip wording (with per-action
-//   defaults).
+//   constants. GatedButton centralises that wording.
 //
 // Use it like:
 //
 //   <GatedButton
 //     canAct={canCreate}
-//     gateReason="create broadcasts"
+//     gateReasonKey="createBroadcasts"
 //     onClick={() => router.push("/broadcasts/new")}
 //   >
 //     <Plus className="h-4 w-4" /> New Broadcast
@@ -41,11 +39,26 @@
 //
 // `canAct` defaults to true so unrelated usages still work.
 // When `canAct` is false, the button is `disabled` and the
-// wrapping span gets a `title` of `"Read-only — your role
-// can't ${gateReason}"`.
+// wrapping span gets the tooltip named by `gateReasonKey`.
+//
+// WHY A KEY AND NOT A PHRASE
+//
+//   The prop used to take a verb phrase — gateReason="create
+//   broadcasts" — which this component interpolated into
+//   "Read-only — your role can't ${gateReason}". That sentence
+//   was assembled in English source and could not be translated
+//   without translating half of it: the fragments sat at sixteen
+//   call sites and the frame sat here.
+//
+//   Each key now carries the WHOLE sentence, so a translator
+//   gets a complete clause and every language can order it
+//   naturally. Korean puts the permission at the end; Malay
+//   needs the verb inflected. Neither survives a placeholder
+//   swap.
 // ============================================================
 
 import type { ComponentProps, ReactNode } from "react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -55,10 +68,14 @@ interface GatedButtonProps extends Omit<ComponentProps<typeof Button>, "title"> 
    *  "Read-only" tooltip. Defaults to `true` so a `<GatedButton>`
    *  without the prop is just a Button. */
   canAct?: boolean;
-  /** Verb phrase that completes the sentence
-   *  `"Read-only — your role can't <gateReason>"`. Provided
-   *  per-call so each CTA can name what it does ("create flows",
-   *  "send messages", "add contacts"). */
+  /** Key under the `Gated` namespace naming the whole tooltip
+   *  sentence — "createFlows", "sendMessages", "manageContacts".
+   *  See the note above on why this is a key and not a phrase. */
+  gateReasonKey?: string;
+  /** @deprecated The old verb-phrase form. Kept for one commit so the
+   *  signature change and the sixteen call-site updates can land
+   *  separately and each stay green under bisect. Removed in the
+   *  follow-up that migrates the callers. */
   gateReason?: string;
   /** Optional fallback title for the non-gated case. */
   title?: string;
@@ -67,6 +84,7 @@ interface GatedButtonProps extends Omit<ComponentProps<typeof Button>, "title"> 
 
 export function GatedButton({
   canAct = true,
+  gateReasonKey,
   gateReason,
   title,
   disabled,
@@ -74,9 +92,14 @@ export function GatedButton({
   children,
   ...rest
 }: GatedButtonProps) {
+  const t = useTranslations("Gated");
   const effectivelyDisabled = disabled || !canAct;
-  const tooltip = !canAct && gateReason
-    ? `Read-only — your role can't ${gateReason}`
+  const tooltip = !canAct
+    ? gateReasonKey
+      ? t(gateReasonKey)
+      : gateReason
+        ? `Read-only — your role can't ${gateReason}`
+        : title
     : title;
 
   return (
