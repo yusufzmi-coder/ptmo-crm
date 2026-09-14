@@ -222,3 +222,71 @@ Two traps when someone runs `db push`:
 Migration 041 has also never been confirmed applied. If it did not land,
 presence has been silently dead — both the online/away dot and the
 co-viewer eye — with only a `console.error` to show for it.
+
+---
+
+## Ditemui semasa batch UI/UX Fasa 1 (14 Sep 2026)
+
+Ketiga-tiga direkod di sini kerana ia BUKAN kerja UI dan tiada pemilik
+dalam batch itu. Tiada satu pun dibaiki.
+
+### `[buttons]` / `[list]` bocor ke UI — dan ke pangkalan data
+
+`src/lib/whatsapp/interactive.ts:238`
+
+`interactivePayloadPreviewText()` pulangkan literal `'[buttons]'` atau
+`'[list]'` bila payload tiada body. Tiga panel UI merendernya terus:
+`quick-replies-manager.tsx:181`, `quick-reply-picker.tsx:164`,
+`automation-builder.tsx:1537`. Jadi panel yang kini 100% diterjemah masih
+boleh memaparkan `[buttons]` kepada pengguna.
+
+**Pembetulannya bukan membungkus fungsi itu.** Ia juga dipanggil oleh
+`src/lib/whatsapp/send-message.ts:543`, yang menulis hasilnya ke
+`conversations.last_message_text` — nilai yang DISIMPAN. Menterjemah
+pulangan fungsi bermakna menulis rentetan mengikut locale ke dalam
+pangkalan data, yang salah: nilai itu dibaca semula oleh semua pengguna,
+bukan hanya yang menulisnya.
+
+Pembetulan yang betul ialah di pemanggil UI — petakan sentinel kepada
+label diterjemah pada masa render, biarkan fungsi pure kekal sebagai
+sentinel. Merentas tiga pokok pemilikan (`settings/`, `inbox/`,
+`automations/`), jadi ia perlukan satu pemilik dan satu helper dikongsi.
+
+Berkait: `automation-builder.tsx:1537` juga membawa `"no body yet"` dan
+`"pick a template"` hardcode sendiri.
+
+### Tajuk kumpulan sidebar gagal kontras WCAG AA
+
+`src/components/layout/sidebar.tsx:352`
+
+Diukur dalam sRGB melalui canvas (CSS guna oklab, jadi nilai terkomputasi
+tidak boleh dibaca terus):
+
+| Mod | Latar | Teks | Nisbah |
+| --- | --- | --- | --- |
+| Gelap | `rgb(15,18,22)` | `rgb(102,105,111)` | **3.41:1** |
+| Terang | `rgb(255,255,255)` | `rgb(146,150,156)` | **2.97:1** |
+
+WCAG AA untuk teks kecil ialah 4.5:1. Baris nav dalam komponen yang sama
+lulus (5.79:1 gelap, 5.52:1 terang), jadi ini khusus tajuk kumpulan.
+Puncanya pengubah `/70` pada `text-muted-foreground/70`. Membuangnya
+memulihkan nisbah baris nav.
+
+Ditugaskan kepada pemilik `layout/**` sebagai pembetulan satu token.
+
+### Konvensyen `middleware` ditamatkan oleh Next 16.2.12
+
+`next dev` mengeluarkan amaran setiap kali boot: konvensyen fail
+`middleware` ditamatkan, guna `proxy`. `AGENTS.md` mengarahkan supaya
+notis deprecation dihiraukan, tetapi `src/middleware.ts` ialah laluan
+merah dan ia akan pecah pada naik taraf Next. Kerja naik taraf dengan
+risikonya sendiri, bukan kemasan.
+
+### Lebar tajuk kumpulan sidebar hanya ada 9% lega
+
+Diukur pada Inter 11px, jarak huruf 0.55px, dengan CSS terkompil dan fon
+sebenar: `"Campaigns & automation"` menduduki 174px daripada 191px ruang
+teks pada `lg:w-60`. Ia muat satu baris, dan Korea jauh lebih pendek
+(79px). Tetapi ia ialah tajuk terpanjang yang muat — mana-mana locale
+ketiga dengan frasa lebih panjang akan membalut. Relevan terus kepada
+sebarang keputusan menambah `messages/ms.json`.
