@@ -145,24 +145,54 @@ this has not already been noticed, and it expires tomorrow.
 
 ---
 
-## What this inventory could not settle
+## SETTLED — the deployed key is a real service key
 
-**Whether production carries the same key.** Only `.env.local` is readable
-from here. If the deployment holds a real `sb_secret…` key, everything
-above is a local-development defect and tomorrow is unaffected.
+**Resolved 15 Sep, on production.** The Boss replaced the variable with a
+real `sb_secret…` key and redeployed, and the UAT that evening proved it
+without anyone planning it as a key test.
 
-That is a one-minute check and it should happen before anything else:
+`POST /api/issues` inserts through `supabaseAdmin()` — built from
+`SUPABASE_SERVICE_ROLE_KEY`, with **no user session** — and the RLS
+policy on that table is:
 
-- Open any page that lists flows or automations while signed in. Those
-  routes authenticate the user with a cookie client and then read data
-  through the admin client. If the admin client is anon-with-no-session,
-  the list comes back **empty for every user**, regardless of what is in
-  the table.
-- A non-empty list is proof the deployed key is a real service key. An
-  empty list on an account that should have rows is proof it is not.
+```sql
+CREATE POLICY issues_insert ON issues FOR INSERT
+  WITH CHECK (is_account_member(account_id, 'agent'));
+```
 
-That test is better than reading the env var because it exercises the
-actual path, and it needs no access to the deployment's secrets.
+A publishable key resolves `auth.uid()` to NULL, so
+`is_account_member()` returns false and the insert is refused. It
+returned **201 four times** against production. That is positive proof,
+not an absence of symptoms.
+
+### The check this section used to recommend does not work
+
+It said: open a page listing flows or automations, and an empty list
+proves the key is wrong.
+
+**Neither page reads through the admin client.** `/automations` queries
+PostgREST directly from the browser with a session, and `GET /api/flows`
+uses the cookie client; `supabaseAdmin()` appears in that file only
+inside `POST`. Both lists came back empty during UAT because the test
+account had no rows — the correct answer to a different question.
+
+And the recipe could not have worked even against the right page:
+this same document records that an anon `SELECT` returns `200 []` rather
+than an error. An empty list can never separate *"key is wrong"* from
+*"account has no rows"*.
+
+The lesson is the one this document exists to teach, turned on the
+document itself: **it prescribed a verification from an assumption about
+the data path, without tracing the data path.** A test that watches for
+an absence proves nothing; a test that exercises a rule which can only
+pass one way proves something.
+
+### The window, which is the part worth keeping
+
+Verify configuration **before** the feature that depends on it goes
+live. After that, every failure wears the feature's face — a bad key
+after the WhatsApp number connects looks like WhatsApp being silent, and
+whoever debugs it starts in the wrong place.
 
 ---
 
