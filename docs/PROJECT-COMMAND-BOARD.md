@@ -4,13 +4,13 @@
 
 **Pemilik:** Yusuf Azmi  
 **Produk:** CRM PTMO Operation Dept  
-**Status keseluruhan:** Fasa 1 **SELESAI** · Fasa 3 (Issue Case) sedang dibina
+**Status keseluruhan:** Fasa 1 **SELESAI** · Isu & Tindakan **hidup pada production**
 **Dikemas kini:** 15 Sep 2026
 **Branch kerja bersepadu:** `feat/multi-number` = `origin/main` = `6928678` — semua diserap
 **Gate:** lint 0 error / 32 warning · typecheck 0 · **1285 ujian lulus** · build berjaya
 **Katalog:** en/ko/ms **1905 kunci** setiap satu. Bahasa Melayu **aktif** — domain menyajikan `lang="ms"`
 **Live:** `crm.ptmostaff.com` 200, melalui Vercel projek `crmfinal_ptmo`
-**Baseline production:** skema **041 + 045 + 046 + 047 + 049**. Release Fasa 1 diapply 15 Sep dalam satu transaksi; tiga penegasan `t`, disahkan bebas dengan probe baca-sahaja dari luar pangkalan data.
+**Baseline production:** skema **041 + 045 + 046 + 047 + 049 + 050**. `050` (Isu & Tindakan) diapply 15 Sep, enam penegasan `t`, disahkan bebas melalui REST. Release Fasa 1 diapply 15 Sep dalam satu transaksi; tiga penegasan `t`, disahkan bebas dengan probe baca-sahaja dari luar pangkalan data.
 **CI:** kedua-dua job Migrations **hijau** — kali pertama dalam hayat repo ini. Ia masih **tidak tercetus sendiri**; sembilan push ke `main` menghasilkan sifar larian sementara events API menunjukkan push itu mendarat. Lihat `docs/open-findings.md`.
 **Belum diapply, dan tiada pangkalan data pernah menjalankannya:** `042`, `043`, `044`, `048`. Jurang itu melebar dengan setiap migration baharu.
 
@@ -41,7 +41,7 @@
 | 0 - Foundation | Reka bentuk multi-zone, nombor balasan betul, migration 041 co-viewer | Done |
 | 1 - Shared Inbox Foundation | Multi-number, zone/HQ, security, centres, release safety | **Done** 15 Sep |
 | 2 - WhatsApp Pilot | 1 Centre, 1 nombor baharu, 2 staf, chat/media/call log asas | **Next** — tinggal sambung nombor |
-| 3 - Operations Workflow | Claim chat, issue case, lifecycle, follow-up, escalation longgar | **Sedang dibina** — teras Issue Case |
+| 3 - Operations Workflow | Claim chat, issue case, lifecycle, follow-up, escalation longgar | **Teras hidup** — kes, kitaran hayat, garis masa. Eskalasi Zone Head masih perlukan 044 |
 | 4 - Scale & HQ | Rollout ikut gelombang, zone health, HQ report, BSC | Planned |
 | 5 - SMS & Automation | Sambung SMS sebagai source of truth, AI/automation terkawal | Later |
 
