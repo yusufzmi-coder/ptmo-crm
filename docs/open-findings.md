@@ -1833,3 +1833,38 @@ berlaku pada push pertama selepas kuota kembali.
 Sehingga itu, **`main` dan domain berbeza**, dan laluan webhook masuk
 berjalan daripada build yang di-deploy. Itu mesti diselesaikan sebelum
 nombor WhatsApp disambung.
+
+## Kunci service-role deployment DISAHKAN betul — ditutup oleh UAT, bukan oleh ujian berasingan
+
+Inventori kunci meninggalkan satu item terbuka: sahkan deployment
+membawa `sb_secret_` sebenar dan bukan salinan kunci anon, dan lakukannya
+**sebelum** nombor WhatsApp bersambung — kerana itu satu-satunya tetingkap
+di mana kegagalannya masih kelihatan seperti masalah kunci dan bukan
+masalah WhatsApp.
+
+**UAT 15 Sep sudah menjawabnya**, tanpa sesiapa merancangnya sebagai
+ujian kunci.
+
+`POST /api/issues` memasukkan melalui `supabaseAdmin()` — klien yang
+dibina daripada `SUPABASE_SERVICE_ROLE_KEY`, **tanpa sesi pengguna**. Dan
+polisi RLS pada jadual itu ialah:
+
+```sql
+CREATE POLICY issues_insert ON issues FOR INSERT
+  WITH CHECK (is_account_member(account_id, 'agent'));
+```
+
+Kalau kunci yang di-deploy ialah kunci publishable, `auth.uid()` akan
+NULL, `is_account_member()` akan memulangkan false, dan insert itu
+**ditolak**.
+
+Ia memulangkan **201 empat kali** pada production malam itu. Jadi kunci
+yang di-deploy benar-benar membawa keistimewaan service-role.
+
+Ini bukti yang lebih kuat daripada ujian satu-minit yang asalnya
+dicadangkan — ujian itu melihat sama ada senarai memuat, dan dua halaman
+yang dinamakan ternyata tidak membaca melalui klien admin langsung.
+Ujian ini menjalankan laluan tulis sebenar terhadap polisi yang
+membezakan kedua-dua kunci.
+
+**Tiada tindakan sebelum menyambung nombor.** Item ini ditutup.
