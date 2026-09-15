@@ -250,19 +250,37 @@ const IN_PAGE = `
     return +(((Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05)).toFixed(2));
   };
 
-  // Walk up to the first ancestor that actually paints, and composite
-  // onto it. An element's own translucent background is meaningless
-  // without knowing what shows through.
+  // The backdrop is a STACK, not a layer.
+  //
+  // The first version of this stopped at the nearest ancestor that
+  // painted anything and composited it over white. That is only correct
+  // when the thing it found is opaque. A sidebar's active row paints
+  // rgba(10,119,187,0.14) over a dark card — read alone over white it
+  // becomes pale blue, and pale text on it scored 2.03 when the real
+  // pixels measure 6.80. A false failure, on the shared tool, on a page
+  // that was fine.
+  //
+  // So: collect every painted layer up to the first OPAQUE one, then
+  // composite them back down in order.
   const surfaceUnder = (el) => {
+    const layers = [];
+    let base = null;
     let n = el.parentElement;
     while (n) {
       const bg = getComputedStyle(n).backgroundColor;
       if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') {
-        return composite(bg, 'rgb(255,255,255)');
+        const m = /^rgba?\(([^)]+)\)/.exec(bg);
+        const parts = m ? m[1].split(',').map((v) => parseFloat(v)) : [];
+        const alpha = parts.length > 3 ? parts[3] : 1;
+        if (alpha >= 0.999) { base = bg; break; }
+        layers.push(bg);
       }
       n = n.parentElement;
     }
-    return composite(getComputedStyle(document.body).backgroundColor || '#fff', 'rgb(255,255,255)');
+    if (!base) base = getComputedStyle(document.body).backgroundColor || '#fff';
+    let acc = composite(base, 'rgb(255,255,255)');
+    for (let i = layers.length - 1; i >= 0; i--) acc = composite(layers[i], rgb(acc));
+    return acc;
   };
 
   // WCAG large text: >=24px, or >=18.66px at weight >=700. Anything else
