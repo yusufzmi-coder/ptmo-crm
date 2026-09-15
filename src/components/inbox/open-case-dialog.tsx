@@ -218,7 +218,14 @@ export function OpenCaseDialog({
                 onValueChange={(v) => isIssueCategory(v) && setCategory(v)}
               >
                 <SelectTrigger className="bg-muted">
-                  <SelectValue />
+                  {/* Base UI renders the raw VALUE unless given a format
+                      function, so without this the picker showed the
+                      database enum — "lain" where "Lain-lain" belongs,
+                      and a bare UUID in the branch field. The labels
+                      existed and were correct; nothing was reading them. */}
+                  <SelectValue>
+                    {(v) => (isIssueCategory(v) ? tCategory(v) : "")}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {ISSUE_CATEGORIES.map((c) => (
@@ -239,7 +246,9 @@ export function OpenCaseDialog({
                 onValueChange={(v) => isIssueSeverity(v) && setSeverity(v)}
               >
                 <SelectTrigger className="bg-muted">
-                  <SelectValue />
+                  <SelectValue>
+                    {(v) => (isIssueSeverity(v) ? tSeverity(v) : "")}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {ISSUE_SEVERITIES.map((s) => (
@@ -261,7 +270,13 @@ export function OpenCaseDialog({
               onValueChange={(v) => setCentreId(v ?? NO_CENTRE)}
             >
               <SelectTrigger className="bg-muted">
-                <SelectValue />
+                <SelectValue>
+                  {(v) =>
+                    v === NO_CENTRE || !v
+                      ? t("centreNone")
+                      : (centres.find((c) => c.id === v)?.name ?? t("centreNone"))
+                  }
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={NO_CENTRE}>{t("centreNone")}</SelectItem>
