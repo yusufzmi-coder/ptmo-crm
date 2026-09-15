@@ -8,7 +8,21 @@ commit that adds or applies a migration.**
 
 ## State as of 2026-09-15 (probed, not assumed)
 
-**The release landed.** `045`, `046` and `047` were applied to production
+**`050` is applied.** It landed after the Phase 1 release, in its own
+transaction from `supabase/release/APPLY-050.sql`. All six in-transaction
+assertions returned true, and the tables answer over REST from outside
+the database:
+
+```
+rest/v1/issues        200   table exists
+rest/v1/issue_events  200   table exists
+anon SELECT issues    []    RLS returns zero rows
+anon POST  issues     401   RLS refuses the write
+```
+
+Production schema is therefore **041 + 045 + 046 + 047 + 049 + 050**.
+
+**The Phase 1 release landed before it.** `045`, `046` and `047` were applied to production
 on 15 Sep in a single transaction, pasted into the SQL Editor from
 `supabase/release/APPLY-045-046-047.sql`. The three assertions at the end
 of that file all returned true, and a separate read-only probe confirmed
@@ -35,6 +49,7 @@ directly, which is the stronger test.
 | `045` | **yes** | yes | **YES, 15 Sep** |
 | `046`, `047` | **yes** | yes | **YES, 15 Sep** |
 | `048` | no | yes | no |
+| `050` | **yes** | yes | **YES, 15 Sep** |
 | `049` | no | yes | **YES, by hand** |
 
 Production schema is therefore at **041 + 045 + 046 + 047 + 049**, and
