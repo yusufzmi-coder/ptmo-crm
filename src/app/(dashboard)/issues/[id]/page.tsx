@@ -189,25 +189,32 @@ export default function IssueDetailPage() {
       </header>
 
       <dl className="grid grid-cols-2 gap-x-6 gap-y-3 rounded-xl border border-border bg-card p-4 text-sm sm:grid-cols-3">
-        <Field label={t("openedAt")}>
+        {/* These three keys are whole sentences carrying a {time}
+            placeholder — "Dibuka {time}" — not labels. Rendering them
+            through <Field label=…> printed the braces to the screen and
+            put the time beside them. moveTo in this same file already
+            interpolates correctly; these three simply never did. */}
+        <div className="col-span-2 sm:col-span-3 flex flex-wrap gap-x-5 gap-y-1 text-muted-foreground">
           <time dateTime={issue.opened_at}>
-            {relativeTime(issue.opened_at, tRel, { style: "full" })}
+            {t("openedAt", {
+              time: relativeTime(issue.opened_at, tRel, { style: "full" }),
+            })}
           </time>
-        </Field>
-        {issue.resolved_at ? (
-          <Field label={t("resolvedAt")}>
+          {issue.resolved_at ? (
             <time dateTime={issue.resolved_at}>
-              {relativeTime(issue.resolved_at, tRel, { style: "full" })}
+              {t("resolvedAt", {
+                time: relativeTime(issue.resolved_at, tRel, { style: "full" }),
+              })}
             </time>
-          </Field>
-        ) : null}
-        {issue.due_at ? (
-          <Field label={t("dueAt")}>
+          ) : null}
+          {issue.due_at ? (
             <time dateTime={issue.due_at}>
-              {relativeTime(issue.due_at, tRel, { style: "full" })}
+              {t("dueAt", {
+                time: relativeTime(issue.due_at, tRel, { style: "full" }),
+              })}
             </time>
-          </Field>
-        ) : null}
+          ) : null}
+        </div>
       </dl>
 
       {issue.conversation_id ? (
@@ -326,14 +333,5 @@ function Chip({ className, children }: { className: string; children: React.Reac
     >
       {children}
     </span>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="mt-0.5 text-foreground">{children}</dd>
-    </div>
   );
 }

@@ -3,14 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Plus, Search } from "lucide-react";
+import { Search } from "lucide-react";
 
 import type { Issue, IssueCategory, IssueSeverity, IssueStatus } from "@/types";
 import { ISSUE_STATUSES } from "@/lib/issues/status";
 import { relativeTime } from "@/lib/time/relative";
 import { createClient } from "@/lib/supabase/client";
-import { useCan } from "@/hooks/use-can";
-import { GatedButton } from "@/components/ui/gated-button";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PageSkeleton, CardGridSkeleton } from "../page-skeletons";
@@ -62,7 +60,6 @@ export default function IssuesPage() {
   const tCategory = useTranslations("Issues.category");
   const tErrors = useTranslations("Issues.errors");
   const tRel = useTranslations("RelativeTime");
-  const canCreate = useCan("send-messages");
   const supabase = createClient();
 
   const [issues, setIssues] = useState<Issue[]>([]);
@@ -172,14 +169,17 @@ export default function IssuesPage() {
           <h1 className="text-2xl font-semibold text-foreground">{t("title")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{t("description")}</p>
         </div>
-        <GatedButton
-          canAct={canCreate}
-          gateReasonKey="createFlows"
-          onClick={() => router.push("/issues/new")}
-        >
-          <Plus className="h-4 w-4" />
-          {t("createButton")}
-        </GatedButton>
+        {/* No create button here on purpose. A case is opened from the
+            conversation it came out of — the dialog needs a
+            conversationId and a contact to suggest a branch from, and
+            neither exists on this screen.
+
+            This button used to push /issues/new, which is not a route.
+            "new" matched [id], the detail page fetched a case with that
+            id, and the person who clicked "Open case" was told the case
+            did not exist. If a case ever needs to be opened without a
+            conversation, build that path first — do not re-add a button
+            that has nowhere to go. */}
       </header>
 
       {loadError ? (
