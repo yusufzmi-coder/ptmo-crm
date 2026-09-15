@@ -88,7 +88,7 @@ export async function PATCH(
   // any row in the table, so the 404 here is the tenant check.
   const { data: current, error: readErr } = await supabase
     .from('issues')
-    .select('id, account_id, status')
+    .select('id, account_id, status, resolution')
     .eq('id', id)
     .maybeSingle()
   if (readErr) {
@@ -129,6 +129,26 @@ export async function PATCH(
           { error: 'invalid_transition', from, to: next },
           { status: 422 },
         )
+      }
+      // A case cannot be closed without recording what was done. The
+      // detail screen already blocks this, but the screen is the layer
+      // that can be bypassed — the public API, a script, or a screen
+      // written later all reach this route directly.
+      //
+      // This is the same call the team made for new -> resolved: a rule
+      // that protects the point of the feature belongs beside the data,
+      // not beside the button. A case closed with an empty resolution is
+      // a complaint that vanished with extra steps, which is the exact
+      // failure this table exists to prevent.
+      if (isResolvedStatus(next)) {
+        const incoming =
+          body.resolution === undefined ? current.resolution : body.resolution
+        if (typeof incoming !== 'string' || incoming.trim() === '') {
+          return NextResponse.json(
+            { error: 'resolution_required' },
+            { status: 422 },
+          )
+        }
       }
       to = next
       patch.status = next

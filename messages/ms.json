@@ -2318,6 +2318,7 @@
       "notFound": "Isu itu tiada lagi, atau ia milik akaun lain.",
       "invalidTransition": "Isu tidak boleh bergerak dari {from} ke {to}.",
       "summaryRequired": "Terangkan apa yang berlaku sebelum membuka kes.",
+      "resolutionRequired": "Tulis apa yang telah dibuat sebelum menandakannya selesai.",
       "invalidCategory": "Pilih satu kategori.",
       "profileNotLinked": "Profil anda tidak terpaut dengan mana-mana akaun.",
       "unauthorized": "Log masuk untuk teruskan.",

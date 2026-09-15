@@ -2318,6 +2318,7 @@
       "notFound": "That issue no longer exists, or it belongs to another account.",
       "invalidTransition": "An issue cannot go from {from} to {to}.",
       "summaryRequired": "Describe what happened before opening the case.",
+      "resolutionRequired": "Write what was done before marking this resolved.",
       "invalidCategory": "Pick a category.",
       "profileNotLinked": "Your profile is not linked to an account.",
       "unauthorized": "Sign in to continue.",
