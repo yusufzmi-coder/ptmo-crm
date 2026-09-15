@@ -1,9 +1,14 @@
 import { readFileSync } from "node:fs";
-import { ERROR_CODE_TO_KEY } from "./labels";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import {
+  ISSUE_CATEGORIES,
+  ISSUE_ERROR_KEYS,
+  ISSUE_SEVERITIES,
+  issueErrorKey,
+} from "./labels";
 import { ISSUE_STATUSES } from "./status";
 
 /**
@@ -22,18 +27,13 @@ import { ISSUE_STATUSES } from "./status";
 const LOCALES = ["en", "ko", "ms"] as const;
 
 /**
- * Route error code → catalogue key.
+ * The map lives in `labels.ts`, not here.
  *
- * The routes return snake_case codes; the catalogue uses camelCase keys
- * chosen by the sessions building the UI. That means the two lists cannot
- * be compared directly, and a mapping written down here is better than a
- * mapping that exists only in whichever component happens to handle the
- * error — which is where it would otherwise live, differently, three
- * times.
- *
- * Several codes collapse onto one message on purpose: a caller does not
- * need to know whether the write failed on insert or update, only that it
- * did not save.
+ * It was in this file first, which made it untestable in the only way
+ * that mattered: a component cannot import from a `.test.ts`, so the
+ * session building the create dialog wrote its own copy — the second
+ * copy, which is exactly what the map exists to prevent. Moving it into
+ * the module and testing it from there was the fix.
  */
 
 function catalogue(locale: string) {
@@ -42,18 +42,6 @@ function catalogue(locale: string) {
     "utf8",
   );
   return JSON.parse(raw).Issues as Record<string, Record<string, string>>;
-}
-
-/** Pull a string-literal union's members out of the type source — a union
- * has no runtime value to import. */
-function unionMembers(typeName: string): string[] {
-  const src = readFileSync(
-    join(process.cwd(), "src", "types", "index.ts"),
-    "utf8",
-  );
-  const block = new RegExp(`export type ${typeName} =([^;]*);`).exec(src);
-  if (!block) throw new Error(`${typeName} not found in src/types/index.ts`);
-  return [...block[1].matchAll(/'([a-z_]+)'/g)].map((m) => m[1]);
 }
 
 /** Every error code the issues routes can put in a JSON body. */
@@ -77,13 +65,13 @@ describe.each(LOCALES)("%s catalogue covers the code", (locale) => {
 
   it("labels every category", () => {
     expect(Object.keys(issues.category).sort()).toEqual(
-      unionMembers("IssueCategory").sort(),
+      [...ISSUE_CATEGORIES].sort(),
     );
   });
 
   it("labels every severity", () => {
     expect(Object.keys(issues.severity).sort()).toEqual(
-      unionMembers("IssueSeverity").sort(),
+      [...ISSUE_SEVERITIES].sort(),
     );
   });
 
@@ -92,17 +80,30 @@ describe.each(LOCALES)("%s catalogue covers the code", (locale) => {
   });
 
   it("has a message for every error code the routes return", () => {
-    const missing = routeErrorCodes().filter((code) => {
-      const key = ERROR_CODE_TO_KEY[code];
-      return !key || !(key in issues.errors);
-    });
+    // Deliberately checks the MAP, not issueErrorKey(): the helper falls
+    // back to saveFailed, which would swallow exactly the case this test
+    // exists to catch — a new route code that nobody mapped.
+    const missing = routeErrorCodes().filter(
+      (code) =>
+        !(code in ISSUE_ERROR_KEYS) ||
+        !(ISSUE_ERROR_KEYS[code as keyof typeof ISSUE_ERROR_KEYS] in
+          issues.errors),
+    );
     expect(missing, "route error codes with no catalogue entry").toEqual([]);
+  });
+
+  it("falls back rather than rendering a raw code", () => {
+    // The fallback is for codes that slip through anyway — better to say
+    // "that did not save" than to show a user `widget_exploded`.
+    expect(issueErrorKey("something_nobody_mapped")).toBe("saveFailed");
+    expect(issueErrorKey(undefined)).toBe("saveFailed");
+    expect(issueErrorKey("not_found")).toBe("notFound");
   });
 
   it("maps no error code to a key that does not exist", () => {
     // The other direction: a renamed catalogue key leaves this map
     // pointing at nothing, and the UI would render a keypath.
-    const dangling = Object.values(ERROR_CODE_TO_KEY).filter(
+    const dangling = Object.values(ISSUE_ERROR_KEYS).filter(
       (key) => !(key in issues.errors),
     );
     expect(dangling).toEqual([]);
@@ -127,8 +128,8 @@ describe("the shared blocks stay shared", () => {
     const issues = catalogue("en");
     const identifiers = [
       ...ISSUE_STATUSES,
-      ...unionMembers("IssueCategory"),
-      ...unionMembers("IssueSeverity"),
+      ...ISSUE_CATEGORIES,
+      ...ISSUE_SEVERITIES,
     ];
     for (const block of ["list", "detail", "create"] as const) {
       for (const id of identifiers) {
@@ -172,5 +173,31 @@ describe("Malay is written, not copied", () => {
     // several category labels are the stored Malay identifier already.
     // Beyond that it is untranslated text hiding behind parity.
     expect(identical.length, `identical: ${identical.join(", ")}`).toBeLessThanOrEqual(12);
+  });
+});
+
+describe("display order is part of the contract", () => {
+  it("keeps categories in the order the pickers render them", () => {
+    // The create dialog and the list filter both map over
+    // ISSUE_CATEGORIES directly, so this array's order IS the on-screen
+    // order. Pinned here because reordering the Record it derives from
+    // is a one-line change with no other symptom.
+    expect([...ISSUE_CATEGORIES]).toEqual([
+      "progress",
+      "keselamatan",
+      "staf",
+      "servis",
+      "yuran",
+      "jadual",
+      "pendaftaran",
+      "fasiliti",
+      "lain",
+    ]);
+  });
+
+  it("keeps severities ordered least to most severe", () => {
+    // Not alphabetical — a severity picker that reads
+    // biasa/kritikal/penting would be actively misleading.
+    expect([...ISSUE_SEVERITIES]).toEqual(["biasa", "penting", "kritikal"]);
   });
 });

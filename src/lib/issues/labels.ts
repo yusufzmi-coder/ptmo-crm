@@ -1,31 +1,30 @@
 import type { IssueCategory, IssueSeverity } from "@/types";
 
 /**
- * The runtime lists behind `IssueCategory` and `IssueSeverity`, and the
- * map from an API error code to its catalogue key.
+ * The runtime lists behind the `IssueCategory` and `IssueSeverity`
+ * unions, and the map from a route's error code to a catalogue key.
  *
- * Why this module exists at all: `labels.test.ts` shipped first and held
- * all three of these as file-local constants. A test file cannot be
- * imported by production code, so the API route declared its own copy of
- * the category list and the inbox dialog declared its own copy of the
- * error map — which is precisely the duplication the test was written to
- * prevent. The test was guarding a contract that nothing else could read.
+ * WHY THESE ARE HERE AND NOT WHERE THEY WERE
  *
- * Everything here is exported so there is one copy and the test has a
- * module to test.
+ * The API route declared its own local `CATEGORIES` array and the error
+ * map lived in a test file. Neither could be imported by the code that
+ * needed them, so both were about to be copied — and a copy of a list
+ * like this does not announce itself when it falls behind. It simply
+ * stops offering one option, or renders a keypath for one error.
+ *
+ * WHY A RECORD AND NOT AN ARRAY
+ *
+ * `readonly IssueCategory[]` accepts a list that is MISSING a member.
+ * Add a tenth category to the union and an array-typed list keeps
+ * compiling while the API silently rejects the new value and the picker
+ * silently stops offering it.
+ *
+ * A `Record<IssueCategory, true>` cannot be missing a member: leaving one
+ * out is a compile error naming the property. So the exhaustiveness is
+ * enforced by the type checker on every build rather than by a test that
+ * someone has to remember to write.
  */
 
-/**
- * Exhaustive by construction. This is a `Record` keyed on the union and
- * not an array, and the difference is the whole point: TypeScript accepts
- * an array that is missing members, so a tenth category added to the type
- * would leave every array-shaped list silently short. A `Record` will not
- * compile until the new member is present here.
- *
- * That failure mode is not hypothetical — it is the one where the type
- * and the UI agree, and the API rejects the value with `invalid_category`
- * at the moment a member of staff tries to file it.
- */
 const CATEGORY_MEMBERS: Record<IssueCategory, true> = {
   progress: true,
   keselamatan: true,
@@ -44,6 +43,20 @@ const SEVERITY_MEMBERS: Record<IssueSeverity, true> = {
   kritikal: true,
 };
 
+/**
+ * Every category, in the order the CHECK constraint lists them.
+ *
+ * THE WRITE ORDER OF THE RECORD ABOVE IS THE DISPLAY ORDER. `Object.keys`
+ * returns string keys in insertion order — guaranteed by the language for
+ * keys that are not integer-like, and none of these are — so reordering
+ * the Record silently reorders every picker that maps over this.
+ *
+ * That is a real coupling rather than a hypothetical one: the create
+ * dialog checked this order matched its own before importing, precisely
+ * because a picker that rearranges itself between releases looks broken
+ * to whoever uses it daily. Sort at the call site if a screen wants a
+ * different order; do not reorder here.
+ */
 export const ISSUE_CATEGORIES = Object.keys(
   CATEGORY_MEMBERS,
 ) as readonly IssueCategory[];
@@ -61,19 +74,19 @@ export function isIssueSeverity(value: unknown): value is IssueSeverity {
 }
 
 /**
- * API error code to `Issues.errors.*` catalogue key.
+ * Route error code → catalogue key under `Issues.errors`.
  *
- * Codes are snake_case and keys are camelCase, so the two lists cannot be
- * compared directly and the mapping has to be written down somewhere. It
- * belongs here rather than inside whichever component happens to render
- * an error, which is where it would otherwise live — differently, three
- * times.
+ * The routes return snake_case codes and the catalogue uses camelCase
+ * keys, so the two lists cannot be lined up by name. Without this in one
+ * importable place the mapping ends up written separately inside every
+ * component that handles a failure — which is where it was heading, and
+ * those copies disagree the moment a code is added.
  *
- * Several codes collapse onto one message on purpose: a caller does not
- * need to know whether the write failed on insert or on update, only that
- * it did not save.
+ * `insert_failed` and `update_failed` deliberately collapse onto one
+ * message: a person does not need to know which statement failed, only
+ * that nothing was saved.
  */
-export const ERROR_CODE_TO_KEY: Readonly<Record<string, string>> = {
+export const ISSUE_ERROR_KEYS = {
   unauthorized: "unauthorized",
   forbidden: "forbidden",
   profile_not_linked: "profileNotLinked",
@@ -86,13 +99,21 @@ export const ERROR_CODE_TO_KEY: Readonly<Record<string, string>> = {
   nothing_to_update: "nothingToUpdate",
   insert_failed: "saveFailed",
   update_failed: "saveFailed",
-};
+} as const satisfies Record<string, string>;
+
+export type IssueErrorCode = keyof typeof ISSUE_ERROR_KEYS;
 
 /**
- * `saveFailed` is the right default for an unrecognised code: the agent
- * needs to know the case did not save, and inventing a more specific
- * message for a code we do not know would be a guess shown as a fact.
+ * The catalogue key for an error code, falling back to `saveFailed` for
+ * anything unrecognised.
+ *
+ * The fallback is deliberate but narrow: a code this map has not heard of
+ * is a code somebody added to a route without coming here, and telling
+ * the user "that did not save" is closer to true than rendering the raw
+ * code at them. It is not a licence to skip adding the key — the test
+ * beside this file fails on any route code that is missing.
  */
-export function errorKeyFor(code: string | undefined): string {
-  return (code && ERROR_CODE_TO_KEY[code]) || "saveFailed";
+export function issueErrorKey(code: string | undefined | null): string {
+  if (!code) return "saveFailed";
+  return (ISSUE_ERROR_KEYS as Record<string, string>)[code] ?? "saveFailed";
 }
