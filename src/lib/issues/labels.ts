@@ -93,6 +93,7 @@ export const ISSUE_ERROR_KEYS = {
   not_found: "notFound",
   invalid_transition: "invalidTransition",
   summary_required: "summaryRequired",
+  resolution_required: "resolutionRequired",
   invalid_category: "invalidCategory",
   invalid_severity: "invalidSeverity",
   invalid_body: "invalidBody",

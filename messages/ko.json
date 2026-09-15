@@ -2318,6 +2318,7 @@
       "notFound": "해당 이슈가 없거나 다른 계정의 이슈입니다.",
       "invalidTransition": "{from}에서 {to}(으)로 바로 변경할 수 없습니다.",
       "summaryRequired": "케이스를 열기 전에 무슨 일인지 적어 주세요.",
+      "resolutionRequired": "해결로 표시하기 전에 조치 내용을 입력하세요.",
       "invalidCategory": "분류를 선택하세요.",
       "profileNotLinked": "프로필이 계정에 연결되어 있지 않습니다.",
       "unauthorized": "계속하려면 로그인하세요.",
