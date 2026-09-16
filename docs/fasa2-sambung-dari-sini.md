@@ -6,14 +6,44 @@ seluruh sejarah.
 
 ---
 
-> **Sebelum apa-apa lagi:** empat kerosakan yang dibaiki pada 16-17 Sep
-> **tidak pernah diperhatikan berlaku.** Kesemuanya dijumpai dengan
-> membaca ledger migration dan kod. Empat commit `fix(...)` dengan mesej
-> terperinci kelihatan sangat meyakinkan, dan **tiada satu pun daripadanya
-> bukti**. Jangan biarkan kewujudan pembetulan membuat sesiapa fikir
-> kerosakan itu sudah disahkan — termasuk pagar `051` dalam dokumen ini.
-> Langkah 1 dan langkah 4 di bawah ialah satu-satunya peluang mengubahnya
-> daripada ramalan kepada keputusan.
+> ## JANGAN JALANKAN `supabase db push`
+>
+> Ledger `schema_migrations` pada production merekodkan **001–040 sahaja**.
+> `041` hingga `050` diapply **dengan tangan** melalui SQL editor, jadi
+> ledger tidak tahu ia wujud walaupun objeknya ada (disahkan dengan probe).
+>
+> Maknanya `supabase db push --linked` akan menganggap **sebelas**
+> migration belum dijalankan dan memainkan semuanya — termasuk `042`,
+> `043`, `044`, `048` yang diparkir. `044` menulis semula
+> `is_account_member()`, fungsi yang menjadi sandaran pengasingan zon bagi
+> lebih 40 query tanpa penapis `account_id`. Itu butang paling berbahaya
+> dalam projek ini sekarang dan tiada apa yang memberi amaran.
+>
+> **Apply `051` dengan menampal failnya ke dalam SQL editor**, cara sama
+> `050` diapply. Bukan CLI.
+
+---
+
+> **Status bukti, dikemas 17 Sep selepas probe production.**
+>
+> Empat kerosakan yang dibaiki 16–17 Sep asalnya dijumpai secara **statik**.
+> Dua daripadanya kini **disahkan pada mesin hidup** dengan probe REST
+> baca-sahaja — tanpa akaun ujian, kerana ketiadaan lajur tidak perlukan
+> sesi:
+>
+> | Dakwaan | Bukti |
+> |---|---|
+> | `quick_replies.whatsapp_config_id` tiada (043) | `42703` dari production ✅ |
+> | `broadcasts.whatsapp_config_id` tiada (048) | `42703` dari production ✅ |
+> | `account_members` tiada (044) | `PGRST205` ✅ — 044 memang tak diapply |
+> | `call_logs` tiada (051) | `PGRST205` ✅ |
+> | `conversations.whatsapp_config_id`, `centres`, `issues` ada | `200` ✅ |
+>
+> Premis kepada empat pembetulan itu **bukan lagi andaian**. Yang masih
+> belum diperhatikan ialah tingkah laku laluan — 500 sebenar dalam aplikasi
+> — dan itu perlukan sesi. Kod lama masih disajikan sehingga Vercel deploy
+> `main`, jadi tingkap itu **masih terbuka sekarang** dan tutup pada deploy,
+> bukan pada merge.
 
 ## Satu ayat
 
@@ -92,7 +122,10 @@ sepatutnya berlaku.
 - Vercel: `META_APP_SECRET` mesti App Secret **sebenar**. Tanpanya
   **setiap** mesej ibu bapa ditolak — gagal tertutup, betul, tetapi
   kelihatan seperti WhatsApp senyap
-- Vercel: `WHATSAPP_TEMPLATES_DRY_RUN` mesti **tiada**
+- Vercel: `WHATSAPP_TEMPLATES_DRY_RUN` mesti **tiada, `false`, atau apa-apa
+  selain `true`/`1`**. Dokumen ini pernah kata "mesti tiada" — itu terlalu
+  ketat; `templates/submit/route.ts:132` hanya mencetuskan dry-run pada
+  `'true'` atau `'1'`
 - Supabase Auth → URL Configuration mesti termasuk domain live
 
 ## Yang termurah kalau ada lima minit
