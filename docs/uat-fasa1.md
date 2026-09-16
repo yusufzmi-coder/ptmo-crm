@@ -23,9 +23,9 @@ sahaja: **bukti bahawa ia berfungsi untuk staf sebenar selepas ia mendarat.**
 | Sasaran | `crm.ptmostaff.com` — hidup, 200, menyajikan build semasa |
 | Environment | production / staging |
 | Skema selepas apply | asas 041 + 049, kemudian 045, 046, 047 |
-| Build/commit diuji | `____________` |
-| Penguji | `____________` |
-| Tarikh | `____________` |
+| Build/commit diuji | `405ba94` (`feat/multi-number` = `origin/main`) |
+| Penguji | Coordinator (Terminal 1) — separa; baki menunggu akaun ujian |
+| Tarikh | 16 Sep 2026 — pusingan tanpa-kelayakan |
 
 Tanda: `LULUS` · `GAGAL` · `TIDAK DIUJI` · `TIDAK BOLEH DIUJI`
 Setiap `GAGAL` mesti bawa: langkah ulang, screenshot, masa, akaun yang guna.
@@ -72,6 +72,94 @@ diuji. Lihat Bahagian 3.
 
 ---
 
+## 0. Tingkap sebelum-merge — ia tutup pada merge, bukan pada apply
+
+Empat kerosakan `043`/`048` dijumpai secara statik dan **tidak pernah
+diperhatikan berlaku**. Ramalannya ialah 500. Bukti setakat ini ialah ledger
+migration dan kod, bukan satu permintaan yang gagal.
+
+Kerosakan itu **masih hidup pada `crm.ptmostaff.com` ketika ini**, kerana
+pembetulannya ada pada `feat/multi-number` dan PR #66 belum dimerge. Detik
+merge itu mendarat, ia hilang — dan bersamanya satu-satunya peluang untuk
+mengesahkan diagnosis ini terhadap mesin sebenar dan bukan terhadap mock.
+
+Ini berbeza daripada tingkap sebelum-051 dalam `docs/uat-fasa2.md`: tingkap itu
+tutup bila seseorang **apply** migration, dan ia mengesahkan pagar **berfungsi**.
+Tingkap ini tutup lebih awal — pada **merge** — dan ia mengesahkan kerosakan itu
+**wujud**. Kalau hanya satu sempat dijalankan, jalankan yang ini: pagar yang
+tidak diperlukan hanyalah kod berlebihan, tetapi kerosakan yang tidak wujud
+bermakna empat pembetulan ini menyelesaikan masalah yang direka.
+
+Perlukan sesi log masuk. Empat permintaan, tiada satu pun menulis data kekal
+yang bermakna.
+
+**Prasyarat data — tanpanya dua kes menguji laluan yang salah:**
+
+| | |
+|---|---|
+| 0.1 | Akaun ujian mesti ada **sekurang-kurangnya satu conversation sebenar**. Picker mesti dibuka **dari dalam thread itu**, bukan dari senarai quick reply biasa. |
+| 0.4 | Mesti ada **broadcast sedia ada** untuk di-resume. Tiada kempen bermakna tiada apa yang dibaca. |
+
+| # | Langkah | Ramalan | Keputusan |
+|---|---|---|---|
+| 0.1 | Buka picker quick reply **dari thread inbox** | 500 — `quick_replies.whatsapp_config_id` tiada | |
+| 0.2 | Cipta satu quick reply, dari mana-mana skrin, tanpa pin cawangan | 500 — lajur dibawa tanpa syarat | |
+| 0.3 | Cipta satu broadcast kepada **satu** kontak ujian | Gagal — RPC 9-hujah tak padan versi 8-hujah `038` | |
+| 0.4 | Resume broadcast sedia ada | `404 Broadcast not found` untuk kempen yang wujud | |
+
+Kalau mana-mana satu **berjaya** dan bukan gagal, pembetulan yang sepadan
+menyelesaikan sesuatu yang bukan masalahnya. Rekod itu — ia lebih bernilai
+daripada empat kelulusan.
+
+**Tetapi periksa prasyarat dahulu sebelum menyimpulkan itu.** Untuk 0.1 ada
+satu cara ia berjaya tanpa diagnosis menjadi salah: akaun tanpa conversation
+tidak pernah membuka picker dari thread langsung, jadi apa yang diuji ialah
+senarai akaun biasa — dan laluan itu memang tidak pernah rosak, sebab ia tidak
+menamakan lajur itu.
+
+Perhatikan bahawa thread yang **tidak** resolve kepada nombor pun tetap patut
+500: kedua-dua cabang menamakan lajur, `.or(...)` bila cawangan diketahui dan
+`.is('whatsapp_config_id', null)` bila tidak (`route.ts:68-72`). Jadi 0.1 yang
+berjaya bermakna salah satu daripada dua perkara — permintaan tidak pernah
+membawa `conversationId`, atau diagnosis salah. Asingkan kedua-duanya sebelum
+menulis keputusan.
+
+Selepas merge, tandakan keempat-empatnya **TIDAK BOLEH DIUJI — tingkap tertutup**
+dan jangan tulis semula sejarah dengan meneka apa yang akan berlaku.
+
+---
+
+## Prasyarat data — sembilan kes lulus pada akaun kosong
+
+Bahagian 0 mendedahkan satu daripada ini dan sesi Fasa 2 menjumpai empat lagi
+dalam dokumennya. Imbasan ke atas dokumen ini menjumpai lapan lagi. Semuanya
+bentuk yang sama: kes yang lulus kerana keadaan yang diuji tidak pernah dicapai.
+
+Lajur terakhir menamakan **mekanisme**. "Sediakan data dahulu" tidak cukup —
+penguji perlu tahu rupa kelulusan palsu itu supaya dia kenali bila melihatnya.
+
+| # | Perlukan | Kalau tidak, ia lulus kerana |
+|---|---|---|
+| 2.1 | — | Kes ini menjangka **ketiadaan**. Ia lulus pada akaun kosong, akaun rosak, dan akaun betul, semuanya sama. Ia mengesahkan tiada permukaan zon terdedah; ia **tidak** mengesahkan `shouldShowSwitcher()` pernah dipanggil. |
+| 2.3, 2.4 | Akaun **viewer** sebenar | Diuji sebagai admin, tindakan admin memang kelihatan dan memang dibenarkan. Kedua-dua kes lulus dengan menguji lawannya. |
+| 3.4 | Satu Centre **tanpa** zon | Tiada Centre yatim bermakna tiada kumpulan unassigned untuk diperiksa. Senarai kosong di hujung kelihatan betul. |
+| 4.1 | ≥1 conversation | Senarai kosong dimuat tanpa ralat. "Tiada ralat" benar dan tidak bermakna apa-apa. |
+| 4.2 | Thread dengan **beberapa** mesej | Satu mesej sentiasa tertib dan sentiasa lengkap. |
+| 4.5 | ≥1 conversation belum dibalas | Antrian kosong ialah antrian tepat. |
+| 5.2 | Lampiran **sebelum** 047 | **Yang paling penting dalam senarai ini.** 5.2 ialah ujian sebenar 047 — lampiran legasi yang mesti masih render. Tiada lampiran legasi bermakna tiada apa yang diuji, dan 047 mendapat kelulusan yang tak pernah diperiksa. |
+| 5.5 | Akaun kedua **dengan media sebenar** | URL yang tidak menunjuk apa-apa juga pulang 404, atas sebab yang sama sekali berbeza. 404 ialah jawapan betul untuk "tiada kebenaran" **dan** untuk "tiada fail" — kes ini tidak boleh membezakannya melainkan fail itu benar-benar wujud pada akaun lain. |
+| 6.7, 6.8 | Akaun **viewer** sebenar | Ditulis eksplisit dalam Bahagian 6 dan diulang di sini kerana ia dua kes bernilai tertinggi dalam keseluruhan dokumen. Admin yang menulis `account_role` sendiri **sepatutnya** berjaya. Lulus sebagai admin bermakna eskalasi keistimewaan tidak pernah diuji. |
+
+5.5 dan 5.2 bersama bermakna Bahagian 5 boleh melaporkan 8/8 pada akaun ujian
+baharu tanpa satu pun daripada dua kes sebenar 047 berlaku.
+
+**Corak yang menghasilkan kesemuanya, ditulis sekali:** kes ujian mempercayai
+kod tentang keadaan runtime. Ia bentuk ketiga dari punca yang sama seperti dua
+yang lain malam ini — kod mempercayai repo tentang pangkalan data (drift skema),
+dan dokumen ini mempercayai repo tentang deploy (`b068453`). Repo bukan sasaran.
+
+---
+
 ## 1. Login
 
 | # | Kes | Jangkaan | Keputusan | Bukti |
@@ -92,12 +180,44 @@ Sudah **diperhatikan berfungsi** pada dev tempatan — lima laluan
 
 | Laluan | 307 → /login? | | Laluan | 307 → /login? |
 |---|---|---|---|---|
-| `/dashboard` | | | `/broadcasts` | |
-| `/inbox` | | | `/automations` | |
-| `/ops/unanswered` | | | `/flows` | |
-| `/notifications` | | | `/agents` | |
-| `/contacts` | | | `/settings` | |
-| `/pipelines` | | | | |
+| `/dashboard` | LULUS | | `/broadcasts` | LULUS |
+| `/inbox` | LULUS | | `/automations` | LULUS |
+| `/ops/unanswered` | LULUS | | `/flows` | LULUS |
+| `/notifications` | LULUS | | `/agents` | LULUS |
+| `/contacts` | LULUS | | `/settings` | LULUS |
+| `/pipelines` | LULUS | | `/issues` | LULUS |
+
+**Kesemuanya LULUS pada `crm.ptmostaff.com`, 16–17 Sep 2026**, disahkan
+dengan larian berasingan. Setiap satu memulangkan `307` dengan
+`Location: https://crm.ptmostaff.com/login`. `/` juga betul: `307` →
+`/dashboard` → `307` → `/login`.
+
+> **Pembetulan 17 Sep.** Pusingan pertama menguji sebelas laluan dan
+> menyatakan ia "sepadan tepat dengan `protectedPaths`, tiada yang
+> tertinggal". Sebelas itu sepadan dengan `middleware.ts` dalam pokok kerja
+> pada masa itu — bukan dengan apa yang sedang hidup. `/issues` sudah
+> dilindungi pada production dan tidak diuji. Ia diuji kemudian dan **LULUS**.
+>
+> Pengajaran, dan ia terpakai pada setiap kes dalam dokumen ini: senarai
+> dalam branch bukan senarai yang sedang disajikan. Kira daripada sasaran,
+> bukan daripada checkout.
+
+**Akan menjadi 13 selepas deploy seterusnya.** `/calls` (Fasa 2) sudah ada
+dalam `protectedPaths` pada branch tetapi belum disajikan — `/calls` dan
+`/api/calls` kedua-duanya memulangkan **404** pada domain live, iaitu bukti
+bahawa kerja Fasa 2 belum di-deploy. Uji semula 1.6 dengan tiga belas laluan
+selepas ia mendarat; sehingga itu jangan tandakan apa-apa untuk `/calls`.
+
+Boleh diulang sesiapa, tanpa kelayakan:
+
+```bash
+for p in /dashboard /inbox /ops/unanswered /notifications /contacts \
+         /pipelines /broadcasts /automations /flows /agents /settings; do
+  printf '%-18s %s -> %s\n' "$p" \
+    "$(curl -s -o /dev/null -w '%{http_code}' https://crm.ptmostaff.com$p)" \
+    "$(curl -s -o /dev/null -w '%{redirect_url}' https://crm.ptmostaff.com$p)"
+done
+```
 
 ### 1.7 Forgot-password hujung ke hujung
 
@@ -128,8 +248,8 @@ yang kelihatan boleh diklik tetapi tidak disokong oleh skema.
 |---|---|---|---|
 | 2.1 | Zone switcher dalam header | Tidak dipapar — `shouldShowSwitcher()` palsu dengan satu akaun | |
 | 2.2 | Cara lain tukar akaun dalam UI | Tiada | |
-| 2.3 | Viewer vs admin | Tindakan admin tersembunyi untuk viewer | |
-| 2.4 | Viewer paksa tindakan admin | Ditolak di **server**, bukan hanya disembunyikan di UI | |
+| 2.3 | Viewer vs admin | Tindakan admin tersembunyi untuk viewer | **Uji sebagai viewer** |
+| 2.4 | Viewer paksa tindakan admin | Ditolak di **server**, bukan hanya disembunyikan di UI | **Uji sebagai viewer** |
 
 ---
 
@@ -137,8 +257,15 @@ yang kelihatan boleh diklik tetapi tidak disokong oleh skema.
 
 049 mencipta `regions` dan `centres`. Tab Settings membacanya, jadi ia
 berfungsi setakat CRUD. Ia **bukan** ciri siap: `contacts.centre_id` tiada
-penulis (`grep -rn "centre_id" src/` = 0), jadi Parent tidak boleh
-ditetapkan kepada Centre.
+penulis, jadi Parent tidak boleh ditetapkan kepada Centre.
+
+> **Bukti dikemas kini 16 Sep.** Dokumen ini asalnya menulis
+> `grep -rn "centre_id" src/` = 0. Kiraan itu kini **11**, dan salah satunya
+> ialah tulisan (`open-case-dialog.tsx:148`). Kesimpulannya tetap sama —
+> setiap satu daripada sebelas rujukan itu ialah `issues.centre_id`, yang
+> datang dengan migration 050 selepas dokumen ini ditulis. `contacts.centre_id`
+> masih tiada penulis. Kesimpulan betul, bukti sudah basi; jangan ulang
+> grep lama itu dan sangka ia menafikan kes 3.7.
 
 Lokasi: Settings → *Centres & zones* (`/settings?tab=centres`)
 
@@ -161,11 +288,36 @@ atau di-apply selepas deploy. Itu kegagalan urutan, bukan kegagalan UI.
 
 | # | Kes | Jangkaan | Keputusan | Bukti |
 |---|---|---|---|---|
-| 4.1 | Senarai perbualan dimuat | Tiada ralat | | |
+| 4.1 | Senarai perbualan dimuat | Tiada ralat | | Perlukan ≥1 conversation |
 | 4.2 | Buka thread, baca sejarah | Tertib, lengkap | | |
 | 4.3 | Hantar mesej keluar **[tulis]** | Terhantar — kontak ujian, bukan parent sebenar | | |
-| 4.4 | Quick replies | Semua muncul; tiada penapis cawangan (043 dikeluarkan) | | |
-| 4.5 | Belum Dibalas (`/ops/unanswered`) | Antrian tepat | | |
+| 4.4 | Quick replies | Semua muncul; tiada penapis cawangan (043 dikeluarkan) | **RAMALAN: GAGAL** — belum dijalankan | kes 0.1, `docs/open-findings.md` |
+| 4.5 | Belum Dibalas (`/ops/unanswered`) | Antrian tepat | | Perlukan ≥1 belum dibalas — antrian kosong ialah antrian tepat |
+
+**4.4 membawa ramalan, bukan keputusan.** Baris itu asalnya ditanda
+`GAGAL (statik)`, yang salah dalam dua arah: ia nilai yang diambil daripada
+membaca kod dan disimpan seolah-olah ia diperhatikan, dan ia berhenti benar
+sebaik `a834ba2` mendarat. Dokumen UAT yang membawa `GAGAL` untuk sesuatu yang
+sudah dibaiki menghantar orang memburu pepijat yang tiada.
+
+Ia menjadi keputusan sebenar selepas **kes 0.1** dijalankan — itulah gunanya
+tingkap sebelum-merge. Sehingga itu ia ramalan.
+
+Jangkaan dalam baris itu — "tiada penapis
+cawangan sebab 043 dikeluarkan" — bercanggah dengan kod yang sedang hidup.
+`src/app/api/quick-replies/route.ts` **memang** menapis mengikut cawangan:
+baris 63-65 menapis `quick_replies.whatsapp_config_id`, dan baris 176
+memasukkannya pada setiap `insert`. Lajur itu dicipta di satu tempat sahaja
+dalam repo, `043_quick_replies_branch.sql:53-55`, dan 043 tidak pernah
+diapply pada mana-mana pangkalan data.
+
+Ramalan: membuka picker quick reply dari thread inbox memulangkan 500, dan
+mencipta quick reply memulangkan 500 tanpa syarat. Belum disahkan terhadap
+production — kedua-duanya perlukan sesi. Sahkan sebaik sahaja D1 selesai;
+kalau ramalan ini betul ia **P0 hidup pada production**, bukan penemuan UAT.
+
+Butiran penuh, dan tiga jalan keluar yang perlu diputuskan, ada dalam
+`docs/open-findings.md`.
 
 ### 4.6 Presence per tab (045) — bug yang release ini sebenarnya baiki
 
@@ -199,11 +351,12 @@ Itu keputusan produk yang direkod.
 | # | Kes | Jangkaan | Keputusan | Bukti |
 |---|---|---|---|---|
 | 5.1 | Attachment **baharu** (selepas deploy) | Render betul | | |
-| 5.2 | Attachment **legasi** (sebelum 047) | **Render betul** — ini ujian sebenar 047 | | |
+| 5.2 | Attachment **legasi** (sebelum 047) | **Render betul** — ini ujian sebenar 047 | | **Perlukan lampiran sebelum-047 sebenar** — tanpanya kes ini lulus tanpa menguji apa-apa |
 | 5.3 | Muat turun attachment legasi | Berjaya | | |
 | 5.4 | Lightbox imej | Buka, tiada 400 | | |
-| 5.5 | Media sebagai pengguna akaun lain | **404**, bukan 403 | | |
-| 5.6 | Media tanpa sesi | Ditolak | | |
+| 5.5 | Media sebagai pengguna akaun lain | **404**, bukan 403 | | **Perlukan media sebenar pada akaun kedua** — URL kosong juga 404 |
+| 5.6 | Media tanpa sesi | Ditolak | **LULUS** | `/api/media/attachments/<x>` → `401`, `cache-control: no-store`. 16 Sep, tanpa kelayakan |
+| 5.6b | `/api/issues` tanpa sesi | Ditolak | **LULUS** | `401`. 17 Sep |
 | 5.7 | Header cache | `private` | | |
 | 5.8 | Tiada bucket public di seluruh projek | Sah | | |
 
@@ -289,16 +442,26 @@ menolak klien tanpa memecahkan apa-apa.)
 
 ## Ringkasan
 
+Kiraan mengikut **kes bernama**, setakat pusingan 16 Sep (tanpa kelayakan).
+
 | Bahagian | Lulus | Gagal | Tidak diuji |
 |---|---|---|---|
-| 1. Login | | | |
-| 2. Akses akaun | | | |
-| 3. Centres | | | |
-| 4. Inbox | | | |
-| 5. Media | | | |
-| 6. Keselamatan | | | |
+| 1. Login | 1 (1.6, kini 12 laluan) | 0 | 6 |
+| 2. Akses akaun | 0 | 0 | 4 |
+| 3. Centres | 0 | 0 | 6 (+1 tidak boleh diuji: 3.7) |
+| 4. Inbox | 0 | 0 | 6 (4.4 = ramalan GAGAL, belum dijalankan) |
+| 5. Media | 2 (5.6, 5.6b) | 0 | 8 |
+| 6. Keselamatan | 0 | 0 | 9 |
 
-**Keputusan UAT:** LULUS / LULUS BERSYARAT / GAGAL
+**Keputusan UAT:** **BELUM SELESAI** — bukan LULUS, bukan GAGAL. Tiga kes
+lulus dengan bukti. **Sifar kes gagal, dan sifar kes diperhatikan gagal** —
+bukan perkara yang sama, tetapi di sini kedua-duanya benar: tiada apa yang
+dijalankan selain permukaan tanpa-sesi.
+
+Empat kerosakan ditemui dan dibaiki malam ini tanpa satu pun diperhatikan
+berlaku. Kesemuanya ramalan sehingga Bahagian 0 dijalankan. Jangan pindahkan
+mana-mana daripadanya ke lajur Gagal sebelum itu, dan jangan biarkan
+pembetulannya membuat sesiapa fikir ia pernah disahkan.
 
 ### Sengaja tidak diuji — dan kenapa
 
@@ -314,4 +477,29 @@ menolak klien tanpa memecahkan apa-apa.)
 
 ### Blocker tinggal
 
+Prasyarat P1–P7 semuanya hijau — release sudah mendarat. Yang menghalang
+sekarang ialah **akses ujian**, bukan keadaan sistem. Tujuh keputusan, dan
+kesemuanya milik Yusuf, bukan mana-mana worker:
+
+| # | Menghalang | Kenapa ia berhenti di sini | Keputusan yang diperlukan |
+|---|---|---|---|
+| D1 | Bahagian 1 (kecuali 1.6), 2, 3, 4, 5 | credential + data production | **Dua akaun ujian** pada domain live: satu admin, satu viewer. Siapa cipta, dalam akaun mana. Tanpa ini 39 kes mati. |
+| D2 | 3.2, 3.3, 3.5, 3.6, 4.3 — kes **[tulis]** | menulis ke pangkalan data production | Lulus menulis pada production dengan awalan `UAT-` dan tanggungjawab membersih, atau tangguh kes tulis. |
+| D3 | 6.1, 6.2, 6.7, 6.8 | auth/security dengan JWT sebenar | Siapa menjalankannya. **6.2 mematikan webhook endpoint** kalau tersilap jalan (`max_failures => 1`) — perlu pemilik bernama dan rancangan pulih. |
+| D4 | 5.9a, dan dengan itu 5.9b/5.9c | data production | Senarai baris ditolak preflight storage Seksyen 5 mesti disalin ke sini. Ia sepatutnya dirakam **sebelum** 047 diapply; 047 sudah diapply 15 Sep. Kalau senarai itu tidak wujud, 5.9c tidak boleh membezakan regresi 047 daripada kerosakan lama — nyatakan begitu dan jangan reka. |
+| D5 | 1.7 hujung ke hujung | menghantar e-mel sebenar, menukar kata laluan | Bergantung pada D1, dan pada P1 board (Supabase Auth → URL Configuration mesti termasuk domain live, kalau tidak pautan reset mendarat di `localhost`). |
+| D6 | Bahagian WhatsApp | nombor belum disambung | Sudah dikenal pasti; kekal TIDAK BOLEH DIUJI sehingga nombor pilot hidup. |
+| D7 | — | migration | Nasib `042`/`043`/`044`/`048` kekal P2 pada board. Tidak dibuka semula oleh UAT ini. |
+
 ### Risiko tinggal
+
+- **Fasa 1 ditanda SELESAI pada board sedangkan UAT baru 2/41.** Board
+  2026-09-13 memutuskan Fasa 1 ditutup hanya selepas preflight + release +
+  UAT. Dua daripada tiga sudah; yang ketiga belum. Jurangnya jurang bukti,
+  bukan jurang kod.
+- **D4 mungkin sudah lewat.** 5.9a meminta rakaman sebelum 047. 047 diapply
+  15 Sep. Kalau preflight storage Seksyen 5 tidak disimpan, tiada cara
+  membina semulanya selepas fakta.
+- **6.7/6.8 ialah kes bernilai tertinggi dan ia belum disentuh.** Kalau viewer
+  boleh menaikkan `account_role` sendiri, itu eskalasi keistimewaan dan
+  release berhenti. Sehingga ia diuji, 046 ialah andaian, bukan bukti.

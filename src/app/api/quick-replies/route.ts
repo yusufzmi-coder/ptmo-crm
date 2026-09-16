@@ -3,7 +3,10 @@ import { getCurrentAccount, requireRole, toErrorResponse } from '@/lib/auth/acco
 import { supabaseAdmin } from '@/lib/automations/admin-client'
 import { validateInteractivePayload } from '@/lib/whatsapp/interactive'
 import { configDisplayName, resolveConfig } from '@/lib/whatsapp/resolve-config'
-import { decorateQuickReplyForBranch } from '@/lib/inbox/quick-reply-branch'
+import {
+  decorateQuickReplyForBranch,
+  isMissingBranchColumn,
+} from '@/lib/inbox/quick-reply-branch'
 
 // Quick replies — reusable snippets (plain text or a saved interactive
 // message) shared across the account. GET lists; POST creates. Mirrors
@@ -49,10 +52,14 @@ export async function GET(request: Request) {
       }
     }
 
-    let query = supabase
-      .from('quick_replies')
-      .select('*')
-      .order('created_at', { ascending: false })
+    // RLS (quick_replies_select) scopes to the caller's account.
+    const baseQuery = () =>
+      supabase
+        .from('quick_replies')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+    let query = baseQuery()
 
     // Hide other branches' pinned snippets. Only once we know which
     // branch we are in: on an unresolved thread, showing the
@@ -65,8 +72,23 @@ export async function GET(request: Request) {
         : query.is('whatsapp_config_id', null)
     }
 
-    // RLS (quick_replies_select) scopes to the caller's account.
-    const { data, error } = await query
+    let { data, error } = await query
+
+    // 043 has never been applied to any database, so on production that
+    // filter names a column that does not exist and the whole list 500s
+    // — for every thread, which is where the picker always opens from.
+    // Without the column there are no pinned snippets to hide, so the
+    // unfiltered list IS the correct answer rather than a degraded one.
+    //
+    // Token expansion is untouched: `{{cawangan}}` resolves through
+    // `conversations.whatsapp_config_id`, which came with 040 and is
+    // live. Only pinning is missing.
+    let branchPinning: 'ok' | 'unavailable' = 'ok'
+    if (error && conversationId && isMissingBranchColumn(error)) {
+      branchPinning = 'unavailable'
+      ;({ data, error } = await baseQuery())
+    }
+
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
     const rows = data ?? []
@@ -96,6 +118,7 @@ export async function GET(request: Request) {
       ),
       branch: branchName,
       branch_resolved: branchConfigId !== null,
+      branch_pinning: branchPinning,
     })
   } catch (err) {
     return toErrorResponse(err)
@@ -164,6 +187,11 @@ export async function POST(request: Request) {
     whatsapp_config_id = resolved.config.id
   }
 
+  // The column is carried only when something is pinned to a branch.
+  // Sending `whatsapp_config_id: null` reads as harmless and is not: a
+  // database without 043 rejects the key itself, null or otherwise, so
+  // including it unconditionally made EVERY quick reply creation fail
+  // rather than only the branch-pinned ones.
   const { data, error } = await supabaseAdmin()
     .from('quick_replies')
     .insert({
@@ -173,12 +201,24 @@ export async function POST(request: Request) {
       kind,
       content_text,
       interactive_payload,
-      whatsapp_config_id,
+      ...(whatsapp_config_id === null ? {} : { whatsapp_config_id }),
     })
     .select()
     .single()
 
   if (error) {
+    // Pinning was asked for and this database cannot store it. Say that,
+    // rather than dropping the pin and returning 201 — a snippet silently
+    // account-wide is the failure that sends a parent to the wrong centre.
+    if (isMissingBranchColumn(error)) {
+      return NextResponse.json(
+        {
+          error:
+            'Branch pinning is not available on this database (migration 043 has not been applied). Create the quick reply without a branch, or apply 043.',
+        },
+        { status: 503 },
+      )
+    }
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
   return NextResponse.json({ quick_reply: data }, { status: 201 })

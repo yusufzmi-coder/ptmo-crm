@@ -45,7 +45,8 @@
     "defaultAvatar": "Avatar",
     "menuProfile": "Profil",
     "menuSettings": "Tetapan",
-    "menuSignOut": "Log keluar"
+    "menuSignOut": "Log keluar",
+    "calls": "Panggilan"
   },
   "Header": {
     "dashboard": "Dashboard",
@@ -66,7 +67,8 @@
     "defaultAvatar": "Avatar",
     "menuProfile": "Profil",
     "menuSettings": "Tetapan",
-    "menuSignOut": "Log keluar"
+    "menuSignOut": "Log keluar",
+    "calls": "Panggilan"
   },
   "ZoneSwitcher": {
     "menuLabel": "Tukar Zone",
@@ -1731,6 +1733,9 @@
       "branchRenameSave": "Simpan",
       "branchRenameCancel": "Batal",
       "branchRenameFailed": "Gagal menyimpan nama cawangan.",
+      "centreNone": "Tiada Centre",
+      "centreForNumber": "Centre untuk {number}",
+      "centreSaveFailed": "Gagal menyimpan Centre untuk nombor ini.",
       "loading": "Memuat nombor WhatsApp",
       "healthTitle": "Kesihatan nombor",
       "healthDesc": "Apa yang Meta laporkan tentang nombor ini sekarang. Tidak pernah disimpan — dibaca semula setiap kali halaman ini dibuka.",
@@ -2326,6 +2331,67 @@
       "invalidSeverity": "Pilih satu tahap.",
       "invalidBody": "Permintaan itu tidak dapat dibaca.",
       "nothingToUpdate": "Tiada apa yang berubah."
+    }
+  },
+  "Calls": {
+    "list": {
+      "title": "Panggilan",
+      "description": "Panggilan telefon dengan ibu bapa, direkod dengan tangan. Separuh perbualan yang berlaku di luar WhatsApp.",
+      "empty": "Belum ada panggilan direkod.",
+      "emptyHint": "Bila ibu bapa ditelefon dan bukan dimesej, rekod di sini supaya syif berikutnya tahu apa yang dibincangkan.",
+      "logCall": "Rekod panggilan",
+      "search": "Cari ringkasan",
+      "allOutcomes": "Semua hasil",
+      "allDirections": "Semua arah",
+      "dueOnly": "Perlu call balik",
+      "clearFilters": "Kosongkan penapis",
+      "followUp": "Call balik {when}",
+      "duration": "{duration}",
+      "loggedBy": "Direkod oleh {name}",
+      "unknownPerson": "Seseorang",
+      "count": "{count, plural, =0 {Tiada panggilan} other {# panggilan}}",
+      "unavailable": "Rekod panggilan belum hidup pada pangkalan data ini. Migration 051 belum diapply."
+    },
+    "log": {
+      "title": "Rekod panggilan",
+      "description": "Apa yang dibincangkan, supaya orang seterusnya tak telefon mereka semula untuk tanya perkara sama.",
+      "directionLabel": "Arah",
+      "outcomeLabel": "Hasilnya",
+      "calledAtLabel": "Bila",
+      "durationLabel": "Berapa lama (minit)",
+      "durationPlaceholder": "cth 5",
+      "summaryLabel": "Apa yang dibincangkan",
+      "summaryPlaceholder": "Ibu tanya yuran Ogos; dijelaskan, invois dihantar melalui e-mel.",
+      "followUpLabel": "Call balik pada",
+      "followUpHint": "Mereka masih menunggu kita. Tetapkan masa, kalau tidak janji itu tak tersimpan di mana-mana.",
+      "save": "Simpan panggilan",
+      "cancel": "Batal",
+      "saved": "Panggilan direkod"
+    },
+    "direction": {
+      "keluar": "Kita telefon",
+      "masuk": "Mereka telefon"
+    },
+    "outcome": {
+      "dijawab": "Dijawab",
+      "tidak_dijawab": "Tidak dijawab",
+      "tinggal_mesej": "Tinggal mesej",
+      "call_balik": "Minta call balik",
+      "nombor_salah": "Nombor salah"
+    },
+    "errors": {
+      "loadFailed": "Gagal memuat senarai panggilan.",
+      "saveFailed": "Tidak berjaya disimpan.",
+      "summaryRequired": "Tulis apa yang dibincangkan.",
+      "invalidDirection": "Pilih arah panggilan.",
+      "invalidOutcome": "Pilih hasil panggilan.",
+      "invalidDuration": "Tempoh mesti nombor dalam minit.",
+      "invalidCalledAt": "Masa itu tidak dapat dibaca.",
+      "invalidBody": "Tiada data yang boleh digunakan dihantar.",
+      "profileNotLinked": "Profil anda belum terikat pada mana-mana akaun.",
+      "unauthorized": "Log masuk dahulu.",
+      "forbidden": "Anda tiada kebenaran merekod panggilan.",
+      "tableMissing": "Rekod panggilan belum tersedia pada pangkalan data ini (migration 051 belum diapply)."
     }
   }
 }

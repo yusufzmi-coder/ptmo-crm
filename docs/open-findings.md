@@ -1868,3 +1868,133 @@ Ujian ini menjalankan laluan tulis sebenar terhadap polisi yang
 membezakan kedua-dua kunci.
 
 **Tiada tindakan sebelum menyambung nombor.** Item ini ditutup.
+
+---
+
+## P0 — quick replies memanggil lajur yang tiada pangkalan data pernah cipta (16 Sep 2026)
+
+`src/app/api/quick-replies/route.ts:63-65` dan `:176`
+
+Corak yang sama seperti `centres-panel.tsx` / 049, tetapi arah bertentangan
+dan belum ditangkap: kali ini kod hidup pada production sedang merujuk lajur
+daripada migration yang **diparkir dan tidak pernah diapply**.
+
+`quick_replies.whatsapp_config_id` dicipta di **satu tempat sahaja** dalam
+seluruh repo — `supabase/migrations/043_quick_replies_branch.sql:53-55`. 043
+ialah salah satu daripada empat migration yang keputusan satu-nombor
+tinggalkan; board menyatakannya secara jelas: *"Belum diapply, dan tiada
+pangkalan data pernah menjalankannya: 042, 043, 044, 048."*
+
+Jangan keliru dengan `conversations.whatsapp_config_id` — lajur itu datang
+dari 040, sudah live, dan berfungsi. Yang hilang ialah lajur pada
+`quick_replies`.
+
+Dua laluan terjejas, dan satu daripadanya tidak bersyarat:
+
+**GET, bila ada `conversationId`.** Baris 63-65 menapis
+`whatsapp_config_id.is.null,whatsapp_config_id.eq.<id>`. `quick-reply-picker.tsx:50`
+membaca `?c=` daripada URL inbox, jadi **setiap** kali picker dibuka dari
+thread sebenar ia melalui laluan ini. Dari senarai quick replies tanpa
+thread ia tidak.
+
+**POST, sentiasa.** Baris 176 memasukkan `whatsapp_config_id` dalam setiap
+`insert`, tanpa syarat, walaupun nilainya `null`. PostgREST menolak lajur
+yang tidak wujud pada skema — nilai `null` tidak menyelamatkannya. Jadi
+**mencipta quick reply pada production gagal 500**, bukan kadang-kadang.
+
+Kenapa ia tidak ditangkap: ujian menyediakan klien Supabase palsu, jadi
+skema yang diuji ialah skema yang diandaikan ujian. Gate hijau tidak
+mengatakan apa-apa tentang lajur yang hilang.
+
+Tidak disahkan secara langsung terhadap production — endpoint memerlukan
+sesi, dan pusingan UAT 16 Sep berjalan tanpa kelayakan. Bukti di sini ialah
+bukti statik: satu-satunya pengisytiharan lajur ada dalam 043, dan 043 tidak
+pernah dijalankan. Langkah pengesahan bila ada akaun ujian: buka picker
+quick reply daripada thread inbox, dan cuba cipta satu quick reply.
+
+Tiga jalan, dan ia keputusan Yusuf, bukan pembaikan yang patut dibuat
+secara senyap:
+
+1. **Apply 043.** Ia menambah satu lajur nullable dan satu index separa;
+   ia idempotent. Tetapi ia membuka semula set migration yang sengaja
+   diparkir, dan keputusan itu ada sebabnya.
+2. **Pagar kod**, seperti `my_accounts` dipagar pada `583d501` bila 044
+   tiada — kesan ketiadaan lajur, jatuh kepada tingkah laku akaun-lebar.
+3. **Buang laluan cawangan** daripada route sepenuhnya, selaras dengan
+   keputusan satu-nombor.
+
+**Jalan 2 diambil (16 Sep).** Route kini mengesan lajur yang hilang dan
+jatuh kepada senarai tanpa penapis; `insert` membawa lajur itu hanya bila
+ada sesuatu yang dipin. Pinning yang diminta pada pangkalan data tanpa 043
+memulangkan **503 dengan sebab**, bukan 201 senyap — snippet yang diam-diam
+menjadi akaun-lebar ialah kegagalan yang menghantar ibu bapa ke centre yang
+salah. Pengesanan hanya terbuka bila mesej ralat menamakan
+`whatsapp_config_id`; `42703` pada lajur lain kekal 500.
+
+Ini menghentikan pendarahan. Ia **tidak** menjawab soalan asal: sama ada
+043 patut diapply, atau laluan cawangan patut dibuang sepenuhnya selaras
+dengan keputusan satu-nombor. Itu masih keputusan Yusuf.
+
+UAT kes 4.4 masih belum boleh ditanda LULUS — ramalan 500 itu sendiri belum
+pernah disahkan terhadap production, dan kini pembetulan ini pun belum.
+Kedua-duanya perlukan sesi.
+
+---
+
+## Audit kelas penuh: kod yang bergantung pada migration diparkir (16 Sep 2026)
+
+Tiga contoh kelas ini ditemui secara kebetulan, satu demi satu — `my_accounts()`
+pada `583d501`, kemudian quick replies. Itu bukan kaedah. Audit ini memeriksa
+**kesemua** objek yang dicipta oleh empat migration yang diparkir (`042`, `043`,
+`044`, `048`) terhadap penggunaannya dalam `src/`, supaya senarainya habis.
+
+Kenapa suite ujian tidak boleh menggantikan audit ini: klien Supabase distub,
+jadi skema yang diuji ialah skema yang ujian andaikan. Gate hijau tidak
+mengatakan apa-apa tentang lajur atau fungsi yang tiada. Ketiga-tiga penemuan
+berlaku di bawah 1300+ ujian yang lulus.
+
+### Hasil
+
+| Migration | Objek dicipta | Kod bergantung? | Keadaan |
+|---|---|---|---|
+| **042** | `merge_duplicate_conversations()` | **Tidak** — 0 rujukan dalam `src/` | Selamat |
+| **043** | `quick_replies.whatsapp_config_id` | **Ya, dua tempat** | **Dibaiki** 16 Sep |
+| **044** | 1 jadual, 9 fungsi | Sebahagian — lihat bawah | Selamat |
+| **048** | `broadcasts.whatsapp_config_id`, `create_broadcast_with_recipients` 9-arg | **Ya, dua tempat** | **Dibaiki** 16 Sep |
+
+### 044 — kenapa ia selamat, walaupun kelihatan paling teruk
+
+Lima RPC 044 dipanggil pada runtime, dan pandangan pertama mencadangkan lima
+kegagalan. Ia bukan:
+
+- `redeem_invitation`, `set_member_role`, `remove_account_member`,
+  `transfer_account_ownership` — keempat-empatnya **juga** dicipta oleh `018`
+  dan `019`, yang sudah live, dan **tandatangannya identik** dengan versi 044.
+  044 menukar badan fungsi, bukan hujahnya. PostgREST memadankan mengikut nama
+  hujah, jadi setiap panggilan ini mendarat pada versi 018/019 dan berfungsi.
+  Jemputan staf — cara staf kedua pilot menyertai — tidak terjejas.
+- `my_accounts()` — 044 sahaja, sudah dipagar pada `583d501`.
+- `set_active_account()` — 044 sahaja, dan **tidak boleh dicapai**: satu-satunya
+  pemanggilnya ialah `use-zones.ts:106`, daripada `zone-switcher.tsx`, yang
+  merender trigger hanya bila `shouldShowSwitcher(zones)` benar. `my_accounts()`
+  yang tiada memulangkan senarai zon kosong, jadi switcher tidak pernah dirender.
+- `account_members` — **0** panggilan `.from()` dalam `src/`.
+
+Pengajaran yang perlu dibawa ke audit akan datang: **jangan berhenti pada
+"migration ini diparkir dan kod memanggil fungsinya."** Soalan sebenar ialah
+sama ada objek itu wujud **di tempat lain** dalam ledger yang diapply, dan jika
+ya, sama ada tandatangannya sepadan. Dua jawapan berbeza, dan 048 vs 044
+menunjukkan kedua-duanya — `create_broadcast_with_recipients` wujud dalam `038`
+tetapi dengan lapan hujah, dan hujah kesembilan sudah cukup untuk mematikannya.
+
+### Yang masih terbuka
+
+Pembaikan menghentikan kegagalan; ia tidak memutuskan hala tuju. `043` dan `048`
+masih diparkir, dan kod masih membawa laluan cawangan yang mereka sokong. Sama
+ada migration itu patut diapply, atau laluan cawangan dibuang selaras keputusan
+satu-nombor, kekal keputusan Yusuf. Keputusan board 2026-09-14 mengekalkan seni
+bina multi-number dengan sengaja, jadi membuangnya bukan pilihan lalai.
+
+Tiada satu pun daripada ini disahkan terhadap production. Pusingan UAT 16 Sep
+berjalan tanpa kelayakan; bukti di sini ialah bukti statik terhadap ledger
+migration dan kod. Sahkan bila akaun ujian ada.

@@ -4,10 +4,10 @@
 
 **Pemilik:** Yusuf Azmi  
 **Produk:** CRM PTMO Operation Dept  
-**Status keseluruhan:** Fasa 1 **SELESAI** · Isu & Tindakan **hidup pada production**
-**Dikemas kini:** 15 Sep 2026
+**Status keseluruhan:** Fasa 1 kod **SELESAI** · Isu & Tindakan **hidup pada production** · **UAT 2/41 kes** — lihat `docs/uat-fasa1.md`
+**Dikemas kini:** 16 Sep 2026
 **Branch kerja bersepadu:** `feat/multi-number` = `origin/main` = `6928678` — semua diserap
-**Gate:** lint 0 error / 32 warning · typecheck 0 · **1285 ujian lulus** · build berjaya
+**Gate:** lint 0 error / 32 warning · typecheck 0 · **1343 ujian lulus (114 fail)** · build berjaya — 16 Sep
 **Katalog:** en/ko/ms **1905 kunci** setiap satu. Bahasa Melayu **aktif** — domain menyajikan `lang="ms"`
 **Live:** `crm.ptmostaff.com` 200, melalui Vercel projek `crmfinal_ptmo`
 **Baseline production:** skema **041 + 045 + 046 + 047 + 049 + 050**. `050` (Isu & Tindakan) diapply 15 Sep, enam penegasan `t`, disahkan bebas melalui REST. Release Fasa 1 diapply 15 Sep dalam satu transaksi; tiga penegasan `t`, disahkan bebas dengan probe baca-sahaja dari luar pangkalan data.
@@ -20,7 +20,9 @@
 
 | Keutamaan | Tindakan | Siapa | Bila selesai |
 |---|---|---|---|
+| P1 | **Nasib laluan cawangan `043` + `048`.** Empat kerosakan hidup sudah dipagar (16 Sep) — quick replies dan broadcast. Masih perlu diputuskan: apply kedua-dua migration, atau buang laluan cawangan selaras keputusan satu-nombor | Yusuf + Coordinator | [ ] **`docs/open-findings.md`** |
 | P0 | Sambung nombor WhatsApp — Callback `https://crm.ptmostaff.com/api/whatsapp/webhook`, verify token yang kau reka, PIN 6-digit | Yusuf | [ ] **satu-satunya yang menghalang Fasa 2** |
+| P1 | **Dua akaun ujian UAT** pada `crm.ptmostaff.com` — satu admin, satu viewer. 39 daripada 41 kes UAT mati tanpanya | Yusuf | [ ] **halangan tunggal UAT** |
 | P1 | Tab Actions GitHub — sepanduk fork. Sembilan push, sifar larian; setiap gate setakat ini dicetuskan dengan tangan | Yusuf | [ ] |
 | P1 | Vercel: pastikan `WHATSAPP_TEMPLATES_DRY_RUN` **tiada**. Kalau `true`, templat dapat ID rekaan dan tidak pernah sampai ke Meta — UI kata "menunggu kelulusan" selama-lamanya | Yusuf | [ ] |
 | P1 | Vercel: sahkan `META_APP_SECRET` ialah App Secret sebenar. Tanpanya **setiap mesej ibu bapa ditolak** — gagal tertutup, betul, tetapi kelihatan seperti WhatsApp senyap | Yusuf | [ ] |
@@ -40,7 +42,7 @@
 |---|---|---|
 | 0 - Foundation | Reka bentuk multi-zone, nombor balasan betul, migration 041 co-viewer | Done |
 | 1 - Shared Inbox Foundation | Multi-number, zone/HQ, security, centres, release safety | **Done** 15 Sep |
-| 2 - WhatsApp Pilot | 1 Centre, 1 nombor baharu, 2 staf, chat/media/call log asas | **Next** — tinggal sambung nombor |
+| 2 - WhatsApp Pilot | 1 Centre, 1 nombor baharu, 2 staf, chat/media/call log asas | **Kod siap 17 Sep** — call log, pemilih Centre per nombor, 051, `docs/uat-fasa2.md`. Tinggal sambung nombor + apply 051 |
 | 3 - Operations Workflow | Claim chat, issue case, lifecycle, follow-up, escalation longgar | **Teras hidup** — kes, kitaran hayat, garis masa. Eskalasi Zone Head masih perlukan 044 |
 | 4 - Scale & HQ | Rollout ikut gelombang, zone health, HQ report, BSC | Planned |
 | 5 - SMS & Automation | Sambung SMS sebagai source of truth, AI/automation terkawal | Later |
@@ -206,6 +208,15 @@ kongsi: guna, jangan ubah.
 | 2026-09-14 | **Template seed tidak lagi mereka fakta** - harga `$9/mo` dan dasar refund palsu dikeluarkan. Sifar fakta dicipta sebagai ganti | `b83dafa` | Coordinator |
 | 2026-09-14 | **Locale tidak lagi gagal senyap** - `.env.local` membawa `"en "` dengan ruang sejak 10 Sep; hari `ms ` ditulis, pengaktifan akan gagal tanpa sebarang isyarat | `b19fa2a` | Coordinator |
 | 2026-09-14 | PR #3 di-merge dan di-deploy | `019e722` | Coordinator |
+| 2026-09-16 | **Audit kelas penuh selesai:** kesemua objek `042`/`043`/`044`/`048` disemak terhadap `src/`. **042 selamat** (0 rujukan). **044 selamat** — empat RPC-nya juga wujud dalam `018`/`019` yang live dengan tandatangan identik, `set_active_account` tak boleh dicapai, `account_members` tidak dipanggil. **043 dan 048 masing-masing dua kerosakan, semua dipagar** | `docs/open-findings.md` | Coordinator |
+| 2026-09-16 | **Dua P0 broadcast dipagar:** `create_broadcast_with_recipients` dipanggil dengan 9 hujah bernama sedangkan production hanya ada versi 8-hujah dari `038` — setiap penciptaan broadcast gagal. `broadcast-resume` pula memilih lajur `048` dan memulangkan 404 untuk kempen yang wujud | `src/lib/whatsapp/broadcast-core.ts`, `broadcast-resume.ts` | Coordinator |
+| 2026-09-17 | **Call log Fasa 2 mendarat.** Jadual `call_logs` (051), `/calls`, `POST/GET /api/calls`, dialog rekod panggilan, `Calls.*` dalam tiga katalog, `/calls` ditambah pada `protectedPaths`. BUKAN WhatsApp Calling API — itu pilot kemudian | `4c35077`, `f7bcc93` | Coordinator Fasa 2 |
+| 2026-09-17 | **051 disahkan atas baseline tanpa 042/043/044/048** dalam pangkalan data buangan di dalam container kongsi — bukan `db reset --local`. Diapply dua kali (idempotent); kedua-dua CHECK dan `NOT NULL` pada `summary` disahkan menggigit dengan insert yang sepatutnya gagal | `5b02395` | Coordinator Fasa 2 |
+| 2026-09-17 | **`whatsapp_config.centre_id` berhenti mati.** 049 mencipta lajur itu dan tiada kod pernah menulisnya; pilot kini terekod pada baris nombor, bukan hanya dalam trigger automation | `e4e139b` | Coordinator Fasa 2 |
+| 2026-09-17 | **Dua sesi membaiki P0 quick-replies serentak.** `a834ba2` (503 bila pin diminta) mendarat dahulu dan dikekalkan; `board/f2-qr-fence` `c1c9b3a` ditarik, tidak dimerge. Commit `a834ba2` turut menarik masuk suntingan `centre_id` sesi lain yang belum dicommit. Jurang kekal: `quick-replies/route.ts` masih tiada ujian route | `a834ba2`, `c1c9b3a` | Coordinator Fasa 2 |
+| 2026-09-16 | **P0 dipagar:** `quick-replies` jatuh kepada senarai tanpa penapis bila lajur 043 tiada; `insert` membawa lajur hanya bila ada pin; pinning tanpa 043 pulang 503 bersebab, bukan 201 senyap. 1330 ujian lulus | `src/app/api/quick-replies/route.ts`, `src/lib/inbox/quick-reply-branch.ts` | Coordinator |
+| 2026-09-16 | **P0 ditemui tanpa menjalankan apa-apa:** `quick-replies/route.ts` menapis dan memasukkan `whatsapp_config_id`, lajur yang hanya `043` cipta dan yang tiada pangkalan data pernah jalankan. Corak sama seperti 049/`centres-panel`, arah bertentangan | `docs/open-findings.md` | Coordinator |
+| 2026-09-16 | **UAT dimulakan pada domain live.** Kes 1.6 LULUS penuh — kesebelas laluan dilindungi pulang 307 → `/login`, sepadan tepat dengan `protectedPaths`. Kes 5.6 LULUS — media tanpa sesi pulang 401, `cache-control: no-store`. Domain menyajikan `lang="ms"`. Baki 39 kes disekat pada akaun ujian | `405ba94`, `docs/uat-fasa1.md` | Coordinator |
 
 ---
 

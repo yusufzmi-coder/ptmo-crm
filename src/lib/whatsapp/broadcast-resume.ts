@@ -23,6 +23,7 @@ import { decrypt } from '@/lib/whatsapp/encryption';
 import { resolveTemplateRow } from '@/lib/whatsapp/template-body';
 import { sanitizePhoneForMeta, isValidE164 } from '@/lib/whatsapp/phone-utils';
 import { resolveConfig, resolveFailureMessage } from '@/lib/whatsapp/resolve-config';
+import { isMissingColumn } from '@/lib/db/schema-drift';
 
 /** Which recipients a resume pass picks up. */
 export type ResumeScope = 'pending' | 'failed' | 'all';
@@ -145,12 +146,43 @@ export async function planBroadcastResume(
   broadcastId: string,
   scope: ResumeScope
 ): Promise<ResumePlan> {
-  const { data: broadcast, error: bcError } = await db
-    .from('broadcasts')
-    .select('id, template_name, template_language, whatsapp_config_id')
-    .eq('id', broadcastId)
-    .eq('account_id', accountId)
-    .maybeSingle();
+  interface BroadcastRow {
+    id: string;
+    template_name: string;
+    template_language: string;
+    whatsapp_config_id?: string | null;
+  }
+
+  const loadBroadcast = async (columns: string) => {
+    const res = await db
+      .from('broadcasts')
+      .select(columns)
+      .eq('id', broadcastId)
+      .eq('account_id', accountId)
+      .maybeSingle();
+    return res as unknown as {
+      data: BroadcastRow | null;
+      error: { code?: string; message?: string } | null;
+    };
+  };
+
+  let { data: broadcast, error: bcError } = await loadBroadcast(
+    'id, template_name, template_language, whatsapp_config_id'
+  );
+
+  // `broadcasts.whatsapp_config_id` comes from 048, which has never been
+  // applied to any database. Selecting it on production fails the whole
+  // query, and the error handler below turns that into "Broadcast not
+  // found" — a 404 for a campaign that is sitting right there.
+  //
+  // Drop the column and read the rest. The code below already handles a
+  // broadcast with no frozen number: `resolveConfig` resolves to the
+  // account's only number, and refuses to guess when there are several.
+  if (bcError && isMissingColumn(bcError, 'whatsapp_config_id')) {
+    ({ data: broadcast, error: bcError } = await loadBroadcast(
+      'id, template_name, template_language'
+    ));
+  }
 
   if (bcError || !broadcast) {
     throw new BroadcastError('not_found', 'Broadcast not found', 404);

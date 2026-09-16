@@ -6,6 +6,7 @@ import {
   hasBranchToken,
 } from '@/lib/inbox/branch-token';
 import { validateInteractivePayload } from '@/lib/whatsapp/interactive';
+import { isMissingColumn } from '@/lib/db/schema-drift';
 
 /**
  * Turn a stored quick reply into the one THIS thread's branch should
@@ -95,4 +96,17 @@ export function decorateQuickReplyForBranch(
       allBranchNames,
     ),
   };
+}
+
+/**
+ * Whether a Supabase error means the 043 branch column is absent.
+ *
+ * Thin wrapper over the shared detector so callers in this module read
+ * in terms of the branch feature rather than a column name. The codes
+ * and the reason they matter live in `@/lib/db/schema-drift`.
+ */
+export function isMissingBranchColumn(
+  error: { code?: string; message?: string } | null | undefined,
+): boolean {
+  return isMissingColumn(error, 'whatsapp_config_id');
 }

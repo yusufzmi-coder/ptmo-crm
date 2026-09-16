@@ -45,7 +45,8 @@
     "defaultAvatar": "아바타",
     "menuProfile": "프로필",
     "menuSettings": "설정",
-    "menuSignOut": "로그아웃"
+    "menuSignOut": "로그아웃",
+    "calls": "Calls"
   },
   "Header": {
     "dashboard": "대시보드",
@@ -66,7 +67,8 @@
     "defaultAvatar": "아바타",
     "menuProfile": "프로필",
     "menuSettings": "설정",
-    "menuSignOut": "로그아웃"
+    "menuSignOut": "로그아웃",
+    "calls": "Calls"
   },
   "ZoneSwitcher": {
     "menuLabel": "구역 전환",
@@ -1731,6 +1733,9 @@
       "branchRenameSave": "Save",
       "branchRenameCancel": "Cancel",
       "branchRenameFailed": "Could not save the branch name.",
+      "centreNone": "No centre",
+      "centreForNumber": "Centre for {number}",
+      "centreSaveFailed": "Could not save the centre for this number.",
       "loading": "WhatsApp 번호 불러오는 중",
       "healthTitle": "번호 상태",
       "healthDesc": "지금 이 번호에 대해 Meta가 보고하는 내용입니다. 저장하지 않고 페이지를 열 때마다 새로 읽습니다.",
@@ -2326,6 +2331,67 @@
       "invalidSeverity": "심각도를 선택하세요.",
       "invalidBody": "요청을 읽을 수 없습니다.",
       "nothingToUpdate": "변경된 내용이 없습니다."
+    }
+  },
+  "Calls": {
+    "list": {
+      "title": "Calls",
+      "description": "Phone calls with parents, logged by hand. The half of a thread that happens off WhatsApp.",
+      "empty": "No calls logged yet.",
+      "emptyHint": "When a parent is phoned instead of messaged, log it here so the next shift can see what was said.",
+      "logCall": "Log a call",
+      "search": "Search summaries",
+      "allOutcomes": "Any outcome",
+      "allDirections": "Any direction",
+      "dueOnly": "Follow-up due",
+      "clearFilters": "Clear filters",
+      "followUp": "Ring back {when}",
+      "duration": "{duration} long",
+      "loggedBy": "Logged by {name}",
+      "unknownPerson": "Someone",
+      "count": "{count, plural, =0 {No calls} one {# call} other {# calls}}",
+      "unavailable": "Call logging is not live on this database yet. Migration 051 has not been applied."
+    },
+    "log": {
+      "title": "Log a call",
+      "description": "What was said, so the next person does not call them again to ask the same thing.",
+      "directionLabel": "Which way",
+      "outcomeLabel": "What came of it",
+      "calledAtLabel": "When",
+      "durationLabel": "How long (minutes)",
+      "durationPlaceholder": "e.g. 5",
+      "summaryLabel": "What was said",
+      "summaryPlaceholder": "Mother asked about August fees; explained, sending the invoice by email.",
+      "followUpLabel": "Ring back at",
+      "followUpHint": "They are still waiting on us. Set a time or the promise lives nowhere.",
+      "save": "Save call",
+      "cancel": "Cancel",
+      "saved": "Call logged"
+    },
+    "direction": {
+      "keluar": "We called",
+      "masuk": "They called"
+    },
+    "outcome": {
+      "dijawab": "Answered",
+      "tidak_dijawab": "No answer",
+      "tinggal_mesej": "Left a message",
+      "call_balik": "Asked for a callback",
+      "nombor_salah": "Wrong number"
+    },
+    "errors": {
+      "loadFailed": "Could not load the calls.",
+      "saveFailed": "That did not save.",
+      "summaryRequired": "Write what was said.",
+      "invalidDirection": "Pick which way the call went.",
+      "invalidOutcome": "Pick what came of it.",
+      "invalidDuration": "A length has to be a number of minutes.",
+      "invalidCalledAt": "That is not a time we can read.",
+      "invalidBody": "Nothing usable was sent.",
+      "profileNotLinked": "Your profile is not linked to an account.",
+      "unauthorized": "Sign in first.",
+      "forbidden": "You do not have permission to log calls.",
+      "tableMissing": "Call logging is not available on this database yet (migration 051 has not been applied)."
     }
   }
 }

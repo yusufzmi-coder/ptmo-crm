@@ -30,6 +30,7 @@ import { resolveTemplateRow } from '@/lib/whatsapp/template-body';
 import type { MessageTemplate } from '@/types';
 import { findOrCreateContact } from '@/lib/api/v1/contacts';
 import { resolveConfig, resolveFailureMessage } from '@/lib/whatsapp/resolve-config';
+import { isMissingFunction } from '@/lib/db/schema-drift';
 
 /** Thrown by createBroadcast on a caller-visible failure; route maps it. */
 export class BroadcastError extends Error {
@@ -213,9 +214,7 @@ export async function createBroadcast(
   // an orphaned campaign that looked like it was sending but had no
   // delivery plan (issue #370). The function body is atomic, so a recipient
   // failure now rolls the parent back and nothing orphaned survives.
-  const { data: createdRows, error: createErr } = await db.rpc(
-    'create_broadcast_with_recipients',
-    {
+  const legacyArgs = {
       p_account_id: accountId,
       p_user_id: auditUserId,
       p_name: name || `API broadcast (${templateName})`,
@@ -226,14 +225,41 @@ export async function createBroadcast(
       // Frozen per-recipient params (migration 038) — without them a
       // resume of this broadcast has no way to reconstruct {{1}}.
       p_template_params: deduped.map((r) => r.params),
-      // The branch this campaign leaves on (migration 048). Frozen for
-      // the same reason the params are: a resume days later has only a
-      // broadcast id to work from, and must not re-derive the number —
-      // re-deriving it would mail the second half of a Batu Caves
-      // campaign from the Rawang number.
-      p_whatsapp_config_id: config.id,
-    }
+  };
+
+  // The branch this campaign leaves on (migration 048). Frozen for the
+  // same reason the params are: a resume days later has only a broadcast
+  // id to work from, and must not re-derive the number — re-deriving it
+  // would mail the second half of a Batu Caves campaign from the Rawang
+  // number.
+  //
+  // Kept separate from the rest so the retry below is simply a call with
+  // one fewer argument.
+  const createArgs = { ...legacyArgs, p_whatsapp_config_id: config.id };
+
+  let { data: createdRows, error: createErr } = await db.rpc(
+    'create_broadcast_with_recipients',
+    createArgs
   );
+
+  // 048 has never been applied to any database. PostgREST resolves an
+  // RPC by matching NAMED arguments, so the nine-argument call above
+  // matches nothing on production — the function is there, under 038's
+  // eight-argument signature, and the extra argument is enough to make
+  // EVERY broadcast fail to create. Not a subset: every one.
+  //
+  // Retry without the frozen number. That is the documented pilot
+  // behaviour already: with 048 absent a broadcast carries no number,
+  // and `resolveConfig` falls back to the account's only number on
+  // resume. Nothing is guessed — a multi-number account without 048
+  // stops and asks, exactly as it does today.
+  if (createErr && isMissingFunction(createErr)) {
+    ({ data: createdRows, error: createErr } = await db.rpc(
+      'create_broadcast_with_recipients',
+      legacyArgs
+    ));
+  }
+
   if (createErr || !createdRows || createdRows.length === 0) {
     console.error('[broadcast-core] create broadcast error:', createErr);
     throw new BroadcastError('internal', 'Failed to create broadcast', 500);
