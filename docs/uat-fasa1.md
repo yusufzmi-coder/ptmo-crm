@@ -23,9 +23,9 @@ sahaja: **bukti bahawa ia berfungsi untuk staf sebenar selepas ia mendarat.**
 | Sasaran | `crm.ptmostaff.com` — hidup, 200, menyajikan build semasa |
 | Environment | production / staging |
 | Skema selepas apply | asas 041 + 049, kemudian 045, 046, 047 |
-| Build/commit diuji | `____________` |
-| Penguji | `____________` |
-| Tarikh | `____________` |
+| Build/commit diuji | `405ba94` (`feat/multi-number` = `origin/main`) |
+| Penguji | Coordinator (Terminal 1) — separa; baki menunggu akaun ujian |
+| Tarikh | 16 Sep 2026 — pusingan tanpa-kelayakan |
 
 Tanda: `LULUS` · `GAGAL` · `TIDAK DIUJI` · `TIDAK BOLEH DIUJI`
 Setiap `GAGAL` mesti bawa: langkah ulang, screenshot, masa, akaun yang guna.
@@ -92,12 +92,29 @@ Sudah **diperhatikan berfungsi** pada dev tempatan — lima laluan
 
 | Laluan | 307 → /login? | | Laluan | 307 → /login? |
 |---|---|---|---|---|
-| `/dashboard` | | | `/broadcasts` | |
-| `/inbox` | | | `/automations` | |
-| `/ops/unanswered` | | | `/flows` | |
-| `/notifications` | | | `/agents` | |
-| `/contacts` | | | `/settings` | |
-| `/pipelines` | | | | |
+| `/dashboard` | LULUS | | `/broadcasts` | LULUS |
+| `/inbox` | LULUS | | `/automations` | LULUS |
+| `/ops/unanswered` | LULUS | | `/flows` | LULUS |
+| `/notifications` | LULUS | | `/agents` | LULUS |
+| `/contacts` | LULUS | | `/settings` | LULUS |
+| `/pipelines` | LULUS | | | |
+
+**Kesebelas-belas LULUS pada `crm.ptmostaff.com`, 16 Sep 2026**, disahkan dua
+kali dengan larian berasingan. Setiap satu memulangkan `307` dengan
+`Location: https://crm.ptmostaff.com/login`. `/` juga betul: `307` →
+`/dashboard` → `307` → `/login`. Senarai sepadan tepat dengan `protectedPaths`
+(`src/middleware.ts:107-119`) — sebelas laluan, tiada yang tertinggal.
+
+Boleh diulang sesiapa, tanpa kelayakan:
+
+```bash
+for p in /dashboard /inbox /ops/unanswered /notifications /contacts \
+         /pipelines /broadcasts /automations /flows /agents /settings; do
+  printf '%-18s %s -> %s\n' "$p" \
+    "$(curl -s -o /dev/null -w '%{http_code}' https://crm.ptmostaff.com$p)" \
+    "$(curl -s -o /dev/null -w '%{redirect_url}' https://crm.ptmostaff.com$p)"
+done
+```
 
 ### 1.7 Forgot-password hujung ke hujung
 
@@ -203,7 +220,7 @@ Itu keputusan produk yang direkod.
 | 5.3 | Muat turun attachment legasi | Berjaya | | |
 | 5.4 | Lightbox imej | Buka, tiada 400 | | |
 | 5.5 | Media sebagai pengguna akaun lain | **404**, bukan 403 | | |
-| 5.6 | Media tanpa sesi | Ditolak | | |
+| 5.6 | Media tanpa sesi | Ditolak | **LULUS** | `/api/media/attachments/<x>` → `401`, `cache-control: no-store`. 16 Sep, tanpa kelayakan |
 | 5.7 | Header cache | `private` | | |
 | 5.8 | Tiada bucket public di seluruh projek | Sah | | |
 
@@ -289,16 +306,23 @@ menolak klien tanpa memecahkan apa-apa.)
 
 ## Ringkasan
 
+Kiraan mengikut **kes bernama**, setakat pusingan 16 Sep (tanpa kelayakan).
+
 | Bahagian | Lulus | Gagal | Tidak diuji |
 |---|---|---|---|
-| 1. Login | | | |
-| 2. Akses akaun | | | |
-| 3. Centres | | | |
-| 4. Inbox | | | |
-| 5. Media | | | |
-| 6. Keselamatan | | | |
+| 1. Login | 1 (1.6) | 0 | 6 |
+| 2. Akses akaun | 0 | 0 | 4 |
+| 3. Centres | 0 | 0 | 6 (+1 tidak boleh diuji: 3.7) |
+| 4. Inbox | 0 | 0 | 6 |
+| 5. Media | 1 (5.6) | 0 | 8 |
+| 6. Keselamatan | 0 | 0 | 9 |
 
-**Keputusan UAT:** LULUS / LULUS BERSYARAT / GAGAL
+**Keputusan UAT:** **BELUM SELESAI** — bukan LULUS, bukan GAGAL. Dua kes
+lulus dengan bukti; 39 lagi belum dijalankan kerana ia memerlukan sesi
+log masuk sebenar. Tiada kes gagal setakat ini.
+
+Jangan baca "0 gagal" sebagai hijau. Ia bermakna tiada apa yang dijalankan
+lagi selain permukaan tanpa-kelayakan.
 
 ### Sengaja tidak diuji — dan kenapa
 
@@ -314,4 +338,29 @@ menolak klien tanpa memecahkan apa-apa.)
 
 ### Blocker tinggal
 
+Prasyarat P1–P7 semuanya hijau — release sudah mendarat. Yang menghalang
+sekarang ialah **akses ujian**, bukan keadaan sistem. Tujuh keputusan, dan
+kesemuanya milik Yusuf, bukan mana-mana worker:
+
+| # | Menghalang | Kenapa ia berhenti di sini | Keputusan yang diperlukan |
+|---|---|---|---|
+| D1 | Bahagian 1 (kecuali 1.6), 2, 3, 4, 5 | credential + data production | **Dua akaun ujian** pada domain live: satu admin, satu viewer. Siapa cipta, dalam akaun mana. Tanpa ini 39 kes mati. |
+| D2 | 3.2, 3.3, 3.5, 3.6, 4.3 — kes **[tulis]** | menulis ke pangkalan data production | Lulus menulis pada production dengan awalan `UAT-` dan tanggungjawab membersih, atau tangguh kes tulis. |
+| D3 | 6.1, 6.2, 6.7, 6.8 | auth/security dengan JWT sebenar | Siapa menjalankannya. **6.2 mematikan webhook endpoint** kalau tersilap jalan (`max_failures => 1`) — perlu pemilik bernama dan rancangan pulih. |
+| D4 | 5.9a, dan dengan itu 5.9b/5.9c | data production | Senarai baris ditolak preflight storage Seksyen 5 mesti disalin ke sini. Ia sepatutnya dirakam **sebelum** 047 diapply; 047 sudah diapply 15 Sep. Kalau senarai itu tidak wujud, 5.9c tidak boleh membezakan regresi 047 daripada kerosakan lama — nyatakan begitu dan jangan reka. |
+| D5 | 1.7 hujung ke hujung | menghantar e-mel sebenar, menukar kata laluan | Bergantung pada D1, dan pada P1 board (Supabase Auth → URL Configuration mesti termasuk domain live, kalau tidak pautan reset mendarat di `localhost`). |
+| D6 | Bahagian WhatsApp | nombor belum disambung | Sudah dikenal pasti; kekal TIDAK BOLEH DIUJI sehingga nombor pilot hidup. |
+| D7 | — | migration | Nasib `042`/`043`/`044`/`048` kekal P2 pada board. Tidak dibuka semula oleh UAT ini. |
+
 ### Risiko tinggal
+
+- **Fasa 1 ditanda SELESAI pada board sedangkan UAT baru 2/41.** Board
+  2026-09-13 memutuskan Fasa 1 ditutup hanya selepas preflight + release +
+  UAT. Dua daripada tiga sudah; yang ketiga belum. Jurangnya jurang bukti,
+  bukan jurang kod.
+- **D4 mungkin sudah lewat.** 5.9a meminta rakaman sebelum 047. 047 diapply
+  15 Sep. Kalau preflight storage Seksyen 5 tidak disimpan, tiada cara
+  membina semulanya selepas fakta.
+- **6.7/6.8 ialah kes bernilai tertinggi dan ia belum disentuh.** Kalau viewer
+  boleh menaikkan `account_role` sendiri, itu eskalasi keistimewaan dan
+  release berhenti. Sehingga ia diuji, 046 ialah andaian, bukan bukti.

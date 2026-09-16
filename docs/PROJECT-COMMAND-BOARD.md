@@ -4,8 +4,8 @@
 
 **Pemilik:** Yusuf Azmi  
 **Produk:** CRM PTMO Operation Dept  
-**Status keseluruhan:** Fasa 1 **SELESAI** · Isu & Tindakan **hidup pada production**
-**Dikemas kini:** 15 Sep 2026
+**Status keseluruhan:** Fasa 1 kod **SELESAI** · Isu & Tindakan **hidup pada production** · **UAT 2/41 kes** — lihat `docs/uat-fasa1.md`
+**Dikemas kini:** 16 Sep 2026
 **Branch kerja bersepadu:** `feat/multi-number` = `origin/main` = `6928678` — semua diserap
 **Gate:** lint 0 error / 32 warning · typecheck 0 · **1285 ujian lulus** · build berjaya
 **Katalog:** en/ko/ms **1905 kunci** setiap satu. Bahasa Melayu **aktif** — domain menyajikan `lang="ms"`
@@ -21,6 +21,7 @@
 | Keutamaan | Tindakan | Siapa | Bila selesai |
 |---|---|---|---|
 | P0 | Sambung nombor WhatsApp — Callback `https://crm.ptmostaff.com/api/whatsapp/webhook`, verify token yang kau reka, PIN 6-digit | Yusuf | [ ] **satu-satunya yang menghalang Fasa 2** |
+| P1 | **Dua akaun ujian UAT** pada `crm.ptmostaff.com` — satu admin, satu viewer. 39 daripada 41 kes UAT mati tanpanya | Yusuf | [ ] **halangan tunggal UAT** |
 | P1 | Tab Actions GitHub — sepanduk fork. Sembilan push, sifar larian; setiap gate setakat ini dicetuskan dengan tangan | Yusuf | [ ] |
 | P1 | Vercel: pastikan `WHATSAPP_TEMPLATES_DRY_RUN` **tiada**. Kalau `true`, templat dapat ID rekaan dan tidak pernah sampai ke Meta — UI kata "menunggu kelulusan" selama-lamanya | Yusuf | [ ] |
 | P1 | Vercel: sahkan `META_APP_SECRET` ialah App Secret sebenar. Tanpanya **setiap mesej ibu bapa ditolak** — gagal tertutup, betul, tetapi kelihatan seperti WhatsApp senyap | Yusuf | [ ] |
@@ -206,6 +207,7 @@ kongsi: guna, jangan ubah.
 | 2026-09-14 | **Template seed tidak lagi mereka fakta** - harga `$9/mo` dan dasar refund palsu dikeluarkan. Sifar fakta dicipta sebagai ganti | `b83dafa` | Coordinator |
 | 2026-09-14 | **Locale tidak lagi gagal senyap** - `.env.local` membawa `"en "` dengan ruang sejak 10 Sep; hari `ms ` ditulis, pengaktifan akan gagal tanpa sebarang isyarat | `b19fa2a` | Coordinator |
 | 2026-09-14 | PR #3 di-merge dan di-deploy | `019e722` | Coordinator |
+| 2026-09-16 | **UAT dimulakan pada domain live.** Kes 1.6 LULUS penuh — kesebelas laluan dilindungi pulang 307 → `/login`, sepadan tepat dengan `protectedPaths`. Kes 5.6 LULUS — media tanpa sesi pulang 401, `cache-control: no-store`. Domain menyajikan `lang="ms"`. Baki 39 kes disekat pada akaun ujian | `405ba94`, `docs/uat-fasa1.md` | Coordinator |
 
 ---
 
