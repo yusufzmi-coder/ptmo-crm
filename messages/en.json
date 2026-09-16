@@ -2349,7 +2349,8 @@
       "duration": "{duration} long",
       "loggedBy": "Logged by {name}",
       "unknownPerson": "Someone",
-      "count": "{count, plural, =0 {No calls} one {# call} other {# calls}}"
+      "count": "{count, plural, =0 {No calls} one {# call} other {# calls}}",
+      "unavailable": "Call logging is not live on this database yet. Migration 051 has not been applied."
     },
     "log": {
       "title": "Log a call",
@@ -2389,7 +2390,8 @@
       "invalidBody": "Nothing usable was sent.",
       "profileNotLinked": "Your profile is not linked to an account.",
       "unauthorized": "Sign in first.",
-      "forbidden": "You do not have permission to log calls."
+      "forbidden": "You do not have permission to log calls.",
+      "tableMissing": "Call logging is not available on this database yet (migration 051 has not been applied)."
     }
   }
 }

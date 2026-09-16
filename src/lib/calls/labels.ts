@@ -116,6 +116,7 @@ export const CALL_ERROR_KEYS = {
   invalid_outcome: 'invalidOutcome',
   invalid_duration: 'invalidDuration',
   invalid_called_at: 'invalidCalledAt',
+  table_missing: 'tableMissing',
   insert_failed: 'saveFailed',
 } as const satisfies Record<string, string>;
 

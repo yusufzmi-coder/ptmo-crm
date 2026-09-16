@@ -2349,7 +2349,8 @@
       "duration": "{duration}",
       "loggedBy": "Direkod oleh {name}",
       "unknownPerson": "Seseorang",
-      "count": "{count, plural, =0 {Tiada panggilan} other {# panggilan}}"
+      "count": "{count, plural, =0 {Tiada panggilan} other {# panggilan}}",
+      "unavailable": "Rekod panggilan belum hidup pada pangkalan data ini. Migration 051 belum diapply."
     },
     "log": {
       "title": "Rekod panggilan",
@@ -2389,7 +2390,8 @@
       "invalidBody": "Tiada data yang boleh digunakan dihantar.",
       "profileNotLinked": "Profil anda belum terikat pada mana-mana akaun.",
       "unauthorized": "Log masuk dahulu.",
-      "forbidden": "Anda tiada kebenaran merekod panggilan."
+      "forbidden": "Anda tiada kebenaran merekod panggilan.",
+      "tableMissing": "Rekod panggilan belum tersedia pada pangkalan data ini (migration 051 belum diapply)."
     }
   }
 }

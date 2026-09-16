@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { requireRole, toErrorResponse } from '@/lib/auth/account'
 import { supabaseAdmin } from '@/lib/calls/admin-client'
 import { isCallDirection, isCallOutcome } from '@/lib/calls/labels'
+import { isMissingTable } from '@/lib/db/schema-drift'
 
 /**
  * GET  /api/calls — list logged calls.
@@ -70,10 +71,23 @@ export async function GET(request: Request) {
   if (followUp === 'due') query = query.not('follow_up_at', 'is', null)
 
   const { data, error } = await query
+
+  // `call_logs` arrives with 051, and the apply is a human step in the
+  // SQL editor while the deploy is a merge. If the code lands first,
+  // every visit to /calls 500s — the same drift that broke quick
+  // replies and broadcast creation, from the other direction: a new
+  // migration rather than a parked one.
+  //
+  // An empty list plus `call_logging: 'unavailable'` lets the page say
+  // what is wrong. A raw 500 tells whoever opens it that the feature is
+  // broken, which sends them looking in the wrong place entirely.
+  if (error && isMissingTable(error, 'call_logs')) {
+    return NextResponse.json({ calls: [], call_logging: 'unavailable' })
+  }
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
-  return NextResponse.json({ calls: data ?? [] })
+  return NextResponse.json({ calls: data ?? [], call_logging: 'ok' })
 }
 
 export async function POST(request: Request) {
@@ -192,6 +206,13 @@ export async function POST(request: Request) {
     })
     .select('*')
     .single()
+
+  if (error && isMissingTable(error, 'call_logs')) {
+    // 503, not a 201 with nothing behind it. A staff member who types
+    // up a call and is told it saved, when no table took it, loses the
+    // handover AND the knowledge that they lost it.
+    return NextResponse.json({ error: 'table_missing' }, { status: 503 })
+  }
 
   if (error || !call) {
     return NextResponse.json(

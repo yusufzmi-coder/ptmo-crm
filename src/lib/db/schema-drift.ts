@@ -68,3 +68,36 @@ export function isMissingColumn(
 export function isMissingFunction(error: DbError | null | undefined): boolean {
   return Boolean(error?.code && FUNCTION_NOT_FOUND.has(error.code));
 }
+
+/**
+ * Postgres reports an unknown relation as `42P01`. PostgREST answers
+ * from its schema cache and reports `PGRST205`, whose message names the
+ * table and often suggests a near match.
+ */
+const TABLE_NOT_FOUND = new Set(['42P01', 'PGRST205']);
+
+/**
+ * Whether the error says `table` specifically is absent.
+ *
+ * The other two detectors here cover code that ran AHEAD of a parked
+ * migration. This one covers the same drift from the other direction: a
+ * migration that is new rather than parked, deployed a moment later
+ * than the code that reads it.
+ *
+ * `051_call_logs.sql` is the live case. It is not parked — it is meant
+ * to be applied — but the apply is a human step in the Supabase SQL
+ * editor and the deploy is a merge, and the evening that produced this
+ * module is three separate proofs that "we will apply it first" is a
+ * plan, not a guarantee.
+ *
+ * Name required, same as `isMissingColumn` and for the same reason: a
+ * fallback that swallowed any `42P01` would return an empty list for a
+ * typo'd table name, which reads as "no rows yet" forever.
+ */
+export function isMissingTable(
+  error: DbError | null | undefined,
+  table: string,
+): boolean {
+  if (!error?.code || !TABLE_NOT_FOUND.has(error.code)) return false;
+  return (error.message ?? '').includes(table);
+}

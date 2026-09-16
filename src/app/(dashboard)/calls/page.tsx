@@ -55,6 +55,14 @@ export default function CallsPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [logging, setLogging] = useState(false);
+  /**
+   * `call_logs` arrives with migration 051, and the apply is a human
+   * step while the deploy is a merge. When the code is ahead, the route
+   * answers with an empty list and says so rather than 500ing, and the
+   * page has to say so too — otherwise an empty page reads as "no calls
+   * logged yet" and nobody ever applies the migration.
+   */
+  const [unavailable, setUnavailable] = useState(false);
 
   const [q, setQ] = useState("");
   const [direction, setDirection] = useState<string>(ALL);
@@ -72,7 +80,10 @@ export default function CallsPage() {
           if (!cancelled) setLoadError(tErrors("loadFailed"));
           return;
         }
-        if (!cancelled) setCalls(json.calls ?? []);
+        if (!cancelled) {
+          setCalls(json.calls ?? []);
+          setUnavailable(json.call_logging === "unavailable");
+        }
 
         // Names for the rows. Read through the browser client so RLS
         // scopes them; a failure here costs the labels, not the page,
@@ -148,11 +159,21 @@ export default function CallsPage() {
             {t("description")}
           </p>
         </div>
-        <Button type="button" onClick={() => setLogging(true)}>
+        <Button
+          type="button"
+          onClick={() => setLogging(true)}
+          disabled={unavailable}
+        >
           <Phone className="size-4" />
           {t("logCall")}
         </Button>
       </div>
+
+      {unavailable ? (
+        <p className="rounded-lg border border-warning/50 bg-warning/10 px-3 py-2 text-sm text-warning">
+          {t("unavailable")}
+        </p>
+      ) : null}
 
       {loadError ? (
         <p className="rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">

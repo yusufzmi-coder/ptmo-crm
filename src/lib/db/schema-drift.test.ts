@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { isMissingColumn, isMissingFunction } from './schema-drift';
+import { isMissingColumn, isMissingFunction,
+  isMissingTable } from './schema-drift';
 
 describe('isMissingColumn', () => {
   it.each(['42703', 'PGRST204'])('recognises both codes (%s)', (code) => {
@@ -60,5 +61,34 @@ describe('isMissingFunction', () => {
   it('is not fooled by an ordinary failure', () => {
     expect(isMissingFunction({ code: '08006' })).toBe(false);
     expect(isMissingFunction(null)).toBe(false);
+  });
+});
+
+describe('isMissingTable', () => {
+  it.each(['42P01', 'PGRST205'])('recognises both codes (%s)', (code) => {
+    expect(
+      isMissingTable(
+        { code, message: 'relation "call_logs" does not exist' },
+        'call_logs',
+      ),
+    ).toBe(true);
+  });
+
+  it('requires the table name, so an unrelated 42P01 still surfaces', () => {
+    // The whole point of naming it: a fallback that swallowed any 42P01
+    // would hand back an empty list for a typo'd table, which reads as
+    // "no rows yet" for as long as nobody checks.
+    expect(
+      isMissingTable(
+        { code: '42P01', message: 'relation "widgets" does not exist' },
+        'call_logs',
+      ),
+    ).toBe(false);
+  });
+
+  it('is not fooled by an ordinary failure', () => {
+    expect(isMissingTable({ code: '08006' }, 'call_logs')).toBe(false);
+    expect(isMissingTable(null, 'call_logs')).toBe(false);
+    expect(isMissingTable({ code: '42P01' }, 'call_logs')).toBe(false);
   });
 });

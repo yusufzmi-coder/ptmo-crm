@@ -142,7 +142,10 @@ describe('GET /api/calls', () => {
     const res = await GET(new Request('http://localhost/api/calls'));
 
     expect(res.status).toBe(200);
-    await expect(res.json()).resolves.toEqual({ calls: [ROW] });
+    await expect(res.json()).resolves.toEqual({
+      calls: [ROW],
+      call_logging: 'ok',
+    });
     // Staff log at the end of a shift, so created_at would sort the
     // day's calls into the order somebody got round to them.
     expect(calls.call_logs).toContainEqual({
@@ -169,6 +172,36 @@ describe('GET /api/calls', () => {
       method: 'not',
       args: ['follow_up_at', 'is', null],
     });
+  });
+
+  it('degrades to an empty list when the table is not on this database', async () => {
+    useCookieClient({
+      rows: {
+        data: null,
+        error: { code: '42P01', message: 'relation "call_logs" does not exist' },
+      },
+    });
+    const res = await GET(new Request('http://localhost/api/calls'));
+
+    // 051 is applied by hand in the SQL editor while the deploy is a
+    // merge. If the code lands first, a 500 tells whoever opens /calls
+    // the feature is broken and sends them looking in the wrong place.
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toEqual({
+      calls: [],
+      call_logging: 'unavailable',
+    });
+  });
+
+  it('still 500s when a DIFFERENT relation is missing', async () => {
+    useCookieClient({
+      rows: {
+        data: null,
+        error: { code: '42P01', message: 'relation "widgets" does not exist' },
+      },
+    });
+    const res = await GET(new Request('http://localhost/api/calls'));
+    expect(res.status).toBe(500);
   });
 
   it('does not filter on follow-up for any other value', async () => {
@@ -279,6 +312,32 @@ describe('POST /api/calls', () => {
       centre_id: null,
       whatsapp_config_id: null,
     });
+  });
+
+  it('refuses with 503 when the table is not on this database', async () => {
+    useCookieClient();
+    useAdmin({
+      data: null,
+      error: { code: '42P01', message: 'relation "call_logs" does not exist' },
+    });
+    const res = await post(VALID);
+    // Not a 201 with nothing behind it: a staff member told their call
+    // saved, when no table took it, loses the handover AND the
+    // knowledge that they lost it.
+    expect(res.status).toBe(503);
+    await expect(res.json()).resolves.toEqual({ error: 'table_missing' });
+  });
+
+  it('still 500s when a DIFFERENT relation is missing', async () => {
+    useCookieClient();
+    useAdmin({
+      data: null,
+      error: { code: '42P01', message: 'relation "widgets" does not exist' },
+    });
+    const res = await post(VALID);
+    // The gate names the table on purpose. Swallowing any 42P01 would
+    // turn a real bug into a tidy 503 nobody chases.
+    expect(res.status).toBe(500);
   });
 
   it('reports a failed insert rather than a clean 201', async () => {
