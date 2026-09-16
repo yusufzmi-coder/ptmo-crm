@@ -1871,6 +1871,86 @@ membezakan kedua-dua kunci.
 
 ---
 
+## P0 — `supabase db push` akan memadam perbualan ibu bapa sebenar (17 Sep 2026)
+
+**Jangan jalankan `supabase db push --linked` terhadap production. Jangan
+jalankan apa-apa yang memanggilnya.** Baca ini sebelum apply `051`, kerana
+`db push` ialah arahan yang paling jelas untuk tugas itu dan ia salah.
+
+### Apa yang ledger fikir
+
+Disahkan `npx supabase migration list --linked`, 17 Sep:
+
+```
+001–040   local + remote      <- ledger tahu
+041–051   local, remote ""    <- ledger fikir SEBELAS ini belum dijalankan
+```
+
+Objek untuk `041`, `045`, `046`, `047`, `049`, `050` **wujud** pada
+production — probe REST membuktikannya. Ia diapply dengan tangan melalui
+SQL editor, dan SQL editor tidak pernah menulis `schema_migrations`. Jadi
+ledger dan realiti berbeza untuk sebelas fail.
+
+### Kenapa itu memusnahkan
+
+`db push` memainkan segala yang ledger fikir belum dijalankan. Sebelas fail,
+mengikut turutan, termasuk empat yang **sengaja diparkir**.
+
+`042` bukan sekadar mencipta fungsi. Baris 149 **memanggilnya**:
+
+```sql
+SELECT public.merge_duplicate_conversations();
+```
+
+Dan fungsi itu, pada baris 95–127, menulis kepada data ibu bapa yang hidup:
+
+```
+UPDATE messages / message_reactions / deals / flow_runs
+     / notifications / ai_usage_log   SET conversation_id = <survivor>
+DELETE FROM conversations WHERE id = ANY(<losers>)
+```
+
+Komen dalam 042 kata ia "tidak menjumpai apa-apa pada data sedia ada", dan
+itu ditulis untuk keadaan satu nombor selepas 040. Ia mungkin masih benar.
+**Ia tidak boleh disahkan tanpa menjalankannya, dan ia tidak boleh
+dibatalkan selepas dijalankan.** Tiada backup dinamakan dalam repo ini.
+
+`044` pula menulis semula `is_account_member()` — versi barunya JOIN kepada
+`account_members`, jadual yang 044 sendiri cipta. **155 rujukan** merentas
+19 fail migration bergantung pada fungsi itu, dan `migrations.yml:84-96`
+merekod bahawa sebahagian besar aplikasi menanya jadualnya **tanpa penapis
+`account_id` langsung**. 044 memang membawa backfill dari `profiles`, jadi
+kemungkinan besar ia tidak mengunci semua orang keluar — tetapi "kemungkinan
+besar" bukan perkataan yang patut muncul berhampiran pengasingan zon.
+
+### Kenapa ia tidak akan kelihatan seperti kesilapan
+
+Sesiapa yang cuba apply `051` akan sampai kepada `db push`. Itu arahan yang
+betul untuk repo yang ledgernya jujur. Tiada amaran dalam repo, tiada apa
+dalam output `db push` yang menyebut `042` akan memadam baris, dan langkah
+itu akan kelihatan berjaya.
+
+### Apa yang patut dibuat
+
+Apply `051` **dengan tangan melalui SQL editor**, sama seperti sepuluh yang
+sebelumnya. Itu bukan jalan pintas; itu satu-satunya jalan yang tidak
+memainkan `042`.
+
+Ledger yang tidak sepadan itu sendiri ialah masalah berasingan dan lebih
+besar daripada mana-mana satu migration. Ia perlu diselaraskan
+(`supabase migration repair` menandakan fail sebagai applied tanpa
+menjalankannya), tetapi itu keputusan yang memerlukan seseorang
+membandingkan setiap satu daripada sebelas fail terhadap keadaan sebenar
+dahulu. Jangan selaraskan dengan tekaan.
+
+Disahkan bebas: `migration list --linked` untuk ledger, `042:149` dan
+`042:95-127` untuk panggilan dan kesannya, `044` untuk badan
+`is_account_member()`, `migrations.yml:84-96` untuk kiraan query tanpa
+penapis. Dilaporkan mula-mula oleh sesi Fasa 2; semua nombor di atas
+disemak semula di sini sebelum ditulis.
+
+---
+
 ## P0 — quick replies memanggil lajur yang tiada pangkalan data pernah cipta (16 Sep 2026)
 
 `src/app/api/quick-replies/route.ts:63-65` dan `:176`
