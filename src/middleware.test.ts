@@ -117,7 +117,7 @@ describe("middleware — refreshed auth cookies survive redirects", () => {
   // /flows, /agents and /notifications are all pages in the (dashboard)
   // route group, but none of them was ever added to `protectedPaths`. An
   // unauthenticated visit rendered a broken shell instead of the login page.
-  it.each(["/flows", "/flows/abc", "/flows/abc/runs", "/agents", "/notifications"])(
+  it.each(["/flows", "/flows/abc", "/flows/abc/runs", "/agents", "/notifications", "/calls"])(
     "redirects a signed-out user off %s to /login",
     async (path) => {
       mockUser = null;

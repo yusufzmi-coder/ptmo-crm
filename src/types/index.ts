@@ -854,3 +854,60 @@ export interface IssueEvent {
   note: string | null;
   created_at: string;
 }
+
+// ============================================================
+// Call log (migration 051)
+// ============================================================
+
+/**
+ * Which way the call went. Malay, like the issue categories and for the
+ * same reason: branch staff pick it in a Malay interface and HQ reads it
+ * back in reports, so a translation layer between the picker and the row
+ * would only add a place for the two to drift.
+ */
+export type CallDirection = 'masuk' | 'keluar';
+
+/**
+ * What came of the call. Mirrors the CHECK on `call_logs.outcome`.
+ * Deliberately short — a list staff scan in one glance beats a taxonomy
+ * nobody picks from honestly.
+ */
+export type CallOutcome =
+  | 'dijawab'
+  | 'tidak_dijawab'
+  | 'tinggal_mesej'
+  | 'call_balik'
+  | 'nombor_salah';
+
+/**
+ * A phone call with a parent, logged by hand.
+ *
+ * NOT the WhatsApp Calling API — that is a later pilot, and when it
+ * arrives it can write these same rows rather than need its own.
+ *
+ * The point of the table is the handover: a thread that stops because
+ * someone picked up the phone reads as abandoned to whoever covers the
+ * next shift, and they call the same parent again.
+ */
+export interface CallLog {
+  id: string;
+  account_id: string;
+  contact_id: string | null;
+  conversation_id: string | null;
+  centre_id: string | null;
+  /** The branch number this call belongs to, when it was one. */
+  whatsapp_config_id: string | null;
+  /** The issue this call was part of, if it was part of one. */
+  issue_id: string | null;
+  direction: CallDirection;
+  outcome: CallOutcome;
+  /** When the call happened — NOT when the row was typed up. */
+  called_at: string;
+  duration_seconds: number | null;
+  summary: string;
+  /** Set when someone has to ring back. The inbox reads this. */
+  follow_up_at: string | null;
+  logged_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
