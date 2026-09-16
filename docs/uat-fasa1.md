@@ -93,6 +93,13 @@ bermakna empat pembetulan ini menyelesaikan masalah yang direka.
 Perlukan sesi log masuk. Empat permintaan, tiada satu pun menulis data kekal
 yang bermakna.
 
+**Prasyarat data — tanpanya dua kes menguji laluan yang salah:**
+
+| | |
+|---|---|
+| 0.1 | Akaun ujian mesti ada **sekurang-kurangnya satu conversation sebenar**. Picker mesti dibuka **dari dalam thread itu**, bukan dari senarai quick reply biasa. |
+| 0.4 | Mesti ada **broadcast sedia ada** untuk di-resume. Tiada kempen bermakna tiada apa yang dibaca. |
+
 | # | Langkah | Ramalan | Keputusan |
 |---|---|---|---|
 | 0.1 | Buka picker quick reply **dari thread inbox** | 500 — `quick_replies.whatsapp_config_id` tiada | |
@@ -103,6 +110,19 @@ yang bermakna.
 Kalau mana-mana satu **berjaya** dan bukan gagal, pembetulan yang sepadan
 menyelesaikan sesuatu yang bukan masalahnya. Rekod itu — ia lebih bernilai
 daripada empat kelulusan.
+
+**Tetapi periksa prasyarat dahulu sebelum menyimpulkan itu.** Untuk 0.1 ada
+satu cara ia berjaya tanpa diagnosis menjadi salah: akaun tanpa conversation
+tidak pernah membuka picker dari thread langsung, jadi apa yang diuji ialah
+senarai akaun biasa — dan laluan itu memang tidak pernah rosak, sebab ia tidak
+menamakan lajur itu.
+
+Perhatikan bahawa thread yang **tidak** resolve kepada nombor pun tetap patut
+500: kedua-dua cabang menamakan lajur, `.or(...)` bila cawangan diketahui dan
+`.is('whatsapp_config_id', null)` bila tidak (`route.ts:68-72`). Jadi 0.1 yang
+berjaya bermakna salah satu daripada dua perkara — permintaan tidak pernah
+membawa `conversationId`, atau diagnosis salah. Asingkan kedua-duanya sebelum
+menulis keputusan.
 
 Selepas merge, tandakan keempat-empatnya **TIDAK BOLEH DIUJI — tingkap tertutup**
 dan jangan tulis semula sejarah dengan meneka apa yang akan berlaku.
