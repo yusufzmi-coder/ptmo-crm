@@ -33,9 +33,24 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from '@/components/ui/accordion';
-import type { WhatsAppConfig as WhatsAppConfigType } from '@/types';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import type { Centre, WhatsAppConfig as WhatsAppConfigType } from '@/types';
 
 const MASKED_TOKEN = '••••••••••••••••';
+
+/**
+ * Radix's Select has no value for "nothing selected" — an empty string
+ * is how it spells *unset*, and it refuses it as an item value. So the
+ * "no centre" row carries a sentinel, translated back to NULL on write.
+ * Same device as `NO_ZONE` in centres-panel.tsx.
+ */
+const NO_CENTRE = '__none__';
 
 type ConnectionStatus = 'connected' | 'disconnected' | 'unknown';
 type ResetReason = 'token_corrupted' | 'meta_api_error' | null;
@@ -172,6 +187,22 @@ export function WhatsAppConfig() {
       }
 
       setNumbers(rows ?? []);
+
+      // Centres, for the per-number picker below. Deliberately not
+      // fatal: an account with no centres set up still has a WhatsApp
+      // panel that works, it just has nothing to pin a number to. A
+      // failure here must not take the numbers list down with it.
+      const { data: centreRows, error: centreError } = await supabase
+        .from('centres')
+        .select('id, account_id, region_id, name, code, address, phone, operating_hours, is_active, created_at, updated_at')
+        .eq('account_id', acctId)
+        .eq('is_active', true)
+        .order('name', { ascending: true });
+      if (centreError) {
+        console.error('Failed to load centres:', centreError);
+      }
+      setCentres((centreRows as Centre[] | null) ?? []);
+
       const data =
         rows?.find((r: WhatsAppConfigType) => r.is_primary) ?? rows?.[0] ?? null;
 
@@ -273,6 +304,47 @@ export function WhatsAppConfig() {
       toast.error(t('mirrorInboundSaveFailed'));
     } finally {
       setSavingMirror(false);
+    }
+  }
+
+  /**
+   * Pin a number to a centre (migration 049, `whatsapp_config.centre_id`).
+   *
+   * Written the same way as the rename and the media toggle — straight
+   * through Supabase, no Meta round trip — because RLS already limits
+   * whatsapp_config UPDATE to admins and a centre is local bookkeeping.
+   *
+   * Nothing routes on this column. It records which centre the pilot
+   * number belongs to so the answer survives being asked six weeks from
+   * now, and gives per-centre reporting a column to group by.
+   */
+  async function handleSetCentre(id: string, value: string) {
+    if (savingCentreFor) return;
+    const next = value === NO_CENTRE ? null : value;
+    const previous = numbers.find((n) => n.id === id)?.centre_id ?? null;
+    if (next === previous) return;
+
+    // Optimistic, rolled back on failure: the picker should settle
+    // immediately, and a silent revert is clearer than a spinner.
+    setNumbers((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, centre_id: next } : n)),
+    );
+    setSavingCentreFor(id);
+    try {
+      const { error } = await supabase
+        .from('whatsapp_config')
+        .update({ centre_id: next })
+        .eq('id', id);
+      if (error) throw new Error(error.message);
+      if (config?.id === id) setConfig({ ...config, centre_id: next });
+    } catch (error) {
+      console.error('Failed to set centre for number:', error);
+      setNumbers((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, centre_id: previous } : n)),
+      );
+      toast.error(t('centreSaveFailed'));
+    } finally {
+      setSavingCentreFor(null);
     }
   }
 
@@ -817,6 +889,36 @@ export function WhatsAppConfig() {
                         <span className="rounded-full border border-primary-soft-2 bg-primary-soft px-2 py-0.5 text-[11px] font-medium text-primary-readable">
                           {t('primaryBadge')}
                         </span>
+                      )}
+                      {/* Which centre this number serves. Hidden rather
+                          than shown empty when the account has no
+                          centres: the fix then is Settings → Centres,
+                          and an empty dropdown does not say so. */}
+                      {centres.length > 0 && canEditSettings && (
+                        <Select
+                          value={n.centre_id ?? NO_CENTRE}
+                          disabled={savingCentreFor === n.id}
+                          onValueChange={(v) => void handleSetCentre(n.id, v ?? NO_CENTRE)}
+                        >
+                          <SelectTrigger
+                            className="h-8 w-auto min-w-40 text-xs"
+                            aria-label={t('centreForNumber', {
+                              number: n.label?.trim() || n.phone_number_id,
+                            })}
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={NO_CENTRE}>
+                              {t('centreNone')}
+                            </SelectItem>
+                            {centres.map((c) => (
+                              <SelectItem key={c.id} value={c.id}>
+                                {c.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       )}
                       <span
                         className={
