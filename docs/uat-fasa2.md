@@ -119,6 +119,31 @@ Semakan kod (bukan pengganti untuk mengujinya hidup): `/calls` ada dalam
 | 0.7 | `GET /calls` dengan sesi, **sebelum** 051 diapply | Halaman memuat dan berkata rekod panggilan belum tersedia; butang rekod dimati. **Bukan 500** | |
 | 0.8 | `POST /api/calls` dengan sesi, **sebelum** 051 diapply | 503 `table_missing`. **Bukan 201** — panggilan yang dikatakan tersimpan sedangkan tiada jadual menerimanya hilang dua kali | |
 
+## Prasyarat data — kes yang boleh lulus atas sebab salah
+
+Empat kes di bawah menghasilkan keputusan hijau apabila keadaan yang
+sepatutnya diuji **tidak pernah dicapai**. Itu lebih buruk daripada
+gagal: gagal menyuruh seseorang siasat, manakala lulus palsu menutup
+kes itu selama-lamanya.
+
+Semak lajur kanan **sebelum** menandakan mana-mana daripada empat ini.
+
+| Kes | Perlu wujud dahulu | Kalau tidak, ia lulus kerana |
+|---|---|---|
+| 1.4 pemilih Centre | Sekurang-kurangnya satu Centre aktif dalam Settings → Centre & Zone | Pemilih **sengaja disembunyikan** bila tiada Centre. Ketiadaannya akan terbaca sebagai pepijat, dan kehadirannya tak pernah diuji |
+| 3.2 picker quick reply | Satu conversation sebenar, dan picker dibuka **dari dalam thread** | Tanpa thread, permintaan tak bawa `conversationId` dan yang diuji ialah senarai akaun biasa — satu-satunya laluan yang memang tak pernah rosak |
+| 5.6 tapis call balik | Sekurang-kurangnya satu panggilan **dengan** `follow_up_at` dan satu **tanpa** | Penapis atas senarai yang semuanya sepadan, atau semuanya tidak, tak membezakan apa-apa |
+| 4.5 media tanpa sesi | Satu fail media sebenar yang sudah masuk melalui thread | URL yang tak menunjuk apa-apa juga pulang bukan-200, atas sebab yang sama sekali berbeza |
+
+Kes 3.2 khususnya: kedua-dua cabang laluan lama menamakan lajur 043 —
+`.or(...)` bila cawangan diketahui, `.is('whatsapp_config_id', null)`
+bila tidak. Jadi "thread tak resolve" **bukan** penjelasan untuk kes
+lulus. Kalau ia lulus, ia bermaksud tepat satu daripada dua perkara:
+permintaan tak pernah bawa `conversationId`, atau diagnosis asal salah.
+Asingkan kedua-duanya sebelum menulis keputusan.
+
+---
+
 ## Bahagian 1 — sambung nombor
 
 | # | Kes | Jangkaan | Status |
@@ -126,7 +151,7 @@ Semakan kod (bukan pengganti untuk mengujinya hidup): `/calls` ada dalam
 | 1.1 | Settings → WhatsApp: simpan phone number id, WABA id, access token, verify token, PIN | Disimpan; token disulitkan, tidak pernah dipaparkan semula | |
 | 1.2 | Butang **Verify with Meta** | `registered_at` dan `subscribed_apps_at` diisi. Kalau tidak, inbound **hilang senyap** — ini pepijat yang mencetuskan kerja multi-number | |
 | 1.3 | Test API Connection | `connected: true` dengan `phone_info` sebenar (nama disahkan, rating kualiti) | |
-| 1.4 | Baris nombor memaparkan pemilih **Centre** | Pilih Centre pilot; muat semula halaman — pilihan kekal | |
+| 1.4 | Baris nombor memaparkan pemilih **Centre** | Pilih Centre pilot; muat semula halaman — pilihan kekal. **Perlu satu Centre aktif** — lihat prasyarat data. | |
 | 1.5 | Viewer membuka Settings → WhatsApp | Tiada pemilih Centre, tiada simpan. RLS 017 hadkan tulis kepada admin | |
 
 ## Bahagian 2 — inbound
@@ -144,7 +169,7 @@ Semakan kod (bukan pengganti untuk mengujinya hidup): `/calls` ada dalam
 | # | Kes | Jangkaan | Status |
 |---|---|---|---|
 | 3.1 | Balas dari thread | Sampai ke telefon ibu bapa **dari nombor yang sama** yang mereka hubungi | |
-| 3.2 | Buka pemilih quick reply dari thread | Senarai muncul — **bukan 500**. Ini kes yang memecah sebelum pagar 043 | |
+| 3.2 | Buka pemilih quick reply dari thread | Senarai muncul — **bukan 500**. Ini kes yang memecah sebelum pagar 043. **Perlu satu conversation sebenar** — lihat prasyarat data. | |
 | 3.3 | Cipta quick reply dalam Settings | Disimpan — **bukan 500** | |
 | 3.4 | Quick reply mengandungi `{{cawangan}}` | Dikembangkan kepada nama cawangan thread | |
 | 3.5 | Balas selepas 24 jam tanpa templat | Ditolak dengan sebab yang boleh dibaca, bukan kegagalan senyap | |
@@ -157,7 +182,7 @@ Semakan kod (bukan pengganti untuk mengujinya hidup): `/calls` ada dalam
 | 4.2 | Ibu bapa hantar dokumen (PDF resit yuran) | Boleh dimuat turun dengan nama fail asal | |
 | 4.3 | Ibu bapa hantar audio / nota suara | Boleh dimainkan | |
 | 4.4 | Staf hantar gambar keluar | Sampai ke telefon ibu bapa | |
-| 4.5 | Buka URL media **tanpa sesi** | 401, `cache-control: no-store` (047). Sudah LULUS 16 Sep pada Fasa 1 — ulang selepas media sebenar wujud | |
+| 4.5 | Buka URL media **tanpa sesi** | 401, `cache-control: no-store` (047). Sudah LULUS 16 Sep pada Fasa 1 — ulang selepas media sebenar wujud. **Perlu media sebenar** — lihat prasyarat data. | |
 | 4.6 | Staf akaun lain cuba URL media yang sama | Ditolak | |
 
 ## Bahagian 5 — call log
@@ -169,7 +194,7 @@ Semakan kod (bukan pengganti untuk mengujinya hidup): `/calls` ada dalam
 | 5.3 | Tempoh ditaip `abc` | Ditolak — **bukan** disimpan sebagai "tiada tempoh" | |
 | 5.4 | Hasil **Tidak dijawab** dipilih | Medan *call balik* muncul | |
 | 5.5 | Pilih **Tidak dijawab**, isi masa call balik, tukar kepada **Dijawab** | Masa call balik dikosongkan — tiada janji yang tiada siapa berniat tunaikan | |
-| 5.6 | Tapis **Perlu call balik** | Hanya panggilan dengan `follow_up_at` | |
+| 5.6 | Tapis **Perlu call balik** | Hanya panggilan dengan `follow_up_at`. **Perlu satu panggilan dengan dan satu tanpa `follow_up_at`** — lihat prasyarat data. | |
 | 5.7 | Akaun viewer cuba merekod panggilan | Ditolak (RLS `agent`) | |
 | 5.8 | Staf A merekod, staf B muat `/calls` | Staf B nampak baris itu, dengan nama staf A | |
 
