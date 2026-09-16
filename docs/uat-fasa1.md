@@ -129,6 +129,37 @@ dan jangan tulis semula sejarah dengan meneka apa yang akan berlaku.
 
 ---
 
+## Prasyarat data — sembilan kes lulus pada akaun kosong
+
+Bahagian 0 mendedahkan satu daripada ini dan sesi Fasa 2 menjumpai empat lagi
+dalam dokumennya. Imbasan ke atas dokumen ini menjumpai lapan lagi. Semuanya
+bentuk yang sama: kes yang lulus kerana keadaan yang diuji tidak pernah dicapai.
+
+Lajur terakhir menamakan **mekanisme**. "Sediakan data dahulu" tidak cukup —
+penguji perlu tahu rupa kelulusan palsu itu supaya dia kenali bila melihatnya.
+
+| # | Perlukan | Kalau tidak, ia lulus kerana |
+|---|---|---|
+| 2.1 | — | Kes ini menjangka **ketiadaan**. Ia lulus pada akaun kosong, akaun rosak, dan akaun betul, semuanya sama. Ia mengesahkan tiada permukaan zon terdedah; ia **tidak** mengesahkan `shouldShowSwitcher()` pernah dipanggil. |
+| 2.3, 2.4 | Akaun **viewer** sebenar | Diuji sebagai admin, tindakan admin memang kelihatan dan memang dibenarkan. Kedua-dua kes lulus dengan menguji lawannya. |
+| 3.4 | Satu Centre **tanpa** zon | Tiada Centre yatim bermakna tiada kumpulan unassigned untuk diperiksa. Senarai kosong di hujung kelihatan betul. |
+| 4.1 | ≥1 conversation | Senarai kosong dimuat tanpa ralat. "Tiada ralat" benar dan tidak bermakna apa-apa. |
+| 4.2 | Thread dengan **beberapa** mesej | Satu mesej sentiasa tertib dan sentiasa lengkap. |
+| 4.5 | ≥1 conversation belum dibalas | Antrian kosong ialah antrian tepat. |
+| 5.2 | Lampiran **sebelum** 047 | **Yang paling penting dalam senarai ini.** 5.2 ialah ujian sebenar 047 — lampiran legasi yang mesti masih render. Tiada lampiran legasi bermakna tiada apa yang diuji, dan 047 mendapat kelulusan yang tak pernah diperiksa. |
+| 5.5 | Akaun kedua **dengan media sebenar** | URL yang tidak menunjuk apa-apa juga pulang 404, atas sebab yang sama sekali berbeza. 404 ialah jawapan betul untuk "tiada kebenaran" **dan** untuk "tiada fail" — kes ini tidak boleh membezakannya melainkan fail itu benar-benar wujud pada akaun lain. |
+| 6.7, 6.8 | Akaun **viewer** sebenar | Ditulis eksplisit dalam Bahagian 6 dan diulang di sini kerana ia dua kes bernilai tertinggi dalam keseluruhan dokumen. Admin yang menulis `account_role` sendiri **sepatutnya** berjaya. Lulus sebagai admin bermakna eskalasi keistimewaan tidak pernah diuji. |
+
+5.5 dan 5.2 bersama bermakna Bahagian 5 boleh melaporkan 8/8 pada akaun ujian
+baharu tanpa satu pun daripada dua kes sebenar 047 berlaku.
+
+**Corak yang menghasilkan kesemuanya, ditulis sekali:** kes ujian mempercayai
+kod tentang keadaan runtime. Ia bentuk ketiga dari punca yang sama seperti dua
+yang lain malam ini — kod mempercayai repo tentang pangkalan data (drift skema),
+dan dokumen ini mempercayai repo tentang deploy (`b068453`). Repo bukan sasaran.
+
+---
+
 ## 1. Login
 
 | # | Kes | Jangkaan | Keputusan | Bukti |
@@ -217,8 +248,8 @@ yang kelihatan boleh diklik tetapi tidak disokong oleh skema.
 |---|---|---|---|
 | 2.1 | Zone switcher dalam header | Tidak dipapar — `shouldShowSwitcher()` palsu dengan satu akaun | |
 | 2.2 | Cara lain tukar akaun dalam UI | Tiada | |
-| 2.3 | Viewer vs admin | Tindakan admin tersembunyi untuk viewer | |
-| 2.4 | Viewer paksa tindakan admin | Ditolak di **server**, bukan hanya disembunyikan di UI | |
+| 2.3 | Viewer vs admin | Tindakan admin tersembunyi untuk viewer | **Uji sebagai viewer** |
+| 2.4 | Viewer paksa tindakan admin | Ditolak di **server**, bukan hanya disembunyikan di UI | **Uji sebagai viewer** |
 
 ---
 
@@ -257,11 +288,11 @@ atau di-apply selepas deploy. Itu kegagalan urutan, bukan kegagalan UI.
 
 | # | Kes | Jangkaan | Keputusan | Bukti |
 |---|---|---|---|---|
-| 4.1 | Senarai perbualan dimuat | Tiada ralat | | |
+| 4.1 | Senarai perbualan dimuat | Tiada ralat | | Perlukan ≥1 conversation |
 | 4.2 | Buka thread, baca sejarah | Tertib, lengkap | | |
 | 4.3 | Hantar mesej keluar **[tulis]** | Terhantar — kontak ujian, bukan parent sebenar | | |
 | 4.4 | Quick replies | Semua muncul; tiada penapis cawangan (043 dikeluarkan) | **GAGAL (statik) — lihat di bawah** | `docs/open-findings.md` P0 16 Sep |
-| 4.5 | Belum Dibalas (`/ops/unanswered`) | Antrian tepat | | |
+| 4.5 | Belum Dibalas (`/ops/unanswered`) | Antrian tepat | | Perlukan ≥1 belum dibalas — antrian kosong ialah antrian tepat |
 
 **4.4 tidak boleh ditanda LULUS.** Jangkaan dalam baris itu — "tiada penapis
 cawangan sebab 043 dikeluarkan" — bercanggah dengan kod yang sedang hidup.
@@ -311,10 +342,10 @@ Itu keputusan produk yang direkod.
 | # | Kes | Jangkaan | Keputusan | Bukti |
 |---|---|---|---|---|
 | 5.1 | Attachment **baharu** (selepas deploy) | Render betul | | |
-| 5.2 | Attachment **legasi** (sebelum 047) | **Render betul** — ini ujian sebenar 047 | | |
+| 5.2 | Attachment **legasi** (sebelum 047) | **Render betul** — ini ujian sebenar 047 | | **Perlukan lampiran sebelum-047 sebenar** — tanpanya kes ini lulus tanpa menguji apa-apa |
 | 5.3 | Muat turun attachment legasi | Berjaya | | |
 | 5.4 | Lightbox imej | Buka, tiada 400 | | |
-| 5.5 | Media sebagai pengguna akaun lain | **404**, bukan 403 | | |
+| 5.5 | Media sebagai pengguna akaun lain | **404**, bukan 403 | | **Perlukan media sebenar pada akaun kedua** — URL kosong juga 404 |
 | 5.6 | Media tanpa sesi | Ditolak | **LULUS** | `/api/media/attachments/<x>` → `401`, `cache-control: no-store`. 16 Sep, tanpa kelayakan |
 | 5.6b | `/api/issues` tanpa sesi | Ditolak | **LULUS** | `401`. 17 Sep |
 | 5.7 | Header cache | `private` | | |
