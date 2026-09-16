@@ -45,7 +45,8 @@
     "defaultAvatar": "Avatar",
     "menuProfile": "Profile",
     "menuSettings": "Settings",
-    "menuSignOut": "Sign out"
+    "menuSignOut": "Sign out",
+    "calls": "Calls"
   },
   "Header": {
     "dashboard": "Dashboard",
@@ -66,7 +67,8 @@
     "defaultAvatar": "Avatar",
     "menuProfile": "Profile",
     "menuSettings": "Settings",
-    "menuSignOut": "Sign out"
+    "menuSignOut": "Sign out",
+    "calls": "Calls"
   },
   "ZoneSwitcher": {
     "menuLabel": "Switch zone",
@@ -2326,6 +2328,65 @@
       "invalidSeverity": "Pick a severity.",
       "invalidBody": "That request could not be read.",
       "nothingToUpdate": "Nothing changed."
+    }
+  },
+  "Calls": {
+    "list": {
+      "title": "Calls",
+      "description": "Phone calls with parents, logged by hand. The half of a thread that happens off WhatsApp.",
+      "empty": "No calls logged yet.",
+      "emptyHint": "When a parent is phoned instead of messaged, log it here so the next shift can see what was said.",
+      "logCall": "Log a call",
+      "search": "Search summaries",
+      "allOutcomes": "Any outcome",
+      "allDirections": "Any direction",
+      "dueOnly": "Follow-up due",
+      "clearFilters": "Clear filters",
+      "followUp": "Ring back {when}",
+      "duration": "{duration} long",
+      "loggedBy": "Logged by {name}",
+      "unknownPerson": "Someone",
+      "count": "{count, plural, =0 {No calls} one {# call} other {# calls}}"
+    },
+    "log": {
+      "title": "Log a call",
+      "description": "What was said, so the next person does not call them again to ask the same thing.",
+      "directionLabel": "Which way",
+      "outcomeLabel": "What came of it",
+      "calledAtLabel": "When",
+      "durationLabel": "How long (minutes)",
+      "durationPlaceholder": "e.g. 5",
+      "summaryLabel": "What was said",
+      "summaryPlaceholder": "Mother asked about August fees; explained, sending the invoice by email.",
+      "followUpLabel": "Ring back at",
+      "followUpHint": "They are still waiting on us. Set a time or the promise lives nowhere.",
+      "save": "Save call",
+      "cancel": "Cancel",
+      "saved": "Call logged"
+    },
+    "direction": {
+      "keluar": "We called",
+      "masuk": "They called"
+    },
+    "outcome": {
+      "dijawab": "Answered",
+      "tidak_dijawab": "No answer",
+      "tinggal_mesej": "Left a message",
+      "call_balik": "Asked for a callback",
+      "nombor_salah": "Wrong number"
+    },
+    "errors": {
+      "loadFailed": "Could not load the calls.",
+      "saveFailed": "That did not save.",
+      "summaryRequired": "Write what was said.",
+      "invalidDirection": "Pick which way the call went.",
+      "invalidOutcome": "Pick what came of it.",
+      "invalidDuration": "A length has to be a number of minutes.",
+      "invalidCalledAt": "That is not a time we can read.",
+      "invalidBody": "Nothing usable was sent.",
+      "profileNotLinked": "Your profile is not linked to an account.",
+      "unauthorized": "Sign in first.",
+      "forbidden": "You do not have permission to log calls."
     }
   }
 }

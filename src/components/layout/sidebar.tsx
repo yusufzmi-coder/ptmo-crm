@@ -11,6 +11,7 @@ import {
   Bell,
   Bot,
   ClipboardList,
+  Phone,
   Crown,
   GitBranch,
   LayoutDashboard,
@@ -125,6 +126,7 @@ const navGroups: NavGroup[] = [
       { href: "/inbox", labelKey: "inbox", icon: MessageSquare },
       { href: "/ops/unanswered", labelKey: "ops", icon: MessageSquareWarning },
       { href: "/issues", labelKey: "issues", icon: ClipboardList },
+      { href: "/calls", labelKey: "calls", icon: Phone },
     ],
   },
   {
