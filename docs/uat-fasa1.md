@@ -72,6 +72,43 @@ diuji. Lihat Bahagian 3.
 
 ---
 
+## 0. Tingkap sebelum-merge — ia tutup pada merge, bukan pada apply
+
+Empat kerosakan `043`/`048` dijumpai secara statik dan **tidak pernah
+diperhatikan berlaku**. Ramalannya ialah 500. Bukti setakat ini ialah ledger
+migration dan kod, bukan satu permintaan yang gagal.
+
+Kerosakan itu **masih hidup pada `crm.ptmostaff.com` ketika ini**, kerana
+pembetulannya ada pada `feat/multi-number` dan PR #66 belum dimerge. Detik
+merge itu mendarat, ia hilang — dan bersamanya satu-satunya peluang untuk
+mengesahkan diagnosis ini terhadap mesin sebenar dan bukan terhadap mock.
+
+Ini berbeza daripada tingkap sebelum-051 dalam `docs/uat-fasa2.md`: tingkap itu
+tutup bila seseorang **apply** migration, dan ia mengesahkan pagar **berfungsi**.
+Tingkap ini tutup lebih awal — pada **merge** — dan ia mengesahkan kerosakan itu
+**wujud**. Kalau hanya satu sempat dijalankan, jalankan yang ini: pagar yang
+tidak diperlukan hanyalah kod berlebihan, tetapi kerosakan yang tidak wujud
+bermakna empat pembetulan ini menyelesaikan masalah yang direka.
+
+Perlukan sesi log masuk. Empat permintaan, tiada satu pun menulis data kekal
+yang bermakna.
+
+| # | Langkah | Ramalan | Keputusan |
+|---|---|---|---|
+| 0.1 | Buka picker quick reply **dari thread inbox** | 500 — `quick_replies.whatsapp_config_id` tiada | |
+| 0.2 | Cipta satu quick reply, dari mana-mana skrin, tanpa pin cawangan | 500 — lajur dibawa tanpa syarat | |
+| 0.3 | Cipta satu broadcast kepada **satu** kontak ujian | Gagal — RPC 9-hujah tak padan versi 8-hujah `038` | |
+| 0.4 | Resume broadcast sedia ada | `404 Broadcast not found` untuk kempen yang wujud | |
+
+Kalau mana-mana satu **berjaya** dan bukan gagal, pembetulan yang sepadan
+menyelesaikan sesuatu yang bukan masalahnya. Rekod itu — ia lebih bernilai
+daripada empat kelulusan.
+
+Selepas merge, tandakan keempat-empatnya **TIDAK BOLEH DIUJI — tingkap tertutup**
+dan jangan tulis semula sejarah dengan meneka apa yang akan berlaku.
+
+---
+
 ## 1. Login
 
 | # | Kes | Jangkaan | Keputusan | Bukti |
