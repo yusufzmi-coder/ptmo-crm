@@ -291,10 +291,19 @@ atau di-apply selepas deploy. Itu kegagalan urutan, bukan kegagalan UI.
 | 4.1 | Senarai perbualan dimuat | Tiada ralat | | Perlukan ≥1 conversation |
 | 4.2 | Buka thread, baca sejarah | Tertib, lengkap | | |
 | 4.3 | Hantar mesej keluar **[tulis]** | Terhantar — kontak ujian, bukan parent sebenar | | |
-| 4.4 | Quick replies | Semua muncul; tiada penapis cawangan (043 dikeluarkan) | **GAGAL (statik) — lihat di bawah** | `docs/open-findings.md` P0 16 Sep |
+| 4.4 | Quick replies | Semua muncul; tiada penapis cawangan (043 dikeluarkan) | **RAMALAN: GAGAL** — belum dijalankan | kes 0.1, `docs/open-findings.md` |
 | 4.5 | Belum Dibalas (`/ops/unanswered`) | Antrian tepat | | Perlukan ≥1 belum dibalas — antrian kosong ialah antrian tepat |
 
-**4.4 tidak boleh ditanda LULUS.** Jangkaan dalam baris itu — "tiada penapis
+**4.4 membawa ramalan, bukan keputusan.** Baris itu asalnya ditanda
+`GAGAL (statik)`, yang salah dalam dua arah: ia nilai yang diambil daripada
+membaca kod dan disimpan seolah-olah ia diperhatikan, dan ia berhenti benar
+sebaik `a834ba2` mendarat. Dokumen UAT yang membawa `GAGAL` untuk sesuatu yang
+sudah dibaiki menghantar orang memburu pepijat yang tiada.
+
+Ia menjadi keputusan sebenar selepas **kes 0.1** dijalankan — itulah gunanya
+tingkap sebelum-merge. Sehingga itu ia ramalan.
+
+Jangkaan dalam baris itu — "tiada penapis
 cawangan sebab 043 dikeluarkan" — bercanggah dengan kod yang sedang hidup.
 `src/app/api/quick-replies/route.ts` **memang** menapis mengikut cawangan:
 baris 63-65 menapis `quick_replies.whatsapp_config_id`, dan baris 176
@@ -440,18 +449,19 @@ Kiraan mengikut **kes bernama**, setakat pusingan 16 Sep (tanpa kelayakan).
 | 1. Login | 1 (1.6, kini 12 laluan) | 0 | 6 |
 | 2. Akses akaun | 0 | 0 | 4 |
 | 3. Centres | 0 | 0 | 6 (+1 tidak boleh diuji: 3.7) |
-| 4. Inbox | 0 | 1 (4.4, statik) | 5 |
+| 4. Inbox | 0 | 0 | 6 (4.4 = ramalan GAGAL, belum dijalankan) |
 | 5. Media | 2 (5.6, 5.6b) | 0 | 8 |
 | 6. Keselamatan | 0 | 0 | 9 |
 
 **Keputusan UAT:** **BELUM SELESAI** — bukan LULUS, bukan GAGAL. Tiga kes
-lulus dengan bukti, satu gagal secara statik (4.4), 37 lagi belum
-dijalankan kerana ia memerlukan sesi log masuk sebenar.
+lulus dengan bukti. **Sifar kes gagal, dan sifar kes diperhatikan gagal** —
+bukan perkara yang sama, tetapi di sini kedua-duanya benar: tiada apa yang
+dijalankan selain permukaan tanpa-sesi.
 
-Jangan baca kiraan ini sebagai hijau. Satu-satunya kegagalan setakat ini
-ditemui tanpa menjalankan apa-apa — ia ditemui dengan membaca kod terhadap
-ledger migration. Itu mencadangkan pusingan berkelayakan akan menemui lebih
-banyak, bukan kurang.
+Empat kerosakan ditemui dan dibaiki malam ini tanpa satu pun diperhatikan
+berlaku. Kesemuanya ramalan sehingga Bahagian 0 dijalankan. Jangan pindahkan
+mana-mana daripadanya ke lajur Gagal sebelum itu, dan jangan biarkan
+pembetulannya membuat sesiapa fikir ia pernah disahkan.
 
 ### Sengaja tidak diuji — dan kenapa
 
