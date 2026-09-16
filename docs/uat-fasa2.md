@@ -45,17 +45,38 @@ kali kedua tiada kesan.
 
 ## Bahagian 0 — yang boleh diuji tanpa kelayakan
 
-Ini sahaja yang boleh dijalankan hari ini. Jalankan sekarang; jangan
-tunggu nombor.
+Dua kumpulan, dan perbezaannya penting. 0.1–0.3 menguji webhook yang
+**sudah** hidup pada production sejak Fasa 1; jalankan sekarang.
+0.4–0.6 menguji kod Fasa 2 yang **belum di-deploy**; ia tidak boleh
+dijalankan lagi, dan menandakannya GAGAL adalah salah baca.
+
+### Sudah boleh dijalankan
 
 | # | Kes | Jangkaan | Status |
 |---|---|---|---|
 | 0.1 | `GET /api/whatsapp/webhook?hub.mode=subscribe&hub.verify_token=salah&hub.challenge=123` | 403. Token salah tidak boleh melepasi | |
 | 0.2 | `GET` yang sama tanpa sebarang parameter | 400 atau 403 — bukan 200, dan bukan 500 | |
 | 0.3 | `POST /api/whatsapp/webhook` dengan badan sah tetapi **tanpa** header `x-hub-signature-256` | Ditolak. Ini yang menghalang sesiapa sahaja daripada menyuntik mesej ke dalam inbox | |
-| 0.4 | `GET /calls` tanpa sesi | 307 → `/login`. `/calls` ada dalam `protectedPaths` (middleware) | |
-| 0.5 | `GET /api/calls` tanpa sesi | 401, bukan senarai kosong | |
-| 0.6 | Domain menyajikan `lang="ms"` dan sidebar memaparkan **Panggilan** | | |
+
+### Disekat pada deploy, bukan pada kelayakan
+
+Diukur 17 Sep pada `crm.ptmostaff.com`: `/calls` **404**, `/api/calls`
+**404**. Itu bukan gate auth yang gagal — ia jurang deploy. PR #66 belum
+dimerge, jadi `main` tiada laluan itu langsung. 404 ialah bacaan yang
+betul untuk keadaan sekarang, dan ia bukti berguna: ia mengukur jarak
+antara branch dan yang disajikan.
+
+Semakan kod (bukan pengganti untuk mengujinya hidup): `/calls` ada dalam
+`protectedPaths` dalam `src/middleware.ts`, `GET /api/calls` dipagar
+`requireUser()`, `POST` dipagar `requireRole('agent')`.
+
+| # | Kes | Jangkaan selepas deploy | Status |
+|---|---|---|---|
+| 0.4 | `GET /calls` tanpa sesi | 307 → `/login` | **404 — belum di-deploy** |
+| 0.5 | `GET /api/calls` tanpa sesi | 401, bukan senarai kosong | **404 — belum di-deploy** |
+| 0.6 | Sidebar memaparkan **Panggilan**, domain menyajikan `lang="ms"` | | **belum di-deploy** |
+| 0.7 | `GET /calls` dengan sesi, **sebelum** 051 diapply | Halaman memuat dan berkata rekod panggilan belum tersedia; butang rekod dimati. **Bukan 500** | |
+| 0.8 | `POST /api/calls` dengan sesi, **sebelum** 051 diapply | 503 `table_missing`. **Bukan 201** — panggilan yang dikatakan tersimpan sedangkan tiada jadual menerimanya hilang dua kali | |
 
 ## Bahagian 1 — sambung nombor
 
