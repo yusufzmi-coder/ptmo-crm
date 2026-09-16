@@ -111,11 +111,10 @@ daripada empat kelulusan.** Rekod, jangan diam-diam anggap lulus.
   rosak pada production sekarang.
 - Tiada satu pun daripada empat pembetulan drift skema disahkan
   terhadap production. Semuanya diagnosis statik.
-- `docs/uat-fasa1.md` kes **4.4** membawa keputusan `GAGAL (statik)` —
-  keputusan yang ditulis daripada membaca kod, bukan daripada satu
-  larian. Selepas #66 mendarat ia tidak lagi benar. Kemas kini semasa
-  langkah 2, kalau tidak dokumen itu mendakwa kegagalan yang sudah
-  dibaiki.
+- `docs/uat-fasa1.md` kes **4.4** kini bertanda **RAMALAN: GAGAL**
+  (`467e401`), bukan keputusan — ia ditulis daripada membaca kod. Ia
+  jadi keputusan sebenar hanya selepas langkah 1 dijalankan. Selepas #66
+  mendarat, ramalan itu tidak lagi terpakai langsung.
 - Empat migration diparkir (`042`, `043`, `044`, `048`) masih tiada
   keputusan. Jurang melebar dengan setiap migration baharu — 051
   menjadikannya lima nombor antara repo dan production.
