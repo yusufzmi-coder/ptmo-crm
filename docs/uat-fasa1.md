@@ -154,8 +154,15 @@ yang kelihatan boleh diklik tetapi tidak disokong oleh skema.
 
 049 mencipta `regions` dan `centres`. Tab Settings membacanya, jadi ia
 berfungsi setakat CRUD. Ia **bukan** ciri siap: `contacts.centre_id` tiada
-penulis (`grep -rn "centre_id" src/` = 0), jadi Parent tidak boleh
-ditetapkan kepada Centre.
+penulis, jadi Parent tidak boleh ditetapkan kepada Centre.
+
+> **Bukti dikemas kini 16 Sep.** Dokumen ini asalnya menulis
+> `grep -rn "centre_id" src/` = 0. Kiraan itu kini **11**, dan salah satunya
+> ialah tulisan (`open-case-dialog.tsx:148`). Kesimpulannya tetap sama —
+> setiap satu daripada sebelas rujukan itu ialah `issues.centre_id`, yang
+> datang dengan migration 050 selepas dokumen ini ditulis. `contacts.centre_id`
+> masih tiada penulis. Kesimpulan betul, bukti sudah basi; jangan ulang
+> grep lama itu dan sangka ia menafikan kes 3.7.
 
 Lokasi: Settings → *Centres & zones* (`/settings?tab=centres`)
 
@@ -181,8 +188,24 @@ atau di-apply selepas deploy. Itu kegagalan urutan, bukan kegagalan UI.
 | 4.1 | Senarai perbualan dimuat | Tiada ralat | | |
 | 4.2 | Buka thread, baca sejarah | Tertib, lengkap | | |
 | 4.3 | Hantar mesej keluar **[tulis]** | Terhantar — kontak ujian, bukan parent sebenar | | |
-| 4.4 | Quick replies | Semua muncul; tiada penapis cawangan (043 dikeluarkan) | | |
+| 4.4 | Quick replies | Semua muncul; tiada penapis cawangan (043 dikeluarkan) | **GAGAL (statik) — lihat di bawah** | `docs/open-findings.md` P0 16 Sep |
 | 4.5 | Belum Dibalas (`/ops/unanswered`) | Antrian tepat | | |
+
+**4.4 tidak boleh ditanda LULUS.** Jangkaan dalam baris itu — "tiada penapis
+cawangan sebab 043 dikeluarkan" — bercanggah dengan kod yang sedang hidup.
+`src/app/api/quick-replies/route.ts` **memang** menapis mengikut cawangan:
+baris 63-65 menapis `quick_replies.whatsapp_config_id`, dan baris 176
+memasukkannya pada setiap `insert`. Lajur itu dicipta di satu tempat sahaja
+dalam repo, `043_quick_replies_branch.sql:53-55`, dan 043 tidak pernah
+diapply pada mana-mana pangkalan data.
+
+Ramalan: membuka picker quick reply dari thread inbox memulangkan 500, dan
+mencipta quick reply memulangkan 500 tanpa syarat. Belum disahkan terhadap
+production — kedua-duanya perlukan sesi. Sahkan sebaik sahaja D1 selesai;
+kalau ramalan ini betul ia **P0 hidup pada production**, bukan penemuan UAT.
+
+Butiran penuh, dan tiga jalan keluar yang perlu diputuskan, ada dalam
+`docs/open-findings.md`.
 
 ### 4.6 Presence per tab (045) — bug yang release ini sebenarnya baiki
 
@@ -313,16 +336,18 @@ Kiraan mengikut **kes bernama**, setakat pusingan 16 Sep (tanpa kelayakan).
 | 1. Login | 1 (1.6) | 0 | 6 |
 | 2. Akses akaun | 0 | 0 | 4 |
 | 3. Centres | 0 | 0 | 6 (+1 tidak boleh diuji: 3.7) |
-| 4. Inbox | 0 | 0 | 6 |
+| 4. Inbox | 0 | 1 (4.4, statik) | 5 |
 | 5. Media | 1 (5.6) | 0 | 8 |
 | 6. Keselamatan | 0 | 0 | 9 |
 
 **Keputusan UAT:** **BELUM SELESAI** — bukan LULUS, bukan GAGAL. Dua kes
-lulus dengan bukti; 39 lagi belum dijalankan kerana ia memerlukan sesi
-log masuk sebenar. Tiada kes gagal setakat ini.
+lulus dengan bukti, satu gagal secara statik (4.4), 38 lagi belum
+dijalankan kerana ia memerlukan sesi log masuk sebenar.
 
-Jangan baca "0 gagal" sebagai hijau. Ia bermakna tiada apa yang dijalankan
-lagi selain permukaan tanpa-kelayakan.
+Jangan baca kiraan ini sebagai hijau. Satu-satunya kegagalan setakat ini
+ditemui tanpa menjalankan apa-apa — ia ditemui dengan membaca kod terhadap
+ledger migration. Itu mencadangkan pusingan berkelayakan akan menemui lebih
+banyak, bukan kurang.
 
 ### Sengaja tidak diuji — dan kenapa
 

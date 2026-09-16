@@ -7,7 +7,7 @@
 **Status keseluruhan:** Fasa 1 kod **SELESAI** · Isu & Tindakan **hidup pada production** · **UAT 2/41 kes** — lihat `docs/uat-fasa1.md`
 **Dikemas kini:** 16 Sep 2026
 **Branch kerja bersepadu:** `feat/multi-number` = `origin/main` = `6928678` — semua diserap
-**Gate:** lint 0 error / 32 warning · typecheck 0 · **1285 ujian lulus** · build berjaya
+**Gate:** lint 0 error / 32 warning · typecheck 0 · **1325 ujian lulus (113 fail)** · build berjaya — dijalankan semula 16 Sep pada `5d68af3`
 **Katalog:** en/ko/ms **1905 kunci** setiap satu. Bahasa Melayu **aktif** — domain menyajikan `lang="ms"`
 **Live:** `crm.ptmostaff.com` 200, melalui Vercel projek `crmfinal_ptmo`
 **Baseline production:** skema **041 + 045 + 046 + 047 + 049 + 050**. `050` (Isu & Tindakan) diapply 15 Sep, enam penegasan `t`, disahkan bebas melalui REST. Release Fasa 1 diapply 15 Sep dalam satu transaksi; tiga penegasan `t`, disahkan bebas dengan probe baca-sahaja dari luar pangkalan data.
@@ -20,6 +20,7 @@
 
 | Keutamaan | Tindakan | Siapa | Bila selesai |
 |---|---|---|---|
+| P0 | **Quick replies rujuk lajur yang tiada** — `quick_replies.whatsapp_config_id` hanya wujud dalam 043, yang tidak pernah diapply. Ramalan: picker dari thread 500, cipta quick reply 500 tanpa syarat. Pilih: apply 043 / pagar kod / buang laluan cawangan | Yusuf + Coordinator | [ ] **`docs/open-findings.md`** |
 | P0 | Sambung nombor WhatsApp — Callback `https://crm.ptmostaff.com/api/whatsapp/webhook`, verify token yang kau reka, PIN 6-digit | Yusuf | [ ] **satu-satunya yang menghalang Fasa 2** |
 | P1 | **Dua akaun ujian UAT** pada `crm.ptmostaff.com` — satu admin, satu viewer. 39 daripada 41 kes UAT mati tanpanya | Yusuf | [ ] **halangan tunggal UAT** |
 | P1 | Tab Actions GitHub — sepanduk fork. Sembilan push, sifar larian; setiap gate setakat ini dicetuskan dengan tangan | Yusuf | [ ] |
@@ -207,6 +208,7 @@ kongsi: guna, jangan ubah.
 | 2026-09-14 | **Template seed tidak lagi mereka fakta** - harga `$9/mo` dan dasar refund palsu dikeluarkan. Sifar fakta dicipta sebagai ganti | `b83dafa` | Coordinator |
 | 2026-09-14 | **Locale tidak lagi gagal senyap** - `.env.local` membawa `"en "` dengan ruang sejak 10 Sep; hari `ms ` ditulis, pengaktifan akan gagal tanpa sebarang isyarat | `b19fa2a` | Coordinator |
 | 2026-09-14 | PR #3 di-merge dan di-deploy | `019e722` | Coordinator |
+| 2026-09-16 | **P0 ditemui tanpa menjalankan apa-apa:** `quick-replies/route.ts` menapis dan memasukkan `whatsapp_config_id`, lajur yang hanya `043` cipta dan yang tiada pangkalan data pernah jalankan. Corak sama seperti 049/`centres-panel`, arah bertentangan | `docs/open-findings.md` | Coordinator |
 | 2026-09-16 | **UAT dimulakan pada domain live.** Kes 1.6 LULUS penuh — kesebelas laluan dilindungi pulang 307 → `/login`, sepadan tepat dengan `protectedPaths`. Kes 5.6 LULUS — media tanpa sesi pulang 401, `cache-control: no-store`. Domain menyajikan `lang="ms"`. Baki 39 kes disekat pada akaun ujian | `405ba94`, `docs/uat-fasa1.md` | Coordinator |
 
 ---

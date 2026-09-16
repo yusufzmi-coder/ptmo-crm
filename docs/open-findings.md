@@ -1868,3 +1868,60 @@ Ujian ini menjalankan laluan tulis sebenar terhadap polisi yang
 membezakan kedua-dua kunci.
 
 **Tiada tindakan sebelum menyambung nombor.** Item ini ditutup.
+
+---
+
+## P0 — quick replies memanggil lajur yang tiada pangkalan data pernah cipta (16 Sep 2026)
+
+`src/app/api/quick-replies/route.ts:63-65` dan `:176`
+
+Corak yang sama seperti `centres-panel.tsx` / 049, tetapi arah bertentangan
+dan belum ditangkap: kali ini kod hidup pada production sedang merujuk lajur
+daripada migration yang **diparkir dan tidak pernah diapply**.
+
+`quick_replies.whatsapp_config_id` dicipta di **satu tempat sahaja** dalam
+seluruh repo — `supabase/migrations/043_quick_replies_branch.sql:53-55`. 043
+ialah salah satu daripada empat migration yang keputusan satu-nombor
+tinggalkan; board menyatakannya secara jelas: *"Belum diapply, dan tiada
+pangkalan data pernah menjalankannya: 042, 043, 044, 048."*
+
+Jangan keliru dengan `conversations.whatsapp_config_id` — lajur itu datang
+dari 040, sudah live, dan berfungsi. Yang hilang ialah lajur pada
+`quick_replies`.
+
+Dua laluan terjejas, dan satu daripadanya tidak bersyarat:
+
+**GET, bila ada `conversationId`.** Baris 63-65 menapis
+`whatsapp_config_id.is.null,whatsapp_config_id.eq.<id>`. `quick-reply-picker.tsx:50`
+membaca `?c=` daripada URL inbox, jadi **setiap** kali picker dibuka dari
+thread sebenar ia melalui laluan ini. Dari senarai quick replies tanpa
+thread ia tidak.
+
+**POST, sentiasa.** Baris 176 memasukkan `whatsapp_config_id` dalam setiap
+`insert`, tanpa syarat, walaupun nilainya `null`. PostgREST menolak lajur
+yang tidak wujud pada skema — nilai `null` tidak menyelamatkannya. Jadi
+**mencipta quick reply pada production gagal 500**, bukan kadang-kadang.
+
+Kenapa ia tidak ditangkap: ujian menyediakan klien Supabase palsu, jadi
+skema yang diuji ialah skema yang diandaikan ujian. Gate hijau tidak
+mengatakan apa-apa tentang lajur yang hilang.
+
+Tidak disahkan secara langsung terhadap production — endpoint memerlukan
+sesi, dan pusingan UAT 16 Sep berjalan tanpa kelayakan. Bukti di sini ialah
+bukti statik: satu-satunya pengisytiharan lajur ada dalam 043, dan 043 tidak
+pernah dijalankan. Langkah pengesahan bila ada akaun ujian: buka picker
+quick reply daripada thread inbox, dan cuba cipta satu quick reply.
+
+Tiga jalan, dan ia keputusan Yusuf, bukan pembaikan yang patut dibuat
+secara senyap:
+
+1. **Apply 043.** Ia menambah satu lajur nullable dan satu index separa;
+   ia idempotent. Tetapi ia membuka semula set migration yang sengaja
+   diparkir, dan keputusan itu ada sebabnya.
+2. **Pagar kod**, seperti `my_accounts` dipagar pada `583d501` bila 044
+   tiada — kesan ketiadaan lajur, jatuh kepada tingkah laku akaun-lebar.
+3. **Buang laluan cawangan** daripada route sepenuhnya, selaras dengan
+   keputusan satu-nombor.
+
+Sehingga salah satu dipilih, UAT kes 4.4 tidak boleh ditanda LULUS dan
+quick replies tidak boleh dianggap berfungsi pada production.
