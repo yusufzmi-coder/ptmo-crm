@@ -43,6 +43,47 @@ kali kedua tiada kesan.
 
 ---
 
+## Urutan — dua tingkap, dan satu tutup lebih awal
+
+Dokumen ini pernah mencadangkan "merge dahulu". Itu salah, dan ia akan
+memusnahkan sesuatu yang tidak boleh dijadualkan semula.
+
+Ada **dua** tingkap yang hanya wujud sekali, dan ia tutup pada peristiwa
+berbeza:
+
+| Tingkap | Tutup bila | Mengesahkan | Di mana |
+|---|---|---|---|
+| Bahagian 0 **`uat-fasa1.md`** | **merge #66** | kerosakan `043`/`048` benar-benar **wujud** | dokumen Fasa 1 |
+| Bahagian 0.7 / 0.8 di bawah | **apply 051** | pagar jadual-hilang benar-benar **berfungsi** | dokumen ini |
+
+Yang Fasa 1 tutup dahulu. Empat kerosakan `043`/`048` dijumpai secara
+statik — dari ledger migration dan kod, bukan daripada satu permintaan
+yang benar-benar gagal — dan ia masih hidup pada `crm.ptmostaff.com`
+sekarang kerana pembetulannya duduk pada branch ini. Detik #66 mendarat,
+ia hilang, dan bersamanya satu-satunya peluang mengesahkan diagnosis itu
+terhadap mesin sebenar. Pagar yang tidak diperlukan cuma kod berlebihan;
+kerosakan yang tidak pernah wujud bermakna empat pembetulan menyelesaikan
+masalah yang direka.
+
+**Urutan:**
+
+```
+1. jalankan Bahagian 0 uat-fasa1.md   <- hanya SEBELUM merge
+2. merge #66
+3. sahkan 0.4 / 0.5 / 0.6 di bawah
+4. jalankan 0.7 / 0.8                 <- hanya SEBELUM apply 051
+5. apply 051
+6. Bahagian 1-6
+```
+
+Langkah 1 dan langkah 4 kedua-duanya perlukan akaun ujian (P4). Jadi
+susunan **dua sekatan Yusuf** itu sendiri penting: kalau kelayakan
+diberi sebelum sekatan merge dibuka, kedua-dua tingkap dapat. Kalau
+merge dibuka dahulu, tingkap Fasa 1 hilang dan keempat-empat kesnya
+ditandakan TIDAK BOLEH DIUJI — bukan diteka sebagai lulus.
+
+---
+
 ## Bahagian 0 — yang boleh diuji tanpa kelayakan
 
 Dua kumpulan, dan perbezaannya penting. 0.1–0.3 menguji webhook yang
