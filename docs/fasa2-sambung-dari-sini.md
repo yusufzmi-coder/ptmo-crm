@@ -6,6 +6,15 @@ seluruh sejarah.
 
 ---
 
+> **Sebelum apa-apa lagi:** empat kerosakan yang dibaiki pada 16-17 Sep
+> **tidak pernah diperhatikan berlaku.** Kesemuanya dijumpai dengan
+> membaca ledger migration dan kod. Empat commit `fix(...)` dengan mesej
+> terperinci kelihatan sangat meyakinkan, dan **tiada satu pun daripadanya
+> bukti**. Jangan biarkan kewujudan pembetulan membuat sesiapa fikir
+> kerosakan itu sudah disahkan — termasuk pagar `051` dalam dokumen ini.
+> Langkah 1 dan langkah 4 di bawah ialah satu-satunya peluang mengubahnya
+> daripada ramalan kepada keputusan.
+
 ## Satu ayat
 
 Kod siap, gate hijau, semuanya ada pada `origin/feat/multi-number`.
