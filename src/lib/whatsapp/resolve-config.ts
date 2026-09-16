@@ -30,7 +30,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 /** Columns every caller needs. Callers wanting more pass their own. */
 export const CONFIG_COLUMNS =
-  'id, account_id, phone_number_id, waba_id, access_token, status, label, is_primary';
+  'id, account_id, phone_number_id, waba_id, access_token, status, label, is_primary, centre_id';
 
 export interface WhatsAppConfigRow {
   id: string;
@@ -41,6 +41,18 @@ export interface WhatsAppConfigRow {
   status: 'connected' | 'disconnected';
   label: string | null;
   is_primary: boolean;
+  /**
+   * The centre this number serves (migration 049). NULL until an admin
+   * sets it in Settings → WhatsApp. Nothing routes on it — the branch a
+   * thread belongs to is still `conversations.whatsapp_config_id` — but
+   * the pilot needs to be readable off the number itself, and per-centre
+   * reporting has nowhere else to start.
+   *
+   * Optional, not required: callers that pass their own narrower
+   * `columns` (the quick-reply picker asks for three) never see it,
+   * and a required field would make those rows fail to type.
+   */
+  centre_id?: string | null;
   [key: string]: unknown;
 }
 

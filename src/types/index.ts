@@ -299,6 +299,14 @@ export interface WhatsAppConfig {
    * true. See src/lib/whatsapp/resolve-config.ts for the full rule.
    */
   is_primary?: boolean;
+  /**
+   * The centre this number serves (migration 049). NULL until an admin
+   * picks one in Settings → WhatsApp. Routing does not read it — a
+   * thread's branch is still `conversations.whatsapp_config_id` — but
+   * the pilot has to be readable off the number, and per-centre
+   * reporting starts here.
+   */
+  centre_id?: string | null;
   phone_number_id: string;
   waba_id?: string;
   access_token: string;

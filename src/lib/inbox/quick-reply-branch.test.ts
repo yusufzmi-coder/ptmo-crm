@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   decorateQuickReplyForBranch,
+  isMissingBranchColumn,
   type StoredQuickReply,
 } from "./quick-reply-branch";
 
@@ -167,5 +168,51 @@ describe("decorateQuickReplyForBranch", () => {
       );
       expect(out.branch_unresolved).toBe(true);
     });
+  });
+});
+
+describe('isMissingBranchColumn', () => {
+  // 043 was parked by the single-number decision and has never been
+  // applied to any database, while the route that reads the column it
+  // creates is live on production. These codes are the only signal the
+  // request gets back, so they are the whole gate.
+
+  it.each(['42703', 'PGRST204'])(
+    'recognises a missing branch column (%s)',
+    (code) => {
+      expect(
+        isMissingBranchColumn({
+          code,
+          message:
+            'column quick_replies.whatsapp_config_id does not exist',
+        }),
+      ).toBe(true);
+    },
+  );
+
+  it('does not swallow a missing OTHER column', () => {
+    // The fallback drops the branch filter and returns the list anyway.
+    // Doing that for an unrelated schema error would hide a real bug
+    // behind a successful-looking response, so the message must name
+    // the column before the gate opens.
+    expect(
+      isMissingBranchColumn({
+        code: '42703',
+        message: 'column quick_replies.title does not exist',
+      }),
+    ).toBe(false);
+  });
+
+  it('does not treat an ordinary failure as a missing column', () => {
+    expect(
+      isMissingBranchColumn({ code: '08006', message: 'connection failure' }),
+    ).toBe(false);
+  });
+
+  it('handles an error with no code or no message', () => {
+    expect(isMissingBranchColumn(null)).toBe(false);
+    expect(isMissingBranchColumn(undefined)).toBe(false);
+    expect(isMissingBranchColumn({ message: 'whatsapp_config_id' })).toBe(false);
+    expect(isMissingBranchColumn({ code: '42703' })).toBe(false);
   });
 });

@@ -70,6 +70,15 @@ export function WhatsAppConfig() {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [savingRename, setSavingRename] = useState(false);
+  /**
+   * Centres available to pin a number to (migration 049). Loaded once
+   * with the numbers; an account that has not set up Settings →
+   * Centres yet gets no picker rather than an empty dropdown, because
+   * an empty dropdown reads as a bug and sends nobody anywhere useful.
+   */
+  const [centres, setCentres] = useState<Centre[]>([]);
+  /** Row whose centre write is in flight — one at a time, by id. */
+  const [savingCentreFor, setSavingCentreFor] = useState<string | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('unknown');
   /**
    * Live metadata for the PRIMARY number, straight from Meta.

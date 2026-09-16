@@ -1923,5 +1923,18 @@ secara senyap:
 3. **Buang laluan cawangan** daripada route sepenuhnya, selaras dengan
    keputusan satu-nombor.
 
-Sehingga salah satu dipilih, UAT kes 4.4 tidak boleh ditanda LULUS dan
-quick replies tidak boleh dianggap berfungsi pada production.
+**Jalan 2 diambil (16 Sep).** Route kini mengesan lajur yang hilang dan
+jatuh kepada senarai tanpa penapis; `insert` membawa lajur itu hanya bila
+ada sesuatu yang dipin. Pinning yang diminta pada pangkalan data tanpa 043
+memulangkan **503 dengan sebab**, bukan 201 senyap — snippet yang diam-diam
+menjadi akaun-lebar ialah kegagalan yang menghantar ibu bapa ke centre yang
+salah. Pengesanan hanya terbuka bila mesej ralat menamakan
+`whatsapp_config_id`; `42703` pada lajur lain kekal 500.
+
+Ini menghentikan pendarahan. Ia **tidak** menjawab soalan asal: sama ada
+043 patut diapply, atau laluan cawangan patut dibuang sepenuhnya selaras
+dengan keputusan satu-nombor. Itu masih keputusan Yusuf.
+
+UAT kes 4.4 masih belum boleh ditanda LULUS — ramalan 500 itu sendiri belum
+pernah disahkan terhadap production, dan kini pembetulan ini pun belum.
+Kedua-duanya perlukan sesi.
