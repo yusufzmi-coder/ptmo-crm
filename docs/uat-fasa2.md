@@ -101,11 +101,14 @@ dijalankan lagi, dan menandakannya GAGAL adalah salah baca.
 
 ### Disekat pada deploy, bukan pada kelayakan
 
-Diukur 17 Sep pada `crm.ptmostaff.com`: `/calls` **404**, `/api/calls`
-**404**. Itu bukan gate auth yang gagal — ia jurang deploy. PR #66 belum
-dimerge, jadi `main` tiada laluan itu langsung. 404 ialah bacaan yang
-betul untuk keadaan sekarang, dan ia bukti berguna: ia mengukur jarak
-antara branch dan yang disajikan.
+**Diselesaikan 17 Sep.** PR #66 dimerge (`049352c`) dan Vercel deploy
+mendarat, jadi 0.4 dan 0.5 kini **LULUS pada domain hidup** — bukan
+dibaca dari `middleware.ts`, tetapi diukur dengan `curl` terhadap
+`crm.ptmostaff.com`.
+
+Bacaan `404` sebelum itu dikekalkan dalam sejarah fail ini kerana ia
+mengukur jurang deploy, bukan gate auth, dan menandakannya GAGAL akan
+merekod gate yang berfungsi sebagai rosak.
 
 Semakan kod (bukan pengganti untuk mengujinya hidup): `/calls` ada dalam
 `protectedPaths` dalam `src/middleware.ts`, `GET /api/calls` dipagar
@@ -113,9 +116,9 @@ Semakan kod (bukan pengganti untuk mengujinya hidup): `/calls` ada dalam
 
 | # | Kes | Jangkaan selepas deploy | Status |
 |---|---|---|---|
-| 0.4 | `GET /calls` tanpa sesi | 307 → `/login` | **404 — belum di-deploy** |
-| 0.5 | `GET /api/calls` tanpa sesi | 401, bukan senarai kosong | **404 — belum di-deploy** |
-| 0.6 | Sidebar memaparkan **Panggilan**, domain menyajikan `lang="ms"` | | **belum di-deploy** |
+| 0.4 | `GET /calls` tanpa sesi | 307 → `/login` | **LULUS 17 Sep** — `307`, `location: https://crm.ptmostaff.com/login`, sama persis dengan `/issues` |
+| 0.5 | `GET /api/calls` tanpa sesi | 401, bukan senarai kosong | **LULUS 17 Sep** — `401 {"error":"unauthorized"}`. Bukan senarai kosong, bukan 500 |
+| 0.6 | Sidebar memaparkan **Panggilan**, domain menyajikan `lang="ms"` | | perlukan sesi |
 | 0.7 | `GET /calls` dengan sesi, **sebelum** 051 diapply | Halaman memuat dan berkata rekod panggilan belum tersedia; butang rekod dimati. **Bukan 500** | |
 | 0.8 | `POST /api/calls` dengan sesi, **sebelum** 051 diapply | 503 `table_missing`. **Bukan 201** — panggilan yang dikatakan tersimpan sedangkan tiada jadual menerimanya hilang dua kali | |
 
