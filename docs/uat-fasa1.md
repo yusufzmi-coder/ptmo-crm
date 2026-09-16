@@ -97,13 +97,28 @@ Sudah **diperhatikan berfungsi** pada dev tempatan — lima laluan
 | `/ops/unanswered` | LULUS | | `/flows` | LULUS |
 | `/notifications` | LULUS | | `/agents` | LULUS |
 | `/contacts` | LULUS | | `/settings` | LULUS |
-| `/pipelines` | LULUS | | | |
+| `/pipelines` | LULUS | | `/issues` | LULUS |
 
-**Kesebelas-belas LULUS pada `crm.ptmostaff.com`, 16 Sep 2026**, disahkan dua
-kali dengan larian berasingan. Setiap satu memulangkan `307` dengan
+**Kesemuanya LULUS pada `crm.ptmostaff.com`, 16–17 Sep 2026**, disahkan
+dengan larian berasingan. Setiap satu memulangkan `307` dengan
 `Location: https://crm.ptmostaff.com/login`. `/` juga betul: `307` →
-`/dashboard` → `307` → `/login`. Senarai sepadan tepat dengan `protectedPaths`
-(`src/middleware.ts:107-119`) — sebelas laluan, tiada yang tertinggal.
+`/dashboard` → `307` → `/login`.
+
+> **Pembetulan 17 Sep.** Pusingan pertama menguji sebelas laluan dan
+> menyatakan ia "sepadan tepat dengan `protectedPaths`, tiada yang
+> tertinggal". Sebelas itu sepadan dengan `middleware.ts` dalam pokok kerja
+> pada masa itu — bukan dengan apa yang sedang hidup. `/issues` sudah
+> dilindungi pada production dan tidak diuji. Ia diuji kemudian dan **LULUS**.
+>
+> Pengajaran, dan ia terpakai pada setiap kes dalam dokumen ini: senarai
+> dalam branch bukan senarai yang sedang disajikan. Kira daripada sasaran,
+> bukan daripada checkout.
+
+**Akan menjadi 13 selepas deploy seterusnya.** `/calls` (Fasa 2) sudah ada
+dalam `protectedPaths` pada branch tetapi belum disajikan — `/calls` dan
+`/api/calls` kedua-duanya memulangkan **404** pada domain live, iaitu bukti
+bahawa kerja Fasa 2 belum di-deploy. Uji semula 1.6 dengan tiga belas laluan
+selepas ia mendarat; sehingga itu jangan tandakan apa-apa untuk `/calls`.
 
 Boleh diulang sesiapa, tanpa kelayakan:
 
@@ -244,6 +259,7 @@ Itu keputusan produk yang direkod.
 | 5.4 | Lightbox imej | Buka, tiada 400 | | |
 | 5.5 | Media sebagai pengguna akaun lain | **404**, bukan 403 | | |
 | 5.6 | Media tanpa sesi | Ditolak | **LULUS** | `/api/media/attachments/<x>` → `401`, `cache-control: no-store`. 16 Sep, tanpa kelayakan |
+| 5.6b | `/api/issues` tanpa sesi | Ditolak | **LULUS** | `401`. 17 Sep |
 | 5.7 | Header cache | `private` | | |
 | 5.8 | Tiada bucket public di seluruh projek | Sah | | |
 
@@ -333,15 +349,15 @@ Kiraan mengikut **kes bernama**, setakat pusingan 16 Sep (tanpa kelayakan).
 
 | Bahagian | Lulus | Gagal | Tidak diuji |
 |---|---|---|---|
-| 1. Login | 1 (1.6) | 0 | 6 |
+| 1. Login | 1 (1.6, kini 12 laluan) | 0 | 6 |
 | 2. Akses akaun | 0 | 0 | 4 |
 | 3. Centres | 0 | 0 | 6 (+1 tidak boleh diuji: 3.7) |
 | 4. Inbox | 0 | 1 (4.4, statik) | 5 |
-| 5. Media | 1 (5.6) | 0 | 8 |
+| 5. Media | 2 (5.6, 5.6b) | 0 | 8 |
 | 6. Keselamatan | 0 | 0 | 9 |
 
-**Keputusan UAT:** **BELUM SELESAI** — bukan LULUS, bukan GAGAL. Dua kes
-lulus dengan bukti, satu gagal secara statik (4.4), 38 lagi belum
+**Keputusan UAT:** **BELUM SELESAI** — bukan LULUS, bukan GAGAL. Tiga kes
+lulus dengan bukti, satu gagal secara statik (4.4), 37 lagi belum
 dijalankan kerana ia memerlukan sesi log masuk sebenar.
 
 Jangan baca kiraan ini sebagai hijau. Satu-satunya kegagalan setakat ini
