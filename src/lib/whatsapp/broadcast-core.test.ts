@@ -51,7 +51,14 @@ describe('createBroadcast validation', () => {
 // Build a Supabase-shaped mock that gets createBroadcast past its config +
 // template lookups and into persistence. `rpcResult` is what the atomic
 // create_broadcast_with_recipients RPC returns.
-function makeDb(rpcResult: { data: unknown; error: unknown }) {
+function makeDb(
+  // A single result answers every call, which is what most tests want.
+  // An array answers them in order, so a test can make the first call
+  // fail and the retry succeed.
+  rpcResult:
+    | { data: unknown; error: unknown }
+    | { data: unknown; error: unknown }[]
+) {
   const calls = {
     rpc: [] as { name: string; args: unknown }[],
     // Incremented if the OLD non-atomic path (a direct broadcasts /
@@ -99,7 +106,9 @@ function makeDb(rpcResult: { data: unknown; error: unknown }) {
     },
     rpc(name: string, args: unknown) {
       calls.rpc.push({ name, args });
-      return Promise.resolve(rpcResult);
+      if (!Array.isArray(rpcResult)) return Promise.resolve(rpcResult);
+      const i = Math.min(calls.rpc.length - 1, rpcResult.length - 1);
+      return Promise.resolve(rpcResult[i]);
     },
   } as unknown as SupabaseClient;
   return { db: database, calls };
@@ -341,5 +350,72 @@ describe('finalizeBroadcastStatus', () => {
       'b-1',
     );
     expect(writes.update?.status).toBe('sent');
+  });
+});
+
+describe('createBroadcast without migration 048', () => {
+  // 048 has never been applied to any database. PostgREST resolves an RPC
+  // by matching named arguments, so the nine-argument call finds nothing
+  // on production even though create_broadcast_with_recipients exists
+  // under 038's eight-argument signature. Every broadcast fails to
+  // create — not a subset, every one.
+  const FUNCTION_NOT_FOUND = {
+    data: null,
+    error: {
+      code: 'PGRST202',
+      message:
+        'Could not find the function public.create_broadcast_with_recipients' +
+        '(p_account_id, p_contact_ids, p_name, p_template_language, ' +
+        'p_template_name, p_template_params, p_total_recipients, ' +
+        'p_user_id, p_whatsapp_config_id) in the schema cache',
+    },
+  };
+  const CREATED = {
+    data: [{ broadcast_id: 'b-1', recipient_id: 'r-1', contact_id: 'c1' }],
+    error: null,
+  };
+
+  it('retries without the frozen number and still creates the broadcast', async () => {
+    const { db, calls } = makeDb([FUNCTION_NOT_FOUND, CREATED]);
+
+    const plan = await createBroadcast(db, 'acc', 'user', {
+      templateName: 'promo',
+      recipients: [{ to: '+14155550123' }],
+    });
+
+    expect(calls.rpc).toHaveLength(2);
+    // The first call carries the 048 argument; the retry must not.
+    expect(calls.rpc[0].args).toHaveProperty('p_whatsapp_config_id');
+    expect(calls.rpc[1].args).not.toHaveProperty('p_whatsapp_config_id');
+    // Everything else is carried through unchanged — a retry that quietly
+    // dropped the recipients would be worse than the failure it replaces.
+    expect(calls.rpc[1].args).toMatchObject({
+      p_account_id: 'acc',
+      p_template_name: 'promo',
+      p_total_recipients: 1,
+    });
+    expect(plan.broadcastId).toBe('b-1');
+    expect(plan.planned).toEqual([
+      { recipientRowId: 'r-1', phone: '14155550123', params: [] },
+    ]);
+  });
+
+  it('does not retry a genuine failure', async () => {
+    // The retry exists for one deployment state. Retrying anything else
+    // would turn a real error into a second identical error and hide the
+    // first one.
+    const { db, calls } = makeDb({
+      data: null,
+      error: { code: '23505', message: 'duplicate key value' },
+    });
+
+    await expect(
+      createBroadcast(db, 'acc', 'user', {
+        templateName: 'promo',
+        recipients: [{ to: '+14155550123' }],
+      })
+    ).rejects.toMatchObject({ status: 500 });
+
+    expect(calls.rpc).toHaveLength(1);
   });
 });

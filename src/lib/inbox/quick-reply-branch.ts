@@ -6,6 +6,7 @@ import {
   hasBranchToken,
 } from '@/lib/inbox/branch-token';
 import { validateInteractivePayload } from '@/lib/whatsapp/interactive';
+import { isMissingColumn } from '@/lib/db/schema-drift';
 
 /**
  * Turn a stored quick reply into the one THIS thread's branch should
@@ -98,25 +99,14 @@ export function decorateQuickReplyForBranch(
 }
 
 /**
- * Postgres reports an unknown column as `42703`; PostgREST answers from
- * its schema cache instead and reports `PGRST204`. Both mean the same
- * thing here: `quick_replies.whatsapp_config_id` is not on this
- * database, because migration 043 has never been applied to it.
+ * Whether a Supabase error means the 043 branch column is absent.
  *
- * Same shape as the `my_accounts()` gate in `src/lib/auth/zones.ts`
- * (`583d501`) — a build shipped ahead of its migration is a deployment
- * state, not a fault. The difference is that this one is worse when
- * unhandled: the zone call only logged, while this one 500s the request.
+ * Thin wrapper over the shared detector so callers in this module read
+ * in terms of the branch feature rather than a column name. The codes
+ * and the reason they matter live in `@/lib/db/schema-drift`.
  */
-const COLUMN_NOT_FOUND = new Set(['42703', 'PGRST204']);
-
-/** Whether a Supabase error means the 043 branch column is absent. */
 export function isMissingBranchColumn(
   error: { code?: string; message?: string } | null | undefined,
 ): boolean {
-  if (!error?.code) return false;
-  if (!COLUMN_NOT_FOUND.has(error.code)) return false;
-  // Only claim it is the branch column when the message names it —
-  // `42703` on any other column is a real bug and must keep 500ing.
-  return (error.message ?? '').includes('whatsapp_config_id');
+  return isMissingColumn(error, 'whatsapp_config_id');
 }

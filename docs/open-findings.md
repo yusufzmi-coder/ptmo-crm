@@ -1938,3 +1938,63 @@ dengan keputusan satu-nombor. Itu masih keputusan Yusuf.
 UAT kes 4.4 masih belum boleh ditanda LULUS — ramalan 500 itu sendiri belum
 pernah disahkan terhadap production, dan kini pembetulan ini pun belum.
 Kedua-duanya perlukan sesi.
+
+---
+
+## Audit kelas penuh: kod yang bergantung pada migration diparkir (16 Sep 2026)
+
+Tiga contoh kelas ini ditemui secara kebetulan, satu demi satu — `my_accounts()`
+pada `583d501`, kemudian quick replies. Itu bukan kaedah. Audit ini memeriksa
+**kesemua** objek yang dicipta oleh empat migration yang diparkir (`042`, `043`,
+`044`, `048`) terhadap penggunaannya dalam `src/`, supaya senarainya habis.
+
+Kenapa suite ujian tidak boleh menggantikan audit ini: klien Supabase distub,
+jadi skema yang diuji ialah skema yang ujian andaikan. Gate hijau tidak
+mengatakan apa-apa tentang lajur atau fungsi yang tiada. Ketiga-tiga penemuan
+berlaku di bawah 1300+ ujian yang lulus.
+
+### Hasil
+
+| Migration | Objek dicipta | Kod bergantung? | Keadaan |
+|---|---|---|---|
+| **042** | `merge_duplicate_conversations()` | **Tidak** — 0 rujukan dalam `src/` | Selamat |
+| **043** | `quick_replies.whatsapp_config_id` | **Ya, dua tempat** | **Dibaiki** 16 Sep |
+| **044** | 1 jadual, 9 fungsi | Sebahagian — lihat bawah | Selamat |
+| **048** | `broadcasts.whatsapp_config_id`, `create_broadcast_with_recipients` 9-arg | **Ya, dua tempat** | **Dibaiki** 16 Sep |
+
+### 044 — kenapa ia selamat, walaupun kelihatan paling teruk
+
+Lima RPC 044 dipanggil pada runtime, dan pandangan pertama mencadangkan lima
+kegagalan. Ia bukan:
+
+- `redeem_invitation`, `set_member_role`, `remove_account_member`,
+  `transfer_account_ownership` — keempat-empatnya **juga** dicipta oleh `018`
+  dan `019`, yang sudah live, dan **tandatangannya identik** dengan versi 044.
+  044 menukar badan fungsi, bukan hujahnya. PostgREST memadankan mengikut nama
+  hujah, jadi setiap panggilan ini mendarat pada versi 018/019 dan berfungsi.
+  Jemputan staf — cara staf kedua pilot menyertai — tidak terjejas.
+- `my_accounts()` — 044 sahaja, sudah dipagar pada `583d501`.
+- `set_active_account()` — 044 sahaja, dan **tidak boleh dicapai**: satu-satunya
+  pemanggilnya ialah `use-zones.ts:106`, daripada `zone-switcher.tsx`, yang
+  merender trigger hanya bila `shouldShowSwitcher(zones)` benar. `my_accounts()`
+  yang tiada memulangkan senarai zon kosong, jadi switcher tidak pernah dirender.
+- `account_members` — **0** panggilan `.from()` dalam `src/`.
+
+Pengajaran yang perlu dibawa ke audit akan datang: **jangan berhenti pada
+"migration ini diparkir dan kod memanggil fungsinya."** Soalan sebenar ialah
+sama ada objek itu wujud **di tempat lain** dalam ledger yang diapply, dan jika
+ya, sama ada tandatangannya sepadan. Dua jawapan berbeza, dan 048 vs 044
+menunjukkan kedua-duanya — `create_broadcast_with_recipients` wujud dalam `038`
+tetapi dengan lapan hujah, dan hujah kesembilan sudah cukup untuk mematikannya.
+
+### Yang masih terbuka
+
+Pembaikan menghentikan kegagalan; ia tidak memutuskan hala tuju. `043` dan `048`
+masih diparkir, dan kod masih membawa laluan cawangan yang mereka sokong. Sama
+ada migration itu patut diapply, atau laluan cawangan dibuang selaras keputusan
+satu-nombor, kekal keputusan Yusuf. Keputusan board 2026-09-14 mengekalkan seni
+bina multi-number dengan sengaja, jadi membuangnya bukan pilihan lalai.
+
+Tiada satu pun daripada ini disahkan terhadap production. Pusingan UAT 16 Sep
+berjalan tanpa kelayakan; bukti di sini ialah bukti statik terhadap ledger
+migration dan kod. Sahkan bila akaun ujian ada.

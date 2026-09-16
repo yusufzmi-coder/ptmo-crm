@@ -454,3 +454,116 @@ describe('planBroadcastResume', () => {
     expect(plan.templateRow?.language).toBe('en');
   });
 });
+
+// ============================================================
+// Resuming on a database that never ran 048.
+// ============================================================
+
+describe('planBroadcastResume without migration 048', () => {
+  // `broadcasts.whatsapp_config_id` is created by 048 and no database has
+  // run it. Selecting the column fails the whole query, and the handler
+  // turns that into "Broadcast not found" — a 404 for a campaign sitting
+  // right there in the list.
+
+  const MISSING_COLUMN = {
+    code: '42703',
+    message: 'column broadcasts.whatsapp_config_id does not exist',
+  };
+
+  /**
+   * Stubs only as far as this test needs: the broadcasts row, then an
+   * empty recipient set so planning stops right after the load.
+   * `selects` records the column list of every broadcasts read.
+   */
+  function resumeDb(selects: string[], firstError: unknown) {
+    let broadcastReads = 0;
+    return {
+      from(table: string) {
+        if (table === 'broadcasts') {
+          let cols = '';
+          const b: Record<string, unknown> = {
+            select: (c: string) => {
+              cols = c;
+              selects.push(c);
+              return b;
+            },
+            eq: () => b,
+            maybeSingle: async () => {
+              broadcastReads += 1;
+              if (broadcastReads === 1 && firstError) {
+                return { data: null, error: firstError };
+              }
+              return {
+                data: {
+                  id: 'bc-1',
+                  template_name: 'promo',
+                  template_language: 'en',
+                  ...(cols.includes('whatsapp_config_id')
+                    ? { whatsapp_config_id: null }
+                    : {}),
+                },
+                error: null,
+              };
+            },
+          };
+          return b;
+        }
+        const r: Record<string, unknown> = {
+          select: () => r,
+          eq: () => r,
+          in: () => r,
+          order: async () => ({ data: [], error: null }),
+        };
+        return r;
+      },
+    } as unknown as SupabaseClient;
+  }
+
+  it('drops the column and finds the broadcast instead of 404ing', async () => {
+    const selects: string[] = [];
+
+    // The stub leaves no recipients, so planning gets as far as
+    // `nothing_to_resume`. That is the assertion: reaching it at all
+    // means the broadcast was FOUND. Before the retry this same call
+    // died earlier, as `not_found`, on a campaign that exists.
+    await expect(
+      planBroadcastResume(
+        resumeDb(selects, MISSING_COLUMN),
+        'acct-1',
+        'bc-1',
+        'pending'
+      )
+    ).rejects.toMatchObject({ code: 'nothing_to_resume' });
+
+    expect(selects).toHaveLength(2);
+    expect(selects[0]).toContain('whatsapp_config_id');
+    expect(selects[1]).not.toContain('whatsapp_config_id');
+  });
+
+  it('still 404s when the broadcast genuinely is not there', async () => {
+    const selects: string[] = [];
+    await expect(
+      planBroadcastResume(
+        {
+          from: () => {
+            const b: Record<string, unknown> = {
+              select: (c: string) => {
+                selects.push(c);
+                return b;
+              },
+              eq: () => b,
+              maybeSingle: async () => ({ data: null, error: null }),
+            };
+            return b;
+          },
+        } as unknown as SupabaseClient,
+        'acct-1',
+        'bc-1',
+        'pending'
+      )
+    ).rejects.toBeInstanceOf(BroadcastError);
+
+    // One read, no retry: a missing row is not a missing column.
+    expect(selects).toHaveLength(1);
+  });
+});
